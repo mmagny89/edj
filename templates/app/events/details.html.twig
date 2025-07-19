@@ -1,0 +1,64 @@
+{% extends "./app/layout.html.twig" %}
+
+{% block body %}
+    <div class="sm:flex sm:justify-between sm:items-center mb-3">
+        <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+           href="{{ path('app_events') }}">
+            <- Retour
+        </a>
+
+        <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+            <a class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+               href="#">
+                + Ajouter un jeu
+            </a>
+        </div>
+    </div>
+
+    <header class="mb-4">
+        <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold mb-2">
+            {{ event.date | date('l d M Y') }}
+        </h1>
+    </header>
+
+    {% if event.games is not empty %}
+        <div class="grid xl:grid-cols-2 gap-6 mb-8">
+            {% for game in event.games %}
+                <article class="flex bg-white dark:bg-gray-800 shadow-xs rounded-xl overflow-hidden">
+                    <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
+                       href="meetups-post.html" target="_blank">
+                        <img class="absolute object-cover object-center w-full h-full"
+                             src="/images/meetups-thumb-01.jpg" width="220" height="236" alt="Meetup 01">
+                    </a>
+
+                    <div class="grow p-5 flex flex-col">
+                        <div class="grow">
+                            <a class="inline-flex mb-2" href="meetups-post.html" target="_blank">
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ game.name }}</h3>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <a class="text-red-500 hover:text-red-600 rounded-full"
+                           href="#">
+                            <span class="sr-only">Supprimer</span>
+                            <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
+                                <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
+                                <path
+                                    d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="mt-3">
+        <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+           href="{{ path('app_events') }}">
+            <- Retour
+        </a>
+    </div>
+{% endblock %}
