@@ -13,7 +13,7 @@
                                         <a class="inline-flex text-gray-800 dark:text-gray-100 hover:text-gray-900 dark:hover:text-white"
                                            href="{{ path('app_events_details', {'event': event.id}) }}">
                                             <h2 class="text-xl leading-snug justify-center font-semibold">
-                                                {{ event.date | date('l d M Y') }}
+                                                {{ event.date | format_date('full') }}
                                             </h2>
                                         </a>
 

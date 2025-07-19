@@ -1,4 +1,4 @@
-{% extends "./app/layout.html.twig" %}
+{% extends "./app/index.html.twig" %}
 
 {% block body %}
     <div class="sm:flex sm:justify-between sm:items-center mb-3">
@@ -17,7 +17,7 @@
 
     <header class="mb-4">
         <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold mb-2">
-            {{ event.date | date('l d M Y') }}
+            {{ event.date | format_date('full') }}
         </h1>
     </header>
 
