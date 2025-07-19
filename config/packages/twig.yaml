@@ -1,0 +1,9 @@
+twig:
+    cache: false # Désactive le cache des templates
+    debug: true
+    auto_reload: true # Recharge automatiquement les templates
+when@dev:
+    twig:
+        cache: false
+        debug: true
+        auto_reload: true
