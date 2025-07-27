@@ -2,12 +2,9 @@
 
 namespace App\Entity;
 
-use App\Repository\GameRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: GameRepository::class)]
+#[ORM\Entity]
 class Game
 {
     #[ORM\Id]
@@ -18,16 +15,14 @@ class Game
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Event>
-     */
-    #[ORM\ManyToMany(targetEntity: Event::class, mappedBy: 'games')]
-    private Collection $events;
+    #[ORM\Column(length: 255)]
+    private ?string $bggId = null;
 
-    public function __construct()
-    {
-        $this->events = new ArrayCollection();
-    }
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imageUrl = null;
+
+    #[ORM\ManyToMany(targetEntity: Event::class, mappedBy: 'games')]
+    private $events;
 
     public function getId(): ?int
     {
@@ -39,37 +34,31 @@ class Game
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Event>
-     */
-    public function getEvents(): Collection
+    public function getBggId(): ?string
     {
-        return $this->events;
+        return $this->bggId;
     }
 
-    public function addEvent(Event $event): static
+    public function setBggId(string $bggId): self
     {
-        if (!$this->events->contains($event)) {
-            $this->events->add($event);
-            $event->addGame($this);
-        }
-
+        $this->bggId = $bggId;
         return $this;
     }
 
-    public function removeEvent(Event $event): static
+    public function getImageUrl(): ?string
     {
-        if ($this->events->removeElement($event)) {
-            $event->removeGame($this);
-        }
+        return $this->imageUrl;
+    }
 
+    public function setImageUrl(?string $imageUrl): self
+    {
+        $this->imageUrl = $imageUrl;
         return $this;
     }
 }

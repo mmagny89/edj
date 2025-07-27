@@ -8,15 +8,15 @@
         </a>
 
         <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-            <a class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
-               href="#">
+            <button class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                    data-modal-toggle="add-game-modal">
                 + Ajouter un jeu
-            </a>
+            </button>
         </div>
     </div>
 
     <header class="mb-4">
-        <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold mb-2">
+        <h1 class="text-2xl md:text-3xl text-gray-800 font-bold mb-2">
             {{ event.date | format_date('full') }}
         </h1>
     </header>
@@ -24,31 +24,42 @@
     {% if event.games is not empty %}
         <div class="grid xl:grid-cols-2 gap-6 mb-8">
             {% for game in event.games %}
-                <article class="flex bg-white dark:bg-gray-800 shadow-xs rounded-xl overflow-hidden">
-                    <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
-                       href="meetups-post.html" target="_blank">
-                        <img class="absolute object-cover object-center w-full h-full"
-                             src="/images/meetups-thumb-01.jpg" width="220" height="236" alt="Meetup 01">
-                    </a>
+                <article class="flex bg-white dark:bg-gray-800 shadow-xs rounded-xl overflow-hidden h-56">
+                    {% if game.imageUrl %}
+                        <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
+                           href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
+                            <img class="absolute object-cover object-center w-full h-full min-w-[220px] min-h-[236px]"
+                                 src="{{ game.imageUrl ?? '/images/meetups-thumb-01.jpg' }}" width="220" height="236" alt="{{ game.name }}">
+                        </a>
+                    {% endif %}
 
                     <div class="grow p-5 flex flex-col">
                         <div class="grow">
-                            <a class="inline-flex mb-2" href="meetups-post.html" target="_blank">
+                            <a class="inline-flex mb-2" href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
                                 <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ game.name }}</h3>
                             </a>
+
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                <a class="text-sm text-gray-800 dark:text-gray-100 hover:underline"
+                                   href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
+                                    Voir le jeu sur BGG
+                                </a>
+                            </div>
                         </div>
                     </div>
 
                     <div class="text-right">
-                        <a class="text-red-500 hover:text-red-600 rounded-full"
-                           href="#">
-                            <span class="sr-only">Supprimer</span>
-                            <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
-                                <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
-                                <path
-                                    d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z"></path>
-                            </svg>
-                        </a>
+                        <form action="{{ path('app_events_remove_game', {'event': event.id, 'game': game.id}) }}" method="post" class="inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
+                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer" data-turbo="true">
+                                <span class="sr-only">Supprimer</span>
+                                <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
+                                    <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
+                                    <path
+                                        d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z"></path>
+                                </svg>
+                            </button>
+                        </form>
                     </div>
                 </article>
             {% endfor %}
@@ -61,4 +72,49 @@
             <- Retour
         </a>
     </div>
+
+    <!-- Modale pour ajouter un jeu -->
+    <div id="add-game-modal" class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Ajouter un jeu</h2>
+                <button class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100" data-modal-toggle="add-game-modal">&times;</button>
+            </div>
+            {{ form_start(form, {'attr': {'id': 'add-game-form'}}) }}
+            <div class="mb-4 relative">
+                {{ form_label(form.name) }}
+                <div class="flex items-center">
+                    {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2 border rounded'}}) }}
+                    <div id="search-loader" class="hidden ml-2 z-20" aria-busy="true" aria-label="Recherche en cours">
+                        <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+                {{ form_errors(form.name) }}
+                <!-- Conteneur pour la liste d'autocomplétion -->
+                <div id="suggestions-container" class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg max-h-[200px] overflow-y-auto hidden top-full mt-1"></div>
+            </div>
+            {{ form_widget(form.bggId) }}
+            {{ form_widget(form.imageUrl) }}
+            <div class="flex justify-end relative">
+                <button type="submit" class="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Ajouter
+                </button>
+                <div id="details-loader" class="hidden ml-2 z-20" aria-busy="true" aria-label="Chargement des détails du jeu">
+                    <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('add-game') }}
 {% endblock %}

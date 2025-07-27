@@ -23,6 +23,7 @@ Encore
    */
   .addEntry('site', './assets/site.js')
   .addEntry('app', './assets/app.js')
+  .addEntry('add-game', './assets/js/add-game.js') // Entrée pour add-game.js
 
   // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
   .splitEntryChunks()
@@ -79,6 +80,8 @@ Encore
 
 // uncomment if you're having problems with a jQuery plugin
 //.autoProvidejQuery()
+
+  .addEntry('alpine', 'alpinejs'); // Ajoute Alpine.js comme entrée
 ;
 
 // Get the Webpack configuration and set the mode dynamically
