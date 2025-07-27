@@ -21,6 +21,17 @@
     background-color: #e9c33a;
 }
 
+/* Boutons */
+a.bg-primary:hover {
+    background-color: #f18579;
+}
+a.bg-secondary:hover {
+    background-color: #edbc77;
+}
+a.bg-tertiary:hover {
+    background-color: #ead382;
+}
+
 .font-logo {
     font-family: 'Akaya Kanadaka', sans-serif;
 }
@@ -91,9 +102,9 @@
     clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
 }
 
-.bg-primary::after { background-color: #efdec6; }
-.bg-secondary::after { background-color: #e9c33a; }
-.bg-tertiary::after { background-color: #fb5a48; }
+.shape-arrow.bg-primary::after { background-color: #efdec6; }
+.shape-arrow.bg-secondary::after { background-color: #e9c33a; }
+.shape-arrow.bg-tertiary::after { background-color: #fb5a48; }
 
 
 .gallery-item {
