@@ -2,6 +2,112 @@
 @source not "../../public";
 
 /* Styles spécifiques au site, si nécessaire */
-body {
-    background-color: lightgrey;
+.bg-grid {
+    background-color: #889BD3;
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-position: center;
 }
+
+.bg-primary {
+    background-color: #fb5a48;
+}
+.bg-secondary {
+    background-color: #efdec6;
+}
+.bg-tertiary {
+    background-color: #e9c33a;
+}
+
+.font-logo {
+    font-family: 'Akaya Kanadaka', sans-serif;
+}
+
+.logo {
+    @apply w-24 h-auto flex items-center justify-center rounded-lg text-white text-sm mb-6;
+    background-image: linear-gradient(45deg, #4a9a5d 50%, #3b82f6 50%);
+}
+
+/* Styles pour l'animation du titre */
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+#titre-principal,
+#sous-titre {
+    opacity: 0;
+}
+.visible {
+    animation: fadeInSlide 1s ease-out forwards;
+}
+
+/* Définition de la forme de flèche avec clip-path */
+.shape-arrow {
+    position: relative;
+    z-index: 1; /* Assure que les éléments s'affichent correctement */
+
+    /* La forme principale de la div est une flèche pointant vers la droite */
+    clip-path: polygon(
+        0% 0%,
+        calc(100% - 24px) 0%,
+        100% 50%,
+        calc(100% - 24px) 100%,
+        0% 100%
+    );
+}
+
+/* On utilise un pseudo-élément pour créer l'encoche à gauche */
+.shape-arrow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 100%;
+    z-index: 2;
+    background-color: #889BD3;
+    clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+}
+
+/* On gère les couleurs des flèches en fonction du conteneur */
+
+/* Pour la flèche sortante de chaque div */
+.shape-arrow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -24px;
+    width: 24px;
+    height: 100%;
+    z-index: 1;
+    clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+}
+
+.bg-primary::after { background-color: #efdec6; }
+.bg-secondary::after { background-color: #e9c33a; }
+.bg-tertiary::after { background-color: #fb5a48; }
+
+
+.gallery-item {
+    @apply h-36 bg-gray-100 flex items-center justify-center text-gray-600;
+}
+.counter {
+    @apply opacity-0;
+}
+.counter.animate {
+    @apply opacity-100;
+    animation: countUp 2s ease-out forwards;
+}
+@keyframes countUp {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
