@@ -3,14 +3,14 @@
 {% block body %}
     <div class="grid grid-cols-12 gap-6">
         {% for event in events %}
-            <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+            <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white shadow-xs rounded-xl">
                 <div class="flex flex-col h-full">
-                    <div class="grow p-5">
+                    <div class="grow p-5 bg-gray-800 rounded-t-xl">
                         <div class="flex justify-between items-start">
                             <header>
                                 <div class="flex mb-2">
                                     <div class="mt-1 pr-1">
-                                        <a class="inline-flex text-gray-800 dark:text-gray-100 hover:text-gray-900 dark:hover:text-white"
+                                        <a class="inline-flex text-white hover:text-gray-400"
                                            href="{{ path('app_events_details', {'event': event.id}) }}">
                                             <h2 class="text-xl leading-snug justify-center font-semibold">
                                                 {{ event.date | format_date('full') }}
@@ -19,7 +19,7 @@
 
                                         <div class="flex items-center">
                                             <span
-                                                class="text-sm font-medium text-gray-400 dark:text-gray-500 -mt-0.5 mr-1">{{ event.games | length }} jeu{{ (event.games | length > 1) ? 'x' : '' }}</span>
+                                                class="text-sm font-medium text-gray-400 -mt-0.5 mr-1">{{ event.games | length }} jeu{{ (event.games | length > 1) ? 'x' : '' }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -27,12 +27,16 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-100 dark:border-gray-700/60">
-                        <div class="flex divide-x divide-gray-100 dark:divide-gray-700/60">
-                            <a class="block flex-1 text-center text-sm text-violet-500 hover:text-violet-600 dark:hover:text-violet-400 font-medium px-3 py-4"
+                    <div class="border-t border-gray-100">
+                        <div class="flex divide-x">
+                            <a class="block flex-1 text-center text-sm font-medium px-3 py-4"
                                href="{{ path('app_events_details', {'event': event.id}) }}">
                                 <div class="flex items-center justify-center">
-                                    <span>Voir -></span>
+                                    <svg class="mr-2" width="16" height="16" viewBox="0 0 16 16">
+                                        <path
+                                            d="M11.7.3c-.4-.4-1-.4-1.4 0l-10 10c-.2.2-.3.4-.3.7v4c0 .6.4 1 1 1h4c.3 0 .5-.1.7-.3l10-10c.4-.4.4-1 0-1.4l-4-4zM4.6 14H2v-2.6l6-6L10.6 8l-6 6zM12 6.6L9.4 4 11 2.4 13.6 5 12 6.6z"></path>
+                                    </svg>
+                                    <span>Gérer</span>
                                 </div>
                             </a>
                         </div>

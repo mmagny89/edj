@@ -2,9 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\GameRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
     #[ORM\Id]
@@ -22,7 +25,12 @@ class Game
     private ?string $imageUrl = null;
 
     #[ORM\ManyToMany(targetEntity: Event::class, mappedBy: 'games')]
-    private $events;
+    private Collection $events;
+
+    public function __construct()
+    {
+        $this->events = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -59,6 +67,28 @@ class Game
     public function setImageUrl(?string $imageUrl): self
     {
         $this->imageUrl = $imageUrl;
+        return $this;
+    }
+
+    public function getEvents()
+    {
+        return $this->events;
+    }
+
+    public function addEvent(Event $event): self
+    {
+        if (!$this->events->contains($event)) {
+            $this->events[] = $event;
+            $event->addGame($this);
+        }
+        return $this;
+    }
+
+    public function removeEvent(Event $event): self
+    {
+        if ($this->events->removeElement($event)) {
+            $event->removeGame($this);
+        }
         return $this;
     }
 }
