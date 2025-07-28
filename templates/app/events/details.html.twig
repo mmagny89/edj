@@ -8,8 +8,9 @@
         </a>
 
         <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-            <button class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
-                    data-modal-toggle="add-game-modal">
+            <button
+                class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                data-modal-toggle="add-game-modal">
                 + Ajouter un jeu
             </button>
         </div>
@@ -29,29 +30,33 @@
                         <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
                            href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
                             <img class="absolute object-cover object-center w-full h-full min-w-[220px] min-h-[236px]"
-                                 src="{{ game.imageUrl ?? '/images/meetups-thumb-01.jpg' }}" width="220" height="236" alt="{{ game.name }}">
+                                 src="{{ game.imageUrl ?? '/images/meetups-thumb-01.jpg' }}" width="220" height="236"
+                                 alt="{{ game.name }}">
                         </a>
                     {% endif %}
 
                     <div class="grow p-5 flex flex-col">
                         <div class="grow">
-                            <a class="inline-flex mb-2" href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
+                            <a class="inline-flex mb-2" href="https://boardgamegeek.com/boardgame/{{ game.bggId }}"
+                               target="_blank">
                                 <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ game.name }}</h3>
                             </a>
 
                             <div class="text-sm text-gray-500 dark:text-gray-400">
                                 <a class="text-sm text-gray-800 dark:text-gray-100 hover:underline"
                                    href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
-                                    Voir le jeu sur BGG
+                                    -> Voir le jeu sur BGG
                                 </a>
                             </div>
                         </div>
                     </div>
 
                     <div class="text-right">
-                        <form action="{{ path('app_events_remove_game', {'event': event.id, 'game': game.id}) }}" method="post" class="inline">
+                        <form action="{{ path('app_events_remove_game', {'event': event.id, 'game': game.id}) }}"
+                              method="post" class="inline">
                             <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
-                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer" data-turbo="true">
+                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer"
+                                    data-turbo="true">
                                 <span class="sr-only">Supprimer</span>
                                 <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
                                     <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
@@ -74,11 +79,15 @@
     </div>
 
     <!-- Modale pour ajouter un jeu -->
-    <div id="add-game-modal" class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+    <div id="add-game-modal"
+         class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
         <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Ajouter un jeu</h2>
-                <button class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100" data-modal-toggle="add-game-modal">&times;</button>
+                <button
+                    class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                    data-modal-toggle="add-game-modal">&times;
+                </button>
             </div>
             {{ form_start(form, {'attr': {'id': 'add-game-form'}}) }}
             <div class="mb-4 relative">
@@ -86,15 +95,19 @@
                 <div class="flex items-center">
                     {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2 border rounded'}}) }}
                     <div id="search-loader" class="hidden ml-2 z-20" aria-busy="true" aria-label="Recherche en cours">
-                        <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
                 </div>
                 {{ form_errors(form.name) }}
                 <!-- Conteneur pour la liste d'autocomplétion -->
-                <div id="suggestions-container" class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg max-h-[200px] overflow-y-auto hidden top-full mt-1"></div>
+                <div id="suggestions-container"
+                     class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg max-h-[200px] overflow-y-auto hidden top-full mt-1"></div>
             </div>
             {{ form_widget(form.bggId) }}
             {{ form_widget(form.imageUrl) }}
@@ -102,10 +115,14 @@
                 <button type="submit" class="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     Ajouter
                 </button>
-                <div id="details-loader" class="hidden ml-2 z-20" aria-busy="true" aria-label="Chargement des détails du jeu">
-                    <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div id="details-loader" class="hidden ml-2 z-20" aria-busy="true"
+                     aria-label="Chargement des détails du jeu">
+                    <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400"
+                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
             </div>

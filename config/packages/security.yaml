@@ -28,10 +28,9 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: ^/admin, roles: ROLE_SUPER_ADMIN }
-        - { path: ^/contributor, roles: ROLE_CONTRIBUTOR }
+        - { path: ^/app, roles: ROLE_USER }
         - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/, roles: PUBLIC_ACCESS }
             
     role_hierarchy:
         ROLE_SUPER_ADMIN: [ ROLE_CONTRIBUTOR, ROLE_USER ]
