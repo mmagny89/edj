@@ -3,7 +3,7 @@
 {% block body %}
     <div class="sm:flex sm:justify-between sm:items-center mb-3">
         <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
-           href="{{ path('app_events') }}">
+           href="{{ path('app_event') }}">
             <- Retour
         </a>
 
@@ -53,7 +53,7 @@
 
                     <div class="text-right flex items-center space-x-2">
                         {# Bouton de suppression existant #}
-                        <form action="{{ path('app_events_remove_game', {'event': event.id, 'game': game.id}) }}"
+                        <form action="{{ path('app_event_remove_game', {'event': event.id, 'game': game.id}) }}"
                               method="post" class="inline remove-game-form">
                             <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
                             <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer">
@@ -82,7 +82,7 @@
 
     <div class="mt-3">
         <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
-           href="{{ path('app_events') }}">
+           href="{{ path('app_event') }}">
             <- Retour
         </a>
     </div>
@@ -151,7 +151,7 @@
             <ul class="space-y-2">
                 {% for lastEvent in lastEvents %}
                     <li>
-                        <form action="{{ path('app_events_add_game', {'event': lastEvent.id, 'game': 0}) }}"
+                        <form action="{{ path('app_event_add_game', {'event': lastEvent.id, 'game': 0}) }}"
                               method="post" class="duplicate-game-form inline" data-event-id="{{ lastEvent.id }}"
                               data-csrf="{{ csrf_token('add_game_' ~ lastEvent.id) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('add_game_' ~ lastEvent.id) }}"

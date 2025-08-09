@@ -1,0 +1,33 @@
+{% extends "./app/index.html.twig" %}
+
+{% block body %}
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold mb-6">Gestion des consommables</h1>
+        <a href="{{ path('consumable_new') }}" class="mb-4 inline-block bg-blue-600 text-white px-4 py-2 rounded">Ajouter un consommable</a>
+        <table class="w-full table-auto border-collapse">
+            <thead>
+            <tr class="bg-gray-200">
+                <th class="px-4 py-2">Nom</th>
+                <th class="px-4 py-2">Type</th>
+                <th class="px-4 py-2">Prix</th>
+                <th class="px-4 py-2">Stock</th>
+                <th class="px-4 py-2">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for consumable in consumables %}
+                <tr>
+                    <td class="border px-4 py-2">{{ consumable.name }}</td>
+                    <td class="border px-4 py-2">{{ consumable.type }}</td>
+                    <td class="border px-4 py-2">{{ consumable.price|number_format(2) }} €</td>
+                    <td class="border px-4 py-2">{{ consumable.stock ?? 'Non défini' }}</td>
+                    <td class="border px-4 py-2">
+                        <a href="{{ path('consumable_edit', {'id': consumable.id}) }}" class="text-blue-600">Modifier</a>
+                        <a href="{{ path('consumable_delete', {'id': consumable.id}) }}" class="text-red-600 ml-2">Supprimer</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

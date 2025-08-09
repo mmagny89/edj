@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/app')]
+#[Route('/app/games')]
 #[IsGranted('ROLE_CONTRIBUTOR')]
 final class GameController extends AbstractController
 {
@@ -21,7 +21,7 @@ final class GameController extends AbstractController
     ) {
     }
 
-    #[Route('/games/search', name: 'app_games_search', methods: ['GET'])]
+    #[Route('/search', name: 'app_game_search', methods: ['GET'])]
     public function searchGames(Request $request): JsonResponse
     {
         $query = $request->query->get('query');
@@ -33,7 +33,7 @@ final class GameController extends AbstractController
         return new JsonResponse($games);
     }
 
-    #[Route('/games/{id}/details', name: 'app_games_details', methods: ['GET'])]
+    #[Route('/{id}/details', name: 'app_game_details', methods: ['GET'])]
     public function getGameDetails(string $id): JsonResponse
     {
         // Vérifier si le jeu existe dans la base de données
