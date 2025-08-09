@@ -51,12 +51,12 @@
                         </div>
                     </div>
 
-                    <div class="text-right">
+                    <div class="text-right flex items-center space-x-2">
+                        {# Bouton de suppression existant #}
                         <form action="{{ path('app_events_remove_game', {'event': event.id, 'game': game.id}) }}"
-                              method="post" class="inline">
+                              method="post" class="inline remove-game-form">
                             <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
-                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer"
-                                    data-turbo="true">
+                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer">
                                 <span class="sr-only">Supprimer</span>
                                 <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
                                     <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
@@ -65,6 +65,15 @@
                                 </svg>
                             </button>
                         </form>
+                        {# Bouton de duplication #}
+                        <button onclick="openDuplicateModal({{ game.id }})"
+                                class="text-blue-500 hover:text-blue-600 rounded-full cursor-pointer"
+                                title="Dupliquer vers un autre événement">
+                            <span class="sr-only">Dupliquer</span>
+                            <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
+                                <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                        </button>
                     </div>
                 </article>
             {% endfor %}
@@ -78,7 +87,7 @@
         </a>
     </div>
 
-    <!-- Modale pour ajouter un jeu -->
+    {# Modal pour ajouter un jeu #}
     <div id="add-game-modal"
          class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
         <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
@@ -105,7 +114,6 @@
                     </div>
                 </div>
                 {{ form_errors(form.name) }}
-                <!-- Conteneur pour la liste d'autocomplétion -->
                 <div id="suggestions-container"
                      class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg max-h-[200px] overflow-y-auto hidden top-full mt-1"></div>
             </div>
@@ -129,9 +137,49 @@
             {{ form_end(form) }}
         </div>
     </div>
+
+    {# Modal pour dupliquer un jeu #}
+    <div id="duplicate-game-modal"
+         class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Dupliquer le jeu vers un événement</h2>
+                <button onclick="closeDuplicateModal()"
+                        class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">&times;
+                </button>
+            </div>
+            <ul class="space-y-2">
+                {% for lastEvent in lastEvents %}
+                    <li>
+                        <form action="{{ path('app_events_add_game', {'event': lastEvent.id, 'game': 0}) }}"
+                              method="post" class="duplicate-game-form inline" data-event-id="{{ lastEvent.id }}"
+                              data-csrf="{{ csrf_token('add_game_' ~ lastEvent.id) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('add_game_' ~ lastEvent.id) }}"
+                                   class="csrf-token">
+                            <button type="submit"
+                                    class="w-full text-left bg-gray-100 dark:bg-gray-700 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100">
+                                {{ lastEvent.date | format_date('full') }}
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     {{ encore_entry_script_tags('add-game') }}
+
+    <script>
+        // Pré-générer les tokens CSRF pour chaque jeu
+        window.csrfTokens = {
+            {% for game in event.games %}
+                {{ game.id }}: '{{ csrf_token('add_game_' ~ game.id) }}',
+            {% endfor %}
+        };
+    </script>
 {% endblock %}
