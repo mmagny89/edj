@@ -1,6 +1,33 @@
 @import "tailwindcss";
 @source not "../../public";
-/* Styles spécifiques à l'application, si nécessaire */
-body {
-    background-color: lightgray;
+
+/* Animation pour les toasts */
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-out-right {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-slide-out-right {
+    animation: slide-out-right 0.3s ease-out;
 }
