@@ -1,7 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => initializeModalToggles());
-document.addEventListener('turbo:load', () => initializeModalToggles());
+document.addEventListener('DOMContentLoaded', () => initializeAddGameModal());
+document.addEventListener('turbo:load', () => initializeAddGameModal());
 
-function initializeModalToggles() {
+function initializeAddGameModal() {
+  console.log('Initialisation de add-game.js');
+  const modal = document.getElementById('add-game-modal');
+  if (!modal) {
+    console.error('Modal #add-game-modal non trouvée');
+    return;
+  }
+
   // Fonction de debouncing
   function debounce(func, wait) {
     let timeout;
@@ -15,266 +22,118 @@ function initializeModalToggles() {
     };
   }
 
-  // Fonction pour afficher un toast
-  function showToast(message, type = 'success') {
-    const toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) return;
+  // Initialiser l'autocomplétion
+  const gameInput = document.getElementById('add_game_name');
+  const suggestionsContainer = document.getElementById('suggestions-container');
+  const searchLoader = document.getElementById('search-loader');
+  const detailsLoader = document.getElementById('details-loader');
 
-    const toast = document.createElement('div');
-    toast.className = `px-4 py-2 rounded-lg shadow-lg text-white animate-slide-in-right ${
-      type === 'success' ? 'bg-green-500' : 'bg-red-500'
-    }`;
-    toast.textContent = message;
-
-    toastContainer.appendChild(toast);
-
-    // Auto-fermeture après 3 secondes
-    setTimeout(() => {
-      toast.classList.add('animate-slide-out-right');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+  if (!gameInput) {
+    console.error('Champ #add_game_name non trouvé dans le DOM');
+    return;
+  }
+  if (!suggestionsContainer) {
+    console.error('Conteneur #suggestions-container non trouvé dans le DOM');
+    return;
   }
 
-  // Fonction pour initialiser l'autocomplétion dans la modale d'ajout
-  function initializeAddModal(modal) {
-    console.log('Initialisation de la modale d\'ajout');
-    const gameInput = document.getElementById('add_game_name');
-    if (!gameInput) {
-      console.error('Champ gameInput non trouvé dans le DOM');
+  const searchGames = debounce(async (query) => {
+    console.log('Recherche de jeux avec query:', query);
+    if (query.length < 3) {
+      suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
+      suggestionsContainer.innerHTML = '';
+      if (searchLoader) {
+        searchLoader.className = searchLoader.className.replace('block', 'hidden');
+      }
       return;
     }
 
-    // Réinitialiser le formulaire
-    const form = modal.querySelector('#add-game-form');
-    if (form) {
-      form.reset();
-    }
-
-    const suggestionsContainer = document.getElementById('suggestions-container');
-    const searchLoader = document.getElementById('search-loader');
-    const detailsLoader = document.getElementById('details-loader');
-
-    const searchGames = debounce(async (query) => {
-      if (query.length < 3) {
-        suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
-        suggestionsContainer.innerHTML = '';
-        if (searchLoader) {
-          searchLoader.className = searchLoader.className.replace('block', 'hidden');
-        }
-        return;
+    try {
+      if (searchLoader) {
+        searchLoader.className = searchLoader.className.replace('hidden', 'block');
       }
-
-      try {
-        if (searchLoader) {
-          searchLoader.className = searchLoader.className.replace('hidden', 'block');
+      const response = await fetch(`/app/games/search?query=${encodeURIComponent(query)}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         }
-        const response = await fetch(`/app/games/search?query=${encodeURIComponent(query)}`, {
-          headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        const games = await response.json();
+      });
+      console.log('Réponse AJAX pour recherche:', response.status);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      const games = await response.json();
+      console.log('Jeux reçus:', games);
 
-        suggestionsContainer.innerHTML = '';
-        if (games.length > 0) {
-          suggestionsContainer.className = suggestionsContainer.className.replace('hidden', 'block');
-          games.forEach(game => {
-            const div = document.createElement('div');
-            div.className = 'px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer';
-            div.textContent = game.name + (game.year ? ` (${game.year})` : '');
-            div.addEventListener('click', async () => {
-              gameInput.value = game.name;
-              document.getElementById('add_game_bggId').value = game.id;
+      suggestionsContainer.innerHTML = '';
+      if (games.length > 0) {
+        suggestionsContainer.className = suggestionsContainer.className.replace('hidden', 'block');
+        games.forEach(game => {
+          const div = document.createElement('div');
+          div.className = 'px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer';
+          div.textContent = game.name + (game.year ? ` (${game.year})` : '');
+          div.addEventListener('click', async () => {
+            console.log('Sélection du jeu:', game.name);
+            gameInput.value = game.name;
+            document.getElementById('add_game_bggId').value = game.id;
 
-              try {
-                if (detailsLoader) {
-                  detailsLoader.className = detailsLoader.className.replace('hidden', 'block');
-                }
-                const detailsResponse = await fetch(`/app/games/${game.id}/details`, {
-                  headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                  }
-                });
-                if (!detailsResponse.ok) {
-                  throw new Error(`Erreur HTTP: ${detailsResponse.status}`);
-                }
-                const details = await detailsResponse.json();
-                document.getElementById('add_game_imageUrl').value = details.image || '';
-              } catch (error) {
-                console.error('Erreur lors de la récupération des détails du jeu :', error);
-                document.getElementById('add_game_imageUrl').value = '';
-                showToast('Erreur lors de la récupération des détails du jeu.', 'error');
-              } finally {
-                if (detailsLoader) {
-                  detailsLoader.className = detailsLoader.className.replace('block', 'hidden');
-                }
+            try {
+              if (detailsLoader) {
+                detailsLoader.className = detailsLoader.className.replace('hidden', 'block');
               }
+              const detailsResponse = await fetch(`/app/games/${game.id}/details`, {
+                headers: {
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+              console.log('Réponse AJAX pour détails:', detailsResponse.status);
+              if (!detailsResponse.ok) {
+                throw new Error(`Erreur HTTP: ${detailsResponse.status}`);
+              }
+              const details = await detailsResponse.json();
+              console.log('Détails reçus:', details);
+              document.getElementById('add_game_imageUrl').value = details.image || '';
+            } catch (error) {
+              console.error('Erreur lors de la récupération des détails du jeu:', error);
+              document.getElementById('add_game_imageUrl').value = '';
+              window.showToast('Erreur lors de la récupération des détails du jeu.', 'error');
+            } finally {
+              if (detailsLoader) {
+                detailsLoader.className = detailsLoader.className.replace('block', 'hidden');
+              }
+            }
 
-              suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
-              suggestionsContainer.innerHTML = '';
-            });
-            suggestionsContainer.appendChild(div);
+            suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
+            suggestionsContainer.innerHTML = '';
           });
-        } else {
-          suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la recherche de jeux :', error);
-        suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
-        suggestionsContainer.innerHTML = '';
-        showToast('Erreur lors de la recherche de jeux.', 'error');
-      } finally {
-        if (searchLoader) {
-          searchLoader.className = searchLoader.className.replace('block', 'hidden');
-        }
-      }
-    }, 300);
-
-    gameInput.addEventListener('input', () => {
-      const query = gameInput.value;
-      searchGames(query);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!gameInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-        suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
-        suggestionsContainer.innerHTML = '';
-      }
-    });
-  }
-
-  // Nettoyer les anciens écouteurs pour éviter les doublons
-  function removeEventListeners(selector, eventType, handler) {
-    document.querySelectorAll(selector).forEach(element => {
-      const newElement = element.cloneNode(true);
-      element.parentNode.replaceChild(newElement, element);
-    });
-  }
-
-  // Fonction pour ouvrir le modal de duplication
-  window.openDuplicateModal = function(gameId) {
-    const modal = document.getElementById('duplicate-game-modal');
-    if (!modal) {
-      console.error('Modal de duplication non trouvé');
-      showToast('Modal de duplication non trouvé.', 'error');
-      return;
-    }
-
-    // Met à jour les formulaires avec le bon gameId et CSRF token
-    document.querySelectorAll('.duplicate-game-form').forEach(form => {
-      const eventId = form.getAttribute('data-event-id');
-      form.action = `/app/events/${eventId}/add-game/${gameId}`;
-      const csrfInput = form.querySelector('.csrf-token');
-      if (csrfInput && window.csrfTokens && window.csrfTokens[gameId]) {
-        csrfInput.value = window.csrfTokens[gameId];
+          suggestionsContainer.appendChild(div);
+        });
       } else {
-        console.warn('Token CSRF non trouvé pour gameId:', gameId);
+        suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
       }
-    });
-
-    modal.classList.remove('hidden');
-    console.log('Modal de duplication ouvert pour gameId:', gameId);
-  };
-
-  // Fonction pour fermer le modal de duplication
-  window.closeDuplicateModal = function() {
-    const modal = document.getElementById('duplicate-game-modal');
-    if (modal) {
-      modal.classList.add('hidden');
+    } catch (error) {
+      console.error('Erreur lors de la recherche de jeux:', error);
+      suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
+      suggestionsContainer.innerHTML = '';
+      window.showToast('Erreur lors de la recherche de jeux.', 'error');
+    } finally {
+      if (searchLoader) {
+        searchLoader.className = searchLoader.className.replace('block', 'hidden');
+      }
     }
-  };
+  }, 300);
 
-  // Supprimer les anciens écouteurs pour éviter les doublons
-  removeEventListeners('[data-modal-toggle]', 'click');
-  removeEventListeners('.remove-game-form', 'submit');
-  removeEventListeners('.duplicate-game-form', 'submit');
-
-  // Ajouter les écouteurs pour les modals
-  const modalToggles = document.querySelectorAll('[data-modal-toggle]');
-  modalToggles.forEach(toggle => {
-    toggle.addEventListener('click', () => {
-      const modalId = toggle.getAttribute('data-modal-toggle');
-      const modal = document.getElementById(modalId);
-      if (modal) {
-        modal.classList.toggle('hidden');
-        if (!modal.classList.contains('hidden') && modalId === 'add-game-modal') {
-          initializeAddModal(modal);
-        }
-      } else {
-        console.error('Modale non trouvée pour ID :', modalId);
-        showToast('Modale non trouvée.', 'error');
-      }
-    });
+  gameInput.addEventListener('input', () => {
+    const query = gameInput.value;
+    console.log('Input dans #add_game_name:', query);
+    searchGames(query);
   });
 
-  // Gérer la suppression des jeux via AJAX
-  const deleteForms = document.querySelectorAll('.remove-game-form');
-  deleteForms.forEach(form => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      console.log('Soumission du formulaire de suppression:', form.action);
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        console.log('Réponse reçue pour suppression:', response.status);
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success) {
-          form.closest('article').remove();
-          showToast('Jeu supprimé avec succès !', 'success');
-        } else {
-          showToast(result.error || 'Erreur lors de la suppression du jeu.', 'error');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la suppression du jeu :', error);
-        showToast('Erreur lors de la suppression du jeu.', 'error');
-      }
-    });
-  });
-
-  // Gérer les soumissions du modal de duplication via AJAX
-  const duplicateForms = document.querySelectorAll('.duplicate-game-form');
-  duplicateForms.forEach(form => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      console.log('Soumission du formulaire pour duplication:', form.action);
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        console.log('Réponse reçue pour duplication:', response.status);
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.success) {
-          showToast('Jeu ajouté à l\'événement !', 'success');
-          closeDuplicateModal();
-        } else {
-          showToast(result.error || 'Erreur lors de l\'ajout du jeu.', 'error');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la duplication du jeu :', error);
-        showToast('Une erreur est survenue lors de l\'ajout du jeu.', 'error');
-      }
-    });
+  document.addEventListener('click', (e) => {
+    if (!gameInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+      suggestionsContainer.className = suggestionsContainer.className.replace('block', 'hidden');
+      suggestionsContainer.innerHTML = '';
+    }
   });
 }

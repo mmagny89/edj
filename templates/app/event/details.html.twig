@@ -1,185 +1,173 @@
 {% extends "./app/index.html.twig" %}
 
 {% block body %}
-    <div class="sm:flex sm:justify-between sm:items-center mb-3">
-        <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
-           href="{{ path('app_event') }}">
-            <- Retour
-        </a>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="sm:flex sm:justify-between sm:items-center mb-3">
+            <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
+               href="{{ path('app_event') }}">
+                &larr; Retour
+            </a>
 
-        <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-            <button
-                class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
-                data-modal-toggle="add-game-modal">
-                + Ajouter un jeu
-            </button>
+            <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+                <button
+                    class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                    data-modal-toggle="add-game-modal">
+                    + Ajouter un jeu
+                </button>
+            </div>
         </div>
-    </div>
 
-    <header class="mb-4">
-        <h1 class="text-2xl md:text-3xl text-gray-800 font-bold mb-2">
-            {{ event.date | format_date('full') }}
-        </h1>
-    </header>
+        <header class="mb-4">
+            <h1 class="text-2xl md:text-3xl text-gray-800 font-bold mb-2">
+                {{ event.date | format_date('full') }}
+            </h1>
+        </header>
 
-    {% if event.games is not empty %}
-        <div class="grid xl:grid-cols-2 gap-6 mb-8">
-            {% for game in event.games %}
-                <article class="flex bg-white dark:bg-gray-800 shadow-xs rounded-xl overflow-hidden h-56">
-                    {% if game.imageUrl %}
-                        <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
-                           href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
-                            <img class="absolute object-cover object-center w-full h-full min-w-[220px] min-h-[236px]"
-                                 src="{{ game.imageUrl ?? '/images/meetups-thumb-01.jpg' }}" width="220" height="236"
-                                 alt="{{ game.name }}">
-                        </a>
-                    {% endif %}
-
-                    <div class="grow p-5 flex flex-col">
-                        <div class="grow">
-                            <a class="inline-flex mb-2" href="https://boardgamegeek.com/boardgame/{{ game.bggId }}"
-                               target="_blank">
-                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ game.name }}</h3>
+        {% if event.games is not empty %}
+            <div class="grid xl:grid-cols-2 gap-6 mb-8">
+                {% for game in event.games %}
+                    <article class="flex bg-white dark:bg-gray-800 shadow-xs rounded-xl overflow-hidden h-56">
+                        {% if game.imageUrl %}
+                            <a class="relative block w-24 sm:w-56 xl:sidebar-expanded:w-40 2xl:sidebar-expanded:w-56 shrink-0"
+                               href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
+                                <img class="absolute object-cover object-center w-full h-full min-w-[220px] min-h-[236px]"
+                                     src="{{ game.imageUrl ?? '/images/meetups-thumb-01.jpg' }}" width="220" height="236"
+                                     alt="{{ game.name }}">
                             </a>
+                        {% endif %}
 
-                            <div class="text-sm text-gray-500 dark:text-gray-400">
-                                <a class="text-sm text-gray-800 dark:text-gray-100 hover:underline"
-                                   href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
-                                    -> Voir le jeu sur BGG
+                        <div class="grow p-5 flex flex-col">
+                            <div class="grow">
+                                <a class="inline-flex mb-2" href="https://boardgamegeek.com/boardgame/{{ game.bggId }}"
+                                   target="_blank">
+                                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ game.name }}</h3>
                                 </a>
+
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    <a class="text-sm text-gray-800 dark:text-gray-100 hover:underline"
+                                       href="https://boardgamegeek.com/boardgame/{{ game.bggId }}" target="_blank">
+                                        -> Voir le jeu sur BGG
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button
+                                    class="inline-flex items-center text-sm font-medium text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                                    data-modal-toggle="duplicate-game-modal" data-game-id="{{ game.id }}">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Dupliquer
+                                </button>
+                                <form action="{{ path('app_event_remove_game', {'event': event.id, 'game': game.id}) }}"
+                                      method="post" class="remove-game-form inline" data-ajax-form>
+                                    <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
+                                    <button type="submit"
+                                            class="inline-flex items-center text-sm font-medium text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        Supprimer
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                    </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl p-5">
+                <p class="text-gray-500 dark:text-gray-400">Aucun jeu associé à cet événement.</p>
+            </div>
+        {% endif %}
 
-                    <div class="text-right flex items-center space-x-2">
-                        {# Bouton de suppression existant #}
-                        <form action="{{ path('app_event_remove_game', {'event': event.id, 'game': game.id}) }}"
-                              method="post" class="inline remove-game-form">
-                            <input type="hidden" name="_token" value="{{ csrf_token('remove_game_' ~ game.id) }}">
-                            <button type="submit" class="text-red-500 hover:text-red-600 rounded-full cursor-pointer">
-                                <span class="sr-only">Supprimer</span>
-                                <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
-                                    <path d="M13 15h2v6h-2zM17 15h2v6h-2z"></path>
-                                    <path
-                                        d="M20 9c0-.6-.4-1-1-1h-6c-.6 0-1 .4-1 1v2H8v2h1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V13h1v-2h-4V9zm-6 1h4v1h-4v-1zm7 3v9H11v-9h10z"></path>
-                                </svg>
-                            </button>
-                        </form>
-                        {# Bouton de duplication #}
-                        <button onclick="openDuplicateModal({{ game.id }})"
-                                class="text-blue-500 hover:text-blue-600 rounded-full cursor-pointer"
-                                title="Dupliquer vers un autre événement">
-                            <span class="sr-only">Dupliquer</span>
-                            <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                                <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        {# Modal pour ajouter un jeu #}
+        <div id="add-game-modal"
+             class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-600 bg-opacity-50 flex items-center justify-center">
+            <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Ajouter un jeu</h2>
+                    <button data-modal-close="add-game-modal"
+                            class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">&times;</button>
+                </div>
+                <form id="add-game-form" action="{{ path('app_event_details', {'event': event.id}) }}" method="post"
+                      data-ajax-form>
+                    {{ form_start(form) }}
+                    <div class="relative">
+                        {{ form_label(form.name, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                        {{ form_widget(form.name, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm'}}) }}
+                        {{ form_errors(form.name) }}
+                        <div id="search-loader" class="hidden absolute right-2 top-10">
+                            <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg"
+                                 fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
+                        </div>
+                        <div id="suggestions-container"
+                             class="hidden absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                        </div>
+                    </div>
+                    {{ form_row(form.bggId, {'attr': {'class': 'hidden'}}) }}
+                    {{ form_row(form.imageUrl, {'attr': {'class': 'hidden'}}) }}
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" data-modal-close="add-game-modal"
+                                class="text-gray-600 dark:text-gray-300 px-4 py-2 hover:text-gray-800 dark:hover:text-gray-100">
+                            Annuler
+                        </button>
+                        <button type="submit"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 ml-4">
+                            Ajouter
                         </button>
                     </div>
-                </article>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <div class="mt-3">
-        <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
-           href="{{ path('app_event') }}">
-            <- Retour
-        </a>
-    </div>
-
-    {# Modal pour ajouter un jeu #}
-    <div id="add-game-modal"
-         class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
-        <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Ajouter un jeu</h2>
-                <button
-                    class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-                    data-modal-toggle="add-game-modal">&times;
-                </button>
+                    {{ form_end(form) }}
+                </form>
             </div>
-            {{ form_start(form, {'attr': {'id': 'add-game-form'}}) }}
-            <div class="mb-4 relative">
-                {{ form_label(form.name) }}
-                <div class="flex items-center">
-                    {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2 border rounded'}}) }}
-                    <div id="search-loader" class="hidden ml-2 z-20" aria-busy="true" aria-label="Recherche en cours">
-                        <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400"
-                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor"
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
+        </div>
+
+        {# Modal pour dupliquer un jeu #}
+        <div id="duplicate-game-modal"
+             class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-600 bg-opacity-50 flex items-center justify-center">
+            <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Dupliquer le jeu vers un événement</h2>
+                    <button data-modal-close="duplicate-game-modal"
+                            class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">&times;</button>
                 </div>
-                {{ form_errors(form.name) }}
-                <div id="suggestions-container"
-                     class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg max-h-[200px] overflow-y-auto hidden top-full mt-1"></div>
+                <ul class="space-y-2">
+                    {% for lastEvent in lastEvents %}
+                        <li>
+                            <form action="{{ path('app_event_add_game', {'event': lastEvent.id, 'game': 0}) }}"
+                                  method="post" class="duplicate-game-form inline" data-ajax-form data-csrf="">
+                                <input type="hidden" name="_token" value="" class="csrf-token">
+                                <button type="submit"
+                                        class="w-full text-left bg-gray-100 dark:bg-gray-700 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100">
+                                    {{ lastEvent.date | format_date('full') }}
+                                </button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
-            {{ form_widget(form.bggId) }}
-            {{ form_widget(form.imageUrl) }}
-            <div class="flex justify-end relative">
-                <button type="submit" class="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Ajouter
-                </button>
-                <div id="details-loader" class="hidden ml-2 z-20" aria-busy="true"
-                     aria-label="Chargement des détails du jeu">
-                    <svg class="animate-spin !h-5 !w-5 text-gray-500 dark:text-gray-400"
-                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-            </div>
-            {{ form_end(form) }}
         </div>
-    </div>
 
-    {# Modal pour dupliquer un jeu #}
-    <div id="duplicate-game-modal"
-         class="modal hidden fixed inset-0 z-50 overflow-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
-        <div class="modal-content bg-white dark:bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Dupliquer le jeu vers un événement</h2>
-                <button onclick="closeDuplicateModal()"
-                        class="modal-close text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">&times;
-                </button>
-            </div>
-            <ul class="space-y-2">
-                {% for lastEvent in lastEvents %}
-                    <li>
-                        <form action="{{ path('app_event_add_game', {'event': lastEvent.id, 'game': 0}) }}"
-                              method="post" class="duplicate-game-form inline" data-event-id="{{ lastEvent.id }}"
-                              data-csrf="{{ csrf_token('add_game_' ~ lastEvent.id) }}">
-                            <input type="hidden" name="_token" value="{{ csrf_token('add_game_' ~ lastEvent.id) }}"
-                                   class="csrf-token">
-                            <button type="submit"
-                                    class="w-full text-left bg-gray-100 dark:bg-gray-700 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100">
-                                {{ lastEvent.date | format_date('full') }}
-                            </button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
     </div>
-
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     {{ encore_entry_script_tags('add-game') }}
 
-    <script>
+    <script data-turbo-eval="false">
         // Pré-générer les tokens CSRF pour chaque jeu
         window.csrfTokens = {
-            {% for game in event.games %}
-                {{ game.id }}: '{{ csrf_token('add_game_' ~ game.id) }}',
-            {% endfor %}
+        {% for game in event.games %}
+        {{ game.id }}: '{{ csrf_token('add_game_' ~ game.id) }}',
+        {% endfor %}
         };
+        console.log('window.csrfTokens initialisé:', window.csrfTokens);
     </script>
 {% endblock %}

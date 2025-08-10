@@ -20,7 +20,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class EventController extends AbstractController
 {
     public function __construct(
-        private readonly LoggerInterface        $logger,
+        private readonly LoggerInterface $logger,
         private readonly EntityManagerInterface $entityManager,
         private readonly EventRepository $eventRepository
     ) {
@@ -58,6 +58,9 @@ final class EventController extends AbstractController
             $this->entityManager->persist($event);
             $this->entityManager->flush();
 
+            if ($request->isXmlHttpRequest()) {
+                return new JsonResponse(['success' => true, 'message' => 'Jeu ajouté avec succès !', 'reload' => true]);
+            }
             return $this->redirectToRoute('app_event_details', ['event' => $event->getId()], Response::HTTP_SEE_OTHER);
         }
 
@@ -86,15 +89,14 @@ final class EventController extends AbstractController
             $this->entityManager->persist($event);
             $this->entityManager->flush();
             $this->logger->info('Jeu supprimé avec succès', ['eventId' => $event->getId(), 'gameId' => $game->getId()]);
+            if ($request->isXmlHttpRequest()) {
+                return new JsonResponse(['success' => true, 'message' => 'Jeu supprimé avec succès !', 'reload' => true]);
+            }
         } else {
-            $this->logger->warning('Token CSRF invalide pour suppression', ['gameId' => $game->getId()]);
+            $this->logger->warning('Token CSRF invalide pour suppression', ['gameId' => $game->getId(), 'token' => $request->request->get('_token')]);
             if ($request->isXmlHttpRequest()) {
                 return new JsonResponse(['success' => false, 'error' => 'Token CSRF invalide'], 403);
             }
-        }
-
-        if ($request->isXmlHttpRequest()) {
-            return new JsonResponse(['success' => true]);
         }
 
         return $this->redirectToRoute('app_event_details', ['event' => $event->getId()], Response::HTTP_SEE_OTHER);
@@ -104,24 +106,36 @@ final class EventController extends AbstractController
     public function addGame(Event $event, Game $game, Request $request): Response
     {
         $this->logger->info('Tentative d\'ajout du jeu', ['eventId' => $event->getId(), 'gameId' => $game->getId()]);
-        if ($this->isCsrfTokenValid('add_game_' . $game->getId(), $request->request->get('_token'))) {
+        $receivedToken = $request->request->get('_token');
+        $expectedTokenKey = 'add_game_' . $game->getId();
+        $this->logger->debug('Vérification CSRF', [
+            'received_token' => $receivedToken,
+            'expected_key' => $expectedTokenKey,
+        ]);
+        if ($this->isCsrfTokenValid($expectedTokenKey, $receivedToken)) {
             if (!$event->getGames()->contains($game)) {
                 $event->addGame($game);
                 $this->entityManager->persist($event);
                 $this->entityManager->flush();
                 $this->logger->info('Jeu ajouté avec succès', ['eventId' => $event->getId(), 'gameId' => $game->getId()]);
+                if ($request->isXmlHttpRequest()) {
+                    return new JsonResponse(['success' => true, 'message' => 'Jeu dupliqué avec succès !', 'reload' => true]);
+                }
             } else {
                 $this->logger->info('Jeu déjà présent dans l\'événement', ['eventId' => $event->getId(), 'gameId' => $game->getId()]);
+                if ($request->isXmlHttpRequest()) {
+                    return new JsonResponse(['success' => false, 'error' => 'Jeu déjà présent dans l\'événement']);
+                }
             }
         } else {
-            $this->logger->warning('Token CSRF invalide pour ajout', ['gameId' => $game->getId(), 'token' => $request->request->get('_token')]);
+            $this->logger->warning('Token CSRF invalide pour ajout', [
+                'gameId' => $game->getId(),
+                'received_token' => $receivedToken,
+                'expected_key' => $expectedTokenKey
+            ]);
             if ($request->isXmlHttpRequest()) {
                 return new JsonResponse(['success' => false, 'error' => 'Token CSRF invalide'], 403);
             }
-        }
-
-        if ($request->isXmlHttpRequest()) {
-            return new JsonResponse(['success' => true]);
         }
 
         return $this->redirectToRoute('app_event_details', ['event' => $event->getId()], Response::HTTP_SEE_OTHER);
