@@ -16,3 +16,4 @@ import './styles/mosaic/js/vendors/chart.js';
 import './styles/mosaic/js/dashboard-charts.js';
 import './styles/mosaic/js/vendors/flatpickr.js';
 import './styles/mosaic/js/flatpickr-init.js';
+import './js/modal.js';

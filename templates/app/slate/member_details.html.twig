@@ -1,91 +1,131 @@
 {% extends 'app/index.html.twig' %}
+
 {% block body %}
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="sm:flex sm:justify-between sm:items-center mb-3">
             <a class="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="{{ path('app_slate_details', {'event': event.id}) }}">
                 &larr; Retour à l'ardoise de l'événement
             </a>
+            <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+                <button class="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white" data-modal-toggle="add-consumption-modal">
+                    + Ajouter une consommation
+                </button>
+            </div>
         </div>
 
         <header class="mb-4">
-            <h1 class="text-2xl md:text-3xl text-gray-800 font-bold">Ardoise de l'adhérent {{ member.memberNumber }} pour {{ event.date|format_date('full') }}</h1>
+            <h1 class="text-2xl md:text-3xl text-gray-800 font-bold dark:text-gray-100">Ardoise de l'adhérent {{ member.memberNumber }} pour {{ event.date|format_date('full') }}</h1>
         </header>
 
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <table class="w-full table-auto border-collapse">
-                <thead>
-                <tr class="bg-gray-200">
-                    <th class="px-4 py-2">Consommable</th>
-                    <th class="px-4 py-2">Quantité</th>
-                    <th class="px-4 py-2">Prix unitaire</th>
-                    <th class="px-4 py-2">Prix total</th>
-                    <th class="px-4 py-2">Date</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for consumption in consumptions %}
+        <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+            <div class="overflow-x-auto">
+                <table class="table-auto w-full">
+                    <thead class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 border-t border-b border-gray-100 dark:border-gray-600">
                     <tr>
-                        <td class="border px-4 py-2">{{ consumption.consumable.name }}</td>
-                        <td class="border px-4 py-2">{{ consumption.quantity }}</td>
-                        <td class="border px-4 py-2">{{ consumption.consumable.price|number_format(2) }} €</td>
-                        <td class="border px-4 py-2">{{ (consumption.quantity * consumption.consumable.price)|number_format(2) }} €</td>
-                        <td class="border px-4 py-2">{{ consumption.consumedAt|format_datetime('medium', 'short') }}</td>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Consommable</div>
+                        </th>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Quantité</div>
+                        </th>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Prix unitaire</div>
+                        </th>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Prix total</div>
+                        </th>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Date</div>
+                        </th>
+                        <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                            <div class="font-semibold text-left">Actions</div>
+                        </th>
                     </tr>
-                {% endfor %}
-                {% if consumptions is empty %}
-                    <tr>
-                        <td colspan="5" class="border px-4 py-2 text-center text-gray-500">Aucune consommation enregistrée pour ce membre.</td>
-                    </tr>
-                {% endif %}
-                </tbody>
-                <tfoot>
-                <tr class="bg-gray-100 font-semibold">
-                    <td colspan="3" class="border px-4 py-2 text-right">Total :</td>
-                    <td class="border px-4 py-2">{{ total|number_format(2) }} €</td>
-                    <td class="border px-4 py-2"></td>
-                </tr>
-                </tfoot>
-            </table>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-600">
+                    {% if consumptions is empty %}
+                        <tr>
+                            <td class="px-2 first:pl-5 last:pr-5 py-3" colspan="6">
+                                <p class="text-gray-500 dark:text-gray-400">Aucune consommation enregistrée pour cet adhérent.</p>
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% for consumption in consumptions %}
+                            <tr>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ consumption.consumable.name }}</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ consumption.quantity }}</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ consumption.consumable.price|number_format(2) }} €</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ (consumption.quantity * consumption.consumable.price)|number_format(2) }} €</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ consumption.createdAt|format_datetime('short', 'none') }}</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <a href="{{ path('app_slate_consumption_edit', {'id': consumption.id}) }}"
+                                       class="text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-2">Modifier</a>
+                                    <form action="{{ path('app_slate_consumption_delete', {'id': consumption.id}) }}"
+                                          method="post" class="inline" data-ajax-form>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_consumption_' ~ consumption.id) }}">
+                                        <button type="submit" class="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300">Supprimer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-
-        {# Bouton pour ouvrir la popup d'ajout de consommation #}
-        <button id="add-consumption-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Ajouter une consommation</button>
 
         {# Modal pour ajouter une consommation #}
         <div id="add-consumption-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-                <h2 class="text-xl font-semibold mb-4">Ajouter une consommation pour l'adhérent {{ member.memberNumber }}</h2>
-                <form id="add-consumption-form" action="{{ path('app_slate_consumption_add', {'event': event.id}) }}" method="post">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-lg w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Ajouter une consommation pour {{ member.name }}</h2>
+                    <button data-modal-close="add-consumption-modal" class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">&times;</button>
+                </div>
+                <form id="add-consumption-form" action="{{ path('app_slate_consumption_add', {'event': event.id}) }}" method="post" data-ajax-form data-csrf="{{ csrf_token('add_consumption') }}">
                     {{ form_start(form) }}
+                    <input type="hidden" name="_token" value="{{ csrf_token('add_consumption') }}" class="csrf-token">
                     <input type="hidden" name="consumption[member]" value="{{ member.memberNumber }}">
                     <div class="grid grid-cols-1 gap-6">
                         <div>
-                            {{ form_label(form.consumable, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            {{ form_widget(form.consumable, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}}) }}
+                            {{ form_label(form.consumable, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                            {{ form_widget(form.consumable, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm'}}) }}
                             {{ form_errors(form.consumable) }}
                         </div>
                         <div>
-                            {{ form_label(form.quantity, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700'}}) }}
-                            {{ form_widget(form.quantity, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm'}}) }}
+                            {{ form_label(form.quantity, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                            {{ form_widget(form.quantity, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm'}}) }}
                             {{ form_errors(form.quantity) }}
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end">
-                        <button type="button" id="cancel-consumption-btn" class="text-gray-600 px-4 py-2 hover:text-gray-800">Annuler</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 ml-4">Ajouter</button>
+                        <button type="button" data-modal-close="add-consumption-modal" class="text-gray-600 dark:text-gray-300 px-4 py-2 hover:text-gray-800 dark:hover:text-gray-100">Annuler</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 ml-4">Ajouter</button>
                     </div>
                     {{ form_end(form) }}
                 </form>
             </div>
         </div>
-
-        <script>
-            document.getElementById('add-consumption-btn').addEventListener('click', () => {
-                document.getElementById('add-consumption-modal').classList.remove('hidden');
-            });
-            document.getElementById('cancel-consumption-btn').addEventListener('click', () => {
-                document.getElementById('add-consumption-modal').classList.add('hidden');
-            });
-        </script>
     </div>
+
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('add-slate') }}
+
+    <script data-turbo-eval="false">
+        console.log('member_details.html.twig scripts initialisés');
+    </script>
 {% endblock %}

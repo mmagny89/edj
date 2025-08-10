@@ -24,6 +24,7 @@ Encore
   .addEntry('site', './assets/site.js')
   .addEntry('app', './assets/app.js')
   .addEntry('add-game', './assets/js/add-game.js') // Entrée pour add-game.js
+  .addEntry('add-slate', './assets/js/add-slate.js') // Entrée pour add-slate.js
 
   // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
   .splitEntryChunks()
