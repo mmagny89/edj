@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Envie de Jouer - Joigny{% endblock %}</title>
-    <link rel="icon"
-          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Envie de Jouer - Association de jeux de société à Joigny{% endblock %}</title>
+    <link rel="icon" href="/img/edj-mascotte-transparent.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Akaya+Kanadaka&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Akaya+Kanadaka&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
           integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
@@ -15,364 +15,270 @@
         {{ encore_entry_link_tags('site') }}
     {% endblock %}
 </head>
-<body class="bg-grid">
+<body>
 {% block body %}
-    <div class="flex">
+    <header class="site-header">
+        <a class="brand" href="#accueil" aria-label="Retour à l'accueil">
+            <img src="/img/edj-mascotte-transparent.png" alt="" class="brand__mascot">
+            <span>
+                <strong>Envie de Jouer</strong>
+                <small>Joigny</small>
+            </span>
+        </a>
 
-        <nav class="sidebar fixed top-0 left-0 w-64 h-screen bg-gray-800 p-4 text-white flex-shrink-0 z-50">
-            <div>
-                <div class="bg-white rounded-xl">
-                    <img src="/img/logo.png" alt="Logo Envie de Jouer, avec la mascotte Perceval"
-                         class="w-56 mx-auto mb-4">
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-toggle>
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            <span>Menu</span>
+        </button>
+
+        <nav id="main-nav" class="main-nav" aria-label="Navigation principale" data-main-nav>
+            <a href="#calendrier">Calendrier</a>
+            <a href="#association">Association</a>
+            <a href="#adhesion">Adhésion</a>
+            <a href="#partenaires">Partenaires</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+
+    <main id="accueil">
+        <section class="hero">
+            <div class="hero__content">
+                <p class="eyebrow">Association de jeux de société modernes à Joigny</p>
+                <h1 class="hero-title">
+                    <span>Envie de</span>
+                    <span class="hero-title__play">
+                        <img src="/img/edj-mascotte-transparent.png" alt="" aria-hidden="true">
+                        Jouer
+                    </span>
+                </h1>
+                <p class="hero__lead">
+                    Des tables ouvertes toute l'année, une ludothèque généreuse et des événements
+                    pour celles et ceux qui aiment découvrir, expliquer, rire, perdre dignement et recommencer.
+                </p>
+
+                <div class="hero__actions" aria-label="Actions principales">
+                    <a href="#calendrier" class="button button--primary">
+                        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                        Voir les prochaines dates
+                    </a>
+                    <a href="mailto:enviedejouer89300@gmail.com" class="button button--quiet">
+                        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                        Nous contacter
+                    </a>
                 </div>
 
-                <ul class="space-y-2 font-logo text-xl">
-                    <li><a href="#qui-sommes-nous"
-                           class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-users mr-2"></i>Qui sommes-nous ?</a></li>
-
-                    <li><a href="#evenements" class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-calendar-days mr-2"></i>Événements</a></li>
-
-                    <li><a href="#adhesion" class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-id-card mr-2"></i>Adhésion</a></li>
-
-                    <li><a href="#partenaires" class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-handshake mr-2"></i>Partenaires</a></li>
-
-                    <li><a href="#galerie" class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-images mr-2"></i>Galerie</a></li>
-
-                    <li><a href="#mascotte" class="block py-2 px-4 hover:bg-gray-700 rounded flex items-center"><i
-                                class="fas fa-hat-wizard mr-2"></i>Notre Mascotte</a></li>
-                </ul>
-
-                <div class="mt-8 flex justify-center space-x-4">
-                    <a href="https://www.facebook.com/EnviedeJouer89/" target="_blank"
-                       class="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-blue-700">
-                        <i class="fab fa-facebook-f text-white text-xl"></i>
-                    </a>
-
-                    <a href="https://www.instagram.com/envie_de_jouer_89/" target="_blank"
-                       class="bg-pink-600 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-pink-700">
-                        <i class="fab fa-instagram text-white text-xl"></i>
-                    </a>
-
-                    <a href="mailto:enviedejouer89300@gmail.com" target="_blank"
-                       class="bg-white w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-gray-200">
-                        <i class="fas fa-envelope text-gray-700 text-xl"></i>
-                    </a>
+                <div class="hero-pills" aria-label="Informations rapides">
+                    <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Maison des Associations, Joigny</span>
+                    <span><i class="fa-solid fa-dice" aria-hidden="true"></i> Mardis soir adhérents</span>
+                    <span><i class="fa-solid fa-people-group" aria-hidden="true"></i> Ouvert à tous le 3e samedi</span>
                 </div>
             </div>
-        </nav>
 
-        <div class="flex flex-col flex-grow ml-64 min-h-screen">
-            <main class="flex-grow">
-                <section id="intro" class="relative h-screen">
-                    <img src="/img/a.jpg" alt="Image illustrant une soirée jeux de société"
-                         class="absolute inset-0 w-full h-full object-cover">
+            <aside class="next-event" aria-labelledby="next-event-title">
+                <span class="next-event__label">Prochain rendez-vous</span>
+                <h2 id="next-event-title" data-next-event-title>Soirée jeux du mardi</h2>
+                <p class="next-event__date" data-next-event-date>Tous les mardis</p>
+                <p data-next-event-meta>18h30 - minuit pour les adhérents. Découverte possible 3 fois, de 19h30 à minuit.</p>
+                <a href="#calendrier">Voir les prochaines dates</a>
+            </aside>
 
-                    <div class="absolute inset-0 bg-black opacity-50"></div>
+        </section>
 
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <h1 class="text-white font-bold text-center">
-                            <span id="titre-principal" class="block text-9xl font-logo">Envie de Jouer</span>
-                            <span id="sous-titre"
-                                  class="block text-4xl mt-2">Association de jeux de société à Joigny (89)</span>
-                        </h1>
-                    </div>
-                </section>
-
-                <section id="qui-sommes-nous" class="my-9 px-6">
-                    <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                        <i class="fas fa-users mr-2 text-4xl"></i><span
-                            class="text-6xl font-logo">Qui sommes-nous ?</span>
-                    </h2>
-
-                    <p class="text-center max-w-5xl text-2xl mx-auto">
-                        L’association Envie de Jouer, créée en 2023 à Joigny, regroupe des passionnés de jeux de
-                        société.<br>
-                        Nous proposons un espace convivial pour tous les âges.
-                    </p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-8 text-center">
-                        <div class="shape-arrow bg-primary py-5 px-4 text-gray-800 shadow-md">
-                            <div class="counter text-5xl font-bold" data-count="2023">0</div>
-                            <p class="mt-2">Date de création</p>
-                        </div>
-
-                        <div class="shape-arrow bg-secondary py-5 px-4 text-gray-800 shadow-md">
-                            <div class="counter text-5xl font-bold" data-count="70">0</div>
-                            <p class="mt-2">Adhérents 2025</p>
-                        </div>
-
-                        <div class="shape-arrow bg-tertiary py-5 px-4 text-gray-800 shadow-md">
-                            <div class="counter text-5xl font-bold" data-count="1300">0</div>
-                            <p class="mt-2">Jeux en ludothèque</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 text-center">
-                        <div class="shape-arrow bg-tertiary py-5 px-4 text-gray-800 shadow-md">
-                            <div class="counter text-5xl font-bold" data-count="110">0</div>
-                            <p class="mt-2">Soirées adhérents</p>
-                        </div>
-
-                        <div class="shape-arrow bg-primary py-5 px-4 text-gray-800 shadow-md">
-                            <div class="counter text-5xl font-bold" data-count="15">0</div>
-                            <p class="mt-2">Nuits du Jeu</p>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="evenements" class="relative py-9 px-9">
-                    <div class="absolute inset-0 z-1 bg-black opacity-10"></div>
-
-                    <div class="relative z-2">
-                        <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                            <i class="fas fa-calendar-days mr-2 text-4xl"></i>
-                            <span class="text-6xl font-logo">Événements</span>
-                        </h2>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="p-6 text-center rounded-lg">
-                                <img src="/img/a.jpg" alt="Image illustrant une soirée jeux de société"
-                                     class="rounded-lg"/>
-
-                                <p class="mt-4">
-                                    <span class="text-2xl">Soirées adhérents</span>
-                                    <span class="block">les mardis de 18h30 à 00h</span>
-                                </p>
-                            </div>
-
-                            <div class="p-6 text-center rounded-lg">
-                                <img src="/img/a.jpg" alt="Image illustrant une soirée jeux de société"
-                                     class="rounded-lg"/>
-
-                                <p class="mt-4">
-                                    <span class="text-2xl">Après-midi ludique</span>
-                                    <span class="block">le 3ème samedi du mois de 14h à 18h</span>
-                                </p>
-                            </div>
-
-                            <div class="p-6 text-center rounded-lg">
-                                <img src="/img/a.jpg" alt="Image illustrant une soirée jeux de société"
-                                     class="rounded-lg"/>
-
-                                <p class="mt-4">
-                                    <span class="text-2xl">Nuits du Jeu</span>
-                                    <span class="block">4 dates dans l'année, entrée à 3€</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <p class="mt-3 text-center text-2xl flex flex-col items-center">
-                            <i class="fas fa-map-marker-alt text-4xl pb-4"></i>
-                            <span>
-                                Retrouvez-nous à la Maison des Associations de Joigny<br>
-                                1 rue de la Guimbarde, 89300 Joigny.
-                            </span>
-                        </p>
-
-                        <p class="mt-6 text-center">
-                            D'autres événements arrivent bientôt, restez connectés sur nos réseaux sociaux pour ne rien
-                            manquer !
-                        </p>
-                    </div>
-                </section>
-
-                <section id="adhesion" class="py-9 px-9">
-                    <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                        <i class="fas fa-id-card mr-2 text-4xl"></i><span class="text-6xl font-logo">Adhésion</span>
-                    </h2>
-
-                    <div
-                        class="flex flex-col md:flex-row items-center justify-center gap-6">
-                        <div
-                            class="bg-primary p-6 rounded-lg shadow-md flex flex-col items-center md:items-start text-center md:text-left space-y-4">
-                            <div class="text-xl font-bold">
-                                <ul class="list-disc mx-5">
-                                    <li>
-                                        <b>Individuel :</b> 10 €
-                                    </li>
-                                    <li>
-                                        <b>Famille :</b> 10 € + 5 € par personne supplémentaire
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <p class="text-sm italic">
-                                L'adhésion est valable pour une année civile, du 1er octobre au 30 septembre.<br>
-                            </p>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <a href="/fiche_adhesion.pdf"
-                               class="rounded-lg shadow-md bg-secondary px-3 py-3 flex items-center justify-center w-full">
-                                <i class="fas fa-download mr-2"></i>
-                                <span>Fiche d'adhésion</span>
-                            </a>
-
-                            <a href="/statuts.pdf"
-                               class="rounded-lg shadow-md bg-tertiary px-3 py-3 flex items-center justify-center w-full">
-                                <i class="fas fa-file-alt mr-2"></i>
-                                <span>Statuts de l'association</span>
-                            </a>
-
-                            <a href="/reglement_interieur.pdf"
-                               class="rounded-lg shadow-md bg-tertiary px-3 py-3 flex items-center justify-center w-full">
-                                <i class="fas fa-scroll mr-2"></i>
-                                <span>Règlement intérieur</span>
-                            </a>
-
-                            <a href="/annexes.pdf"
-                               class="rounded-lg shadow-md bg-secondary px-3 py-3 flex items-center justify-center w-full">
-                                <i class="fas fa-paperclip mr-2"></i>
-                                <span>Annexes</span>
-                            </a>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="partenaires" class="relative py-9 px-9">
-                    <div class="absolute inset-0 z-1 bg-black opacity-10"></div>
-
-                    <div class="relative z-2">
-                        <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                            <i class="fas fa-handshake mr-2 text-4xl"></i>
-                            <span class="text-6xl font-logo">Partenaires</span>
-                        </h2>
-
-                        <p class="text-center max-w-2xl mx-auto mb-6">
-                            Nos partenaires soutiennent nos activités au quotidien et lors de nos événements.
-                        </p>
-
-                        <div class="flex flex-wrap justify-center gap-6">
-                            <div class="flex flex-col items-center">
-                                <img src="/img/a.jpg" alt="Logo de la Crique aux jeux" class="h-16 mb-2 rounded-lg">
-                                <span class="text-lg">La Crique aux jeux</span>
-                            </div>
-
-                            <div class="flex flex-col items-center">
-                                <img src="/img/a.jpg" alt="Logo de Carte sur table" class="h-16 mb-2 rounded-lg">
-                                <span class="text-lg">Carte sur table</span>
-                            </div>
-
-                            <div class="flex flex-col items-center">
-                                <img src="/img/a.jpg" alt="Logo de la Ville de Joigny" class="h-16 mb-2 rounded-lg">
-                                <span class="text-lg">Ville de Joigny</span>
-                            </div>
-
-                            <div class="flex flex-col items-center">
-                                <img src="/img/a.jpg" alt="Logo de Sens Ludique" class="h-16 mb-2 rounded-lg">
-                                <span class="text-lg">Sens Ludique</span>
-                            </div>
-
-                            <div class="flex flex-col items-center">
-                                <img src="/img/a.jpg" alt="Logo de LudiPassion" class="h-16 mb-2 rounded-lg">
-                                <span class="text-lg">LudiPassion</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="galerie" class="py-9 px-9">
-                    <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                        <i class="fas fa-images mr-2 text-4xl"></i><span class="text-6xl font-logo">Galerie</span>
-                    </h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-
-                        <div class="p-4">
-                            <img src="/img/a.jpg" alt="Photo d'une soirée jeux de société"
-                                 class="w-full h-auto rounded-lg">
-                        </div>
-                    </div>
-                </section>
-
-                <section id="mascotte" class="relative py-9 px-9">
-                    <div class="absolute inset-0 z-1 bg-black opacity-10"></div>
-
-                    <div class="relative z-2">
-                        <h2 class="text-center mb-6 flex items-center justify-center text-gray-800">
-                            <i class="fas fa-hat-wizard mr-2 text-4xl"></i>
-                            <span class="text-6xl font-logo">Notre Mascotte</span>
-                        </h2>
-
-                        <div
-                            class="bg-secondary p-6 rounded-lg shadow-md flex flex-col md:flex-row items-center gap-6 text-gray-800">
-                            <div class="flex-shrink-0">
-                                <img src="/img/perceval.jpg"
-                                     alt="Mascotte de l'association, Perceval le chevalier des jeux"
-                                     class="w-64 h-64 object-cover rounded-lg shadow-md">
-                            </div>
-
-                            <div class="text-center md:text-left">
-                                <h3 class="text-4xl font-bold font-logo mb-2">Perceval, le chevalier des jeux</h3>
-
-                                <p class="text-lg">
-                                    Son nom s’inspire de la série Kaamelott (d’Alexandre Astier) et en particulier du
-                                    personnage "Perceval", connu pour expliquer des jeux de manière parfois farfelue.
-                                </p>
-
-                                <p class="mt-3 text-lg">
-                                    Le choix d’un chevalier évoque le riche passé historique de Joigny, marqué par son
-                                    héritage médiéval et des périodes influencées par des présences militaires
-                                    d’autrefois.
-                                </p>
-
-                                <p class="mt-3 text-lg">
-                                    Perceval, aux couleurs de Joigny (vert, bleu et blanc), porte fièrement son casque,
-                                    un dé de 6 et un bouclier orné du maillet emblématique de la ville.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <footer class="bg-black text-white text-center py-2 text-sm mt-auto">
+        <section id="calendrier" class="section section--calendar">
+            <div class="section__intro">
+                <p class="eyebrow">Calendrier</p>
+                <h2>Les prochaines dates</h2>
                 <p>
-                    © {{ "now" | date('Y') }} Envie de Jouer - Créé par Mylène Magny -
-                    <a href="/mentions-legales" class="text-indigo-300 hover:text-indigo-100">Mentions légales</a>
+                    Choisis ton créneau, repère la prochaine table et viens jouer : les soirées du mardi
+                    accueillent les curieux jusqu'à trois essais, et les samedis ouverts sont pensés pour
+                    découvrir l'association tranquillement.
                 </p>
-            </footer>
-        </div>
-    </div>
+            </div>
+
+            <div class="event-carousel" data-event-carousel>
+                <div class="calendar-toolbar" aria-label="Filtrer les événements">
+                    <button class="calendar-filter is-active" type="button" data-filter="all">Tous</button>
+                    <button class="calendar-filter" type="button" data-filter="weekly">Mardis</button>
+                    <button class="calendar-filter" type="button" data-filter="monthly">3e samedis</button>
+                    <button class="calendar-filter" type="button" data-filter="special">Manifestations</button>
+                </div>
+
+                <div class="carousel-controls" aria-label="Navigation du carrousel">
+                    <button type="button" data-carousel-prev aria-label="Événements précédents">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" data-carousel-next aria-label="Événements suivants">
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="event-track" data-event-track aria-live="polite"></div>
+            </div>
+        </section>
+
+        <section id="association" class="section association-section">
+            <div class="section__intro">
+                <p class="eyebrow">L'association</p>
+                <h2>Une ludothèque vivante à Joigny</h2>
+                <p>
+                    Créée en 2023, Envie de Jouer rassemble des passionnés de jeux de société
+                    autour de soirées régulières, d'après-midi ouverts et de manifestations.
+                </p>
+            </div>
+
+            <div class="stats-grid" aria-label="Chiffres clés">
+                <article>
+                    <strong class="counter" data-count="2023">0</strong>
+                    <span>création</span>
+                </article>
+                <article>
+                    <strong class="counter" data-count="70">0</strong>
+                    <span>adhérents 2025</span>
+                </article>
+                <article>
+                    <strong class="counter" data-count="1300">0</strong>
+                    <span>jeux dans les ludothèques de nos membres</span>
+                </article>
+                <article>
+                    <strong class="counter" data-count="110">0</strong>
+                    <span>soirées adhérents</span>
+                </article>
+                <article>
+                    <strong class="counter" data-count="125">0</strong>
+                    <span>événements déjà organisés</span>
+                </article>
+            </div>
+        </section>
+
+        <section id="adhesion" class="section membership">
+            <div class="section__intro">
+                <p class="eyebrow">Adhésion</p>
+                <h2>Rejoindre l'association</h2>
+                <p>
+                    L'adhésion ouvre les soirées du mardi, l'accès à la vie associative et aux grands
+                    rendez-vous de la saison. Elle court du 1er octobre au 30 septembre suivant.
+                </p>
+            </div>
+
+            <div class="membership__content">
+                <div class="membership-season">
+                    <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                    <h3>Saison associative</h3>
+                    <p>Du <strong>1er octobre</strong> au <strong>30 septembre</strong> suivant.</p>
+                </div>
+
+                <div class="membership-benefits">
+                    <h3>Ce que l'adhésion permet</h3>
+                    <ul>
+                        <li>Participer aux soirées du mardi dès 18h30.</li>
+                        <li>Profiter de la ludothèque et des explications autour des tables.</li>
+                        <li>Prendre part aux rendez-vous et à la vie de l'association.</li>
+                    </ul>
+                </div>
+
+                <div class="membership-prices">
+                    <article>
+                        <span>Individuelle</span>
+                        <strong>10 €</strong>
+                    </article>
+                    <article>
+                        <span>Famille</span>
+                        <strong>10 € <small>+ 5 € / pers. suppl.</small></strong>
+                    </article>
+                </div>
+
+                <div class="membership-files">
+                    <h3>Documents</h3>
+                    <div class="document-links">
+                        <a href="/fiche_adhesion.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Fiche d'adhésion</a>
+                        <a href="/statuts.pdf"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Statuts</a>
+                        <a href="/reglement_interieur.pdf"><i class="fa-solid fa-scroll" aria-hidden="true"></i> Règlement intérieur</a>
+                        <a href="/annexes.pdf"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Annexes</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section mascot-section">
+            <div>
+                <p class="eyebrow">Mascotte</p>
+                <h2>Perceval, le chevalier des jeux</h2>
+                <p>
+                    Son nom s'inspire de la série Kaamelott, d'Alexandre Astier, et en particulier du
+                    personnage Perceval, connu pour expliquer des jeux de manière parfois farfelue.
+                </p>
+                <p>
+                    Le choix d'un chevalier évoque le riche passé historique de Joigny, marqué par son
+                    héritage médiéval et par des périodes influencées par des présences militaires d'autrefois.
+                </p>
+                <p>
+                    Perceval, aux couleurs de Joigny, vert, bleu et blanc, porte fièrement son casque,
+                    un dé de 6 et un bouclier orné du maillet emblématique de la ville.
+                </p>
+            </div>
+            <img src="/img/edj-mascotte-transparent.png" alt="Perceval, mascotte chevalier d'Envie de Jouer">
+        </section>
+
+        <section id="contact" class="section contact-section">
+            <div class="contact-layout">
+                <div>
+                    <div class="section__intro">
+                        <p class="eyebrow">Contact</p>
+                        <h2>Une question, une envie de passer ?</h2>
+                        <p>Le plus simple : nous écrire ou suivre les annonces des prochaines manifestations.</p>
+                    </div>
+
+                    <div class="contact-actions">
+                        <a href="mailto:enviedejouer89300@gmail.com" class="button button--primary">
+                            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                            enviedejouer89300@gmail.com
+                        </a>
+                        <a href="https://www.facebook.com/EnviedeJouer89/" target="_blank" rel="noreferrer" class="button button--social">
+                            <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                            Facebook
+                        </a>
+                        <a href="https://www.instagram.com/envie_de_jouer_89/" target="_blank" rel="noreferrer" class="button button--social">
+                            <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                            Instagram
+                        </a>
+                    </div>
+                </div>
+
+                <aside id="partenaires" class="partners-panel">
+                    <p class="eyebrow">Partenaires</p>
+                    <h2>Ils jouent avec nous</h2>
+                    <p>Un espace prêt pour intégrer les logos des partenaires.</p>
+                    <div class="partners-list" aria-label="Liste des partenaires">
+                        <article>
+                            <img src="/img/edj-mascotte-transparent.png" alt="">
+                            <span>La Crique aux jeux</span>
+                        </article>
+                        <article>
+                            <img src="/img/edj-mascotte-transparent.png" alt="">
+                            <span>Carte sur table</span>
+                        </article>
+                        <article>
+                            <img src="/img/edj-mascotte-transparent.png" alt="">
+                            <span>Ville de Joigny</span>
+                        </article>
+                        <article>
+                            <img src="/img/edj-mascotte-transparent.png" alt="">
+                            <span>Sens Ludique</span>
+                        </article>
+                        <article>
+                            <img src="/img/edj-mascotte-transparent.png" alt="">
+                            <span>LudiPassion</span>
+                        </article>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <span>© {{ "now" | date('Y') }} Envie de Jouer - Joigny</span>
+        <a href="/mentions-legales">Mentions légales</a>
+    </footer>
 {% endblock %}
 {% block javascripts %}
     {{ encore_entry_script_tags('site') }}
