@@ -1,0 +1,9 @@
+# Limitation de debit du bulletin d'adhesion : cinq envois par heure et par
+# adresse IP. Le formulaire est public et declenche un envoi de courriel a
+# chaque depot valide — sans plafond, il devient un relais a spam.
+framework:
+    rate_limiter:
+        membership_application:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'

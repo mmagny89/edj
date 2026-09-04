@@ -1,3 +1,8 @@
+parameters:
+    # Adresse de contact de l'association : destinataire des notifications de
+    # bulletin d'adhesion, et expediteur technique de ces messages.
+    app.contact_email: 'enviedejouer89300@gmail.com'
+
 services:
     _defaults:
         autowire: true

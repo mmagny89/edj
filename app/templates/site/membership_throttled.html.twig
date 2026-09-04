@@ -1,0 +1,21 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Trop de tentatives - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h2>Trop de tentatives</h2>
+            <p>
+                Le bulletin a déjà été envoyé plusieurs fois depuis cette connexion. Merci de
+                réessayer dans une heure — ou de nous écrire directement à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

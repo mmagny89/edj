@@ -1,0 +1,114 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Bulletin d'adhésion - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="bulletin" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h2>Bulletin d'adhésion</h2>
+            <p>
+                Le même bulletin que sur papier, à remplir en ligne. Une adhésion correspond à un
+                bulletin : pour une famille, chaque membre remplit le sien en désignant le même
+                adhérent principal.
+            </p>
+        </div>
+
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    Le bulletin n'a pas pu être envoyé : quelques champs demandent votre attention.
+                </p>
+
+                {# Erreurs non rattachees a un champ — jeton CSRF invalide,
+                   contraintes de classe. Sans ce rendu, un envoi refuse par
+                   le jeton echoue en silence : le visiteur voit un formulaire
+                   vide sans savoir pourquoi. #}
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Vos coordonnées</legend>
+                <div class="form-grid">
+                    {{ form_row(form.lastName) }}
+                    {{ form_row(form.firstName) }}
+                    {{ form_row(form.birthDate) }}
+                    {{ form_row(form.phone) }}
+                    <div class="form-grid__wide">{{ form_row(form.address) }}</div>
+                    {{ form_row(form.postalCode) }}
+                    {{ form_row(form.city) }}
+                    <div class="form-grid__wide">{{ form_row(form.email) }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Adhésion et cotisation</legend>
+                {{ form_row(form.membershipType) }}
+                {{ form_row(form.principalMemberName) }}
+                <p class="form-note">
+                    Pour les enfants de <strong>moins de 14 ans</strong>, l'adhésion doit être rattachée
+                    à un adulte. Pour les enfants de <strong>moins de 8 ans</strong>, elle est gratuite.
+                </p>
+            </fieldset>
+
+            <fieldset>
+                <legend>Responsable légal</legend>
+                <p class="form-note">
+                    À remplir si l'adhérent a moins de 18 ans : c'est le responsable légal qui signe.
+                </p>
+                <div class="form-grid">
+                    {{ form_row(form.guardianLastName) }}
+                    {{ form_row(form.guardianFirstName) }}
+                    <div class="form-grid__wide">{{ form_row(form.guardianEmail) }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Avantage ludique</legend>
+                {{ form_row(form.philibertConsent) }}
+                <p class="form-note">
+                    Autres avantages inclus dans l'adhésion : 5 % de remise à La Crique au Jeu (Sens)
+                    sur présentation de la carte d'adhérent, 10 % de réduction chez Carte sur Table
+                    (Auxerre), carte à demander auprès du Conseil d'Administration.
+                </p>
+            </fieldset>
+
+            <fieldset>
+                <legend>Droit à l'image</legend>
+                {{ form_row(form.imageRightsRefused) }}
+            </fieldset>
+
+            <fieldset>
+                <legend>Déclaration d'adhésion</legend>
+                {{ form_row(form.statutesAccepted) }}
+                {{ form_row(form.rulesAccepted) }}
+
+                <p class="form-note">
+                    Les informations recueillies sont nécessaires à la gestion des activités ludiques et
+                    à la communication interne d'Envie de Jouer. Elles font l'objet d'un traitement
+                    informatique et sont destinées au Conseil d'Administration de l'association. En
+                    application de la loi n°78-17 du 6 janvier 1978 relative à l'informatique, aux
+                    fichiers et aux libertés (conformité RGPD), vous bénéficiez d'un droit d'accès, de
+                    rectification et de suppression des informations qui vous concernent. Pour exercer
+                    ce droit : <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
+                </p>
+
+                <div class="form-grid">
+                    {{ form_row(form.signaturePlace) }}
+                    {{ form_row(form.signatureName) }}
+                </div>
+            </fieldset>
+
+            {{ form_row(form.website) }}
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary">
+                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                    Envoyer mon bulletin
+                </button>
+                <a href="{{ path('site_index') }}#adhesion" class="button button--quiet">Retour à l'adhésion</a>
+            </div>
+        {{ form_end(form) }}
+    </main>
+{% endblock %}
