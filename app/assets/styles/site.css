@@ -1016,6 +1016,30 @@ h1 {
     color: var(--muted);
 }
 
+/* Cotisations — deux groupes distincts : annuelle et a l'evenement. */
+.price-group {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.price-group h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.price-group__note {
+    margin: -4px 0 2px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.price-group--event {
+    padding-top: 14px;
+    border-top: 3px dashed var(--ink);
+}
+
 @media (max-width: 920px) {
     .rendezvous-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
