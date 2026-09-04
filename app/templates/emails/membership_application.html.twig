@@ -1,0 +1,45 @@
+<h1>Nouveau bulletin d'adhésion</h1>
+
+<p>Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}.</p>
+
+<h2>Adhérent</h2>
+<ul>
+    <li><strong>Nom :</strong> {{ application.lastName }}</li>
+    <li><strong>Prénom :</strong> {{ application.firstName }}</li>
+    <li><strong>Date de naissance :</strong> {{ application.birthDate|date('d/m/Y') }}
+        {% if application.isMinor %}(mineur){% endif %}</li>
+    {% if application.address %}<li><strong>Adresse :</strong> {{ application.address }}</li>{% endif %}
+    <li><strong>Code postal et ville :</strong> {{ application.postalCode }} {{ application.city }}</li>
+    {% if application.phone %}<li><strong>Téléphone :</strong> {{ application.phone }}</li>{% endif %}
+    <li><strong>E-mail :</strong> {{ application.email }}</li>
+</ul>
+
+<h2>Adhésion</h2>
+<ul>
+    <li><strong>Formule :</strong> {{ application.membershipType.label }} — {{ application.membershipType.priceLabel }}</li>
+    {% if application.principalMemberName %}
+        <li><strong>Adhérent principal :</strong> {{ application.principalMemberName }}</li>
+    {% endif %}
+</ul>
+
+{% if application.isMinor %}
+    <h2>Responsable légal</h2>
+    <ul>
+        <li><strong>Nom :</strong> {{ application.guardianLastName }}</li>
+        <li><strong>Prénom :</strong> {{ application.guardianFirstName }}</li>
+        <li><strong>E-mail :</strong> {{ application.guardianEmail }}</li>
+    </ul>
+{% endif %}
+
+<h2>Déclarations</h2>
+<ul>
+    <li><strong>Communication de l'e-mail à Philibert :</strong> {{ application.philibertConsent ? 'autorisée' : 'refusée' }}</li>
+    <li><strong>Droit à l'image :</strong> {{ application.imageRightsRefused ? 'REFUSÉ' : 'accepté' }}</li>
+    <li><strong>Statuts :</strong> lus et acceptés</li>
+    <li><strong>Règlement intérieur :</strong> lu et accepté</li>
+</ul>
+
+<p>
+    Fait à {{ application.signaturePlace }}, le {{ application.submittedAt|date('d/m/Y') }}.<br>
+    Signé : {{ application.signatureName }}
+</p>

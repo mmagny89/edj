@@ -1,0 +1,25 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Bulletin envoyé - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h2>Bulletin bien reçu</h2>
+            <p>
+                Merci ! Votre bulletin est arrivé. Le Conseil d'Administration le traite et vous
+                répond à l'adresse e-mail que vous avez indiquée. Le règlement de la cotisation se
+                fait ensuite sur place, lors d'une de nos soirées.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">
+                <i class="fa-solid fa-house" aria-hidden="true"></i>
+                Retour à l'accueil
+            </a>
+            <a href="{{ path('site_index') }}#calendrier" class="button button--quiet">Voir les prochaines dates</a>
+        </div>
+    </main>
+{% endblock %}
