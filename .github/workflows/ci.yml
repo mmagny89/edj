@@ -1,0 +1,137 @@
+# Verifications qualite. Ordre fail-fast : ce qui echoue vite passe en
+# premier, le build d'image (le plus lent) en dernier.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Une seule execution par branche : un push qui en suit un autre annule le
+# precedent plutot que de faire la queue.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHP — lint, audit, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # La version PHP est celle du conteneur de production
+      # (PHP_VERSION du .env racine) : ne jamais tester sur une version plus
+      # recente que celle reellement servie.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: composer validate
+        working-directory: app
+        run: composer validate --no-check-publish
+
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: app
+
+      # Vulnerabilites connues des dependances installees. Bloquant : une
+      # faille connue ne doit pas atteindre main.
+      - name: Audit de securite des dependances
+        working-directory: app
+        run: composer audit --locked
+
+      - name: Lint PHP
+        working-directory: app
+        run: find src config public -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: Lint des conteneurs et de la configuration Symfony
+        working-directory: app
+        env:
+          APP_ENV: test
+          APP_SECRET: ci-only-not-a-real-secret
+        run: |
+          php bin/console lint:yaml config --parse-tags
+          php bin/console lint:container
+
+      - name: Lint des templates Twig
+        working-directory: app
+        env:
+          APP_ENV: test
+          APP_SECRET: ci-only-not-a-real-secret
+        run: php bin/console lint:twig templates
+
+      # Le repertoire tests/ ne contient pour l'instant que son bootstrap :
+      # l'etape se saute d'elle-meme tant qu'aucun test n'est ecrit, plutot
+      # que d'echouer sur "No tests executed" ou de faire croire a une
+      # couverture qui n'existe pas.
+      - name: PHPUnit
+        working-directory: app
+        env:
+          APP_ENV: test
+          APP_SECRET: ci-only-not-a-real-secret
+        run: |
+          if [ -n "$(find tests -name '*Test.php' -print -quit)" ]; then
+            vendor/bin/phpunit
+          else
+            echo "::warning title=Aucun test::app/tests/ ne contient aucun *Test.php — etape sautee."
+          fi
+
+  front:
+    name: Front — build Webpack Encore
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # npm ci et non npm install : la CI doit installer exactement ce que
+      # decrit package-lock.json, comme le fait le stage prod_builder.
+      - name: npm ci
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+
+      - name: npm run build
+        working-directory: app
+        run: npm run build
+
+  image:
+    name: Image — build du stage prod
+    needs: [php, front]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Versions lues dans le .env racine, source de verite unique
+      # (conventions, section 5) : jamais recopiees dans ce fichier.
+      - name: Lire les versions du .env racine
+        run: grep -E '^(PHP_VERSION|FRANKENPHP_VERSION|PHP_EXTENSION_INSTALLER_VERSION|NODE_VERSION)=' .env >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build seul, sans push : verifie que l'image de production se
+      # construit avant qu'un merge sur main ne declenche un deploiement.
+      - name: docker build (stage prod)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: prod
+          push: false
+          build-args: |
+            PHP_VERSION=${{ env.PHP_VERSION }}
+            FRANKENPHP_VERSION=${{ env.FRANKENPHP_VERSION }}
+            PHP_EXTENSION_INSTALLER_VERSION=${{ env.PHP_EXTENSION_INSTALLER_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
