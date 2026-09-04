@@ -39,9 +39,16 @@ Premier demarrage — installer les dependances et compiler le front :
 
 ```sh
 docker compose exec edj-php composer install
-docker compose exec edj-php npm ci
-docker compose exec edj-php npm run watch
+cd app && npm ci && npm run watch
 ```
+
+`npm` se lance depuis l'hote, pas depuis le conteneur. `app/node_modules` est
+un bind mount et Tailwind 4 y depose un binaire natif (lightningcss) propre a
+la plateforme : une installation faite dans le conteneur Linux rend le `npm`
+de l'hote inutilisable, et inversement — l'erreur est un
+`Cannot find module '../lightningcss.<plateforme>.node'` au premier build.
+Le stage `prod_builder` de l'image, lui, installe ses propres modules sans
+bind mount : la production n'est pas concernee.
 
 | Adresse | Quoi |
 |---|---|
