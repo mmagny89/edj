@@ -97,7 +97,7 @@ const buildSeasonEvents = () => {
       type: 'weekly',
       title: 'Soirée jeux du mardi',
       time: '18h30 - 00h',
-      description: 'Adhérents toute la soirée. Découverte possible 3 fois, de 19h30 à minuit.',
+      description: 'Soirée entre adhérents, de 18h30 à minuit.',
     });
     currentTuesday = addDays(currentTuesday, 7);
   }
@@ -108,7 +108,7 @@ const buildSeasonEvents = () => {
       type: 'monthly',
       title: 'Après-midi ludique',
       time: '14h - 18h',
-      description: "Ouvert à tous, parfait pour découvrir l'association.",
+      description: "Après-midi entre adhérents, autour de la ludothèque.",
     });
   });
 
