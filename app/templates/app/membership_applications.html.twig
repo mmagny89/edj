@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bulletins d'adhésion{% endblock %}
+
+{% block body %}
+    <h1>Bulletins d'adhésion</h1>
+
+    {% if applications is empty %}
+        <p>Aucun bulletin déposé pour le moment.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Déposé le</th>
+                    <th>Adhérent</th>
+                    <th>Naissance</th>
+                    <th>Contact</th>
+                    <th>Formule</th>
+                    <th>Adhérent principal</th>
+                    <th>Responsable légal</th>
+                    <th>Droit à l'image</th>
+                    <th>Philibert</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for application in applications %}
+                    <tr>
+                        <td>{{ application.submittedAt|date('d/m/Y H:i') }}</td>
+                        <td>{{ application.firstName }} {{ application.lastName }}</td>
+                        <td>
+                            {{ application.birthDate|date('d/m/Y') }}
+                            {% if application.isMinor %}<strong>(mineur)</strong>{% endif %}
+                        </td>
+                        <td>
+                            <a href="mailto:{{ application.email }}">{{ application.email }}</a>
+                            {% if application.phone %}<br>{{ application.phone }}{% endif %}
+                            <br>{{ application.postalCode }} {{ application.city }}
+                        </td>
+                        <td>{{ application.membershipType.label }}</td>
+                        <td>{{ application.principalMemberName ?: '—' }}</td>
+                        <td>
+                            {% if application.isMinor %}
+                                {{ application.guardianFirstName }} {{ application.guardianLastName }}
+                                <br>{{ application.guardianEmail }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ application.imageRightsRefused ? 'refusé' : 'accepté' }}</td>
+                        <td>{{ application.philibertConsent ? 'oui' : 'non' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
