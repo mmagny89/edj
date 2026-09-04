@@ -1,24 +1,36 @@
-###> symfony/framework-bundle ###
-/symfony/.env.local
-/symfony/.env.local.php
-/symfony/.env.*.local
-/symfony/config/secrets/prod/prod.decrypt.private.php
-/symfony/public/bundles/
-/symfony/var/
-/symfony/vendor/
-###< symfony/framework-bundle ###
+# Outillage de l'agence (agents, regles, bibliotheque de ressources,
+# scripts) : jamais committe dans le depot du projet. Exclusion cruciale,
+# pas seulement une preference — certains fichiers qui y transitent portent
+# des secrets reels (ex. .env.install.local d'un stack Drupal, jamais un
+# modele .dist), qui ne doivent jamais entrer dans l'historique git.
+.claude/
 
-###> phpunit/phpunit ###
-/symfony/phpunit.xml
-/symfony/.phpunit.cache/
-###< phpunit/phpunit ###
+# Secrets reels — jamais committes (conventions, section 3). Les .dist
+# restent committes.
+.env.staging.local
+.env.prod.local
+.env.*.local
 
-###> symfony/webpack-encore-bundle ###
-/symfony/node_modules/
-/symfony/public/build/
+# Surcharges locales de l'application.
+app/.env.local*
+
+# Etat local de l'application PHP.
+app/var/
+app/vendor/
+# macOS
+.DS_Store
+
+# Front (Webpack Encore) — dependances et build regenerables.
+app/node_modules/
+app/public/build/
 npm-debug.log
 yarn-error.log
-###< symfony/webpack-encore-bundle ###
 
+# Outillage PHP.
+app/phpunit.xml
+app/.phpunit.cache/
+app/config/secrets/prod/prod.decrypt.private.php
+app/public/bundles/
+
+# IDE.
 .idea/
-.DS_Store

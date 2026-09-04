@@ -1,0 +1,89 @@
+# Socle commun a tous les environnements (conventions, section 1). Genere
+# par .claude/scripts/setup-symfony.sh.
+name: edj
+
+services:
+  edj-php:
+    container_name: edj-php
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: ${TARGET}
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+        FRANKENPHP_VERSION: ${FRANKENPHP_VERSION}
+        PHP_EXTENSION_INSTALLER_VERSION: ${PHP_EXTENSION_INSTALLER_VERSION}
+        NODE_VERSION: ${NODE_VERSION}
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${GROUP_ID}
+    image: edj-php:${TARGET}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@edj-database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS}
+      # Ce que Caddy sert dans le conteneur : "localhost" en developpement
+      # (TLS interne), ":80" en staging et production (Traefik termine le
+      # TLS en amont). Le domaine public, lui, n'apparait que dans le label
+      # Traefik des overrides, via APP_DOMAIN.
+      SERVER_NAME: ${SERVER_NAME}
+      MAILER_DSN: ${MAILER_DSN}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
+    volumes:
+      - edj-caddy-data:/data
+      - edj-caddy-config:/config
+      - edj-caddy-admin:/run/caddy
+    networks:
+      - edj
+    depends_on:
+      edj-database:
+        condition: service_healthy
+
+  edj-database:
+    container_name: edj-database
+    image: postgres:${POSTGRES_VERSION}-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      # PostgreSQL 18+ : monter le repertoire parent, pas .../data
+      # (conventions, section 16 — verifier a chaque montee de version
+      # majeure, ce chemin n'est pas garanti stable).
+      - edj-database-data:/var/lib/postgresql
+    networks:
+      - edj
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Sans profil ici (conventions, section 9) : les overrides staging/prod
+  # lui en ajoutent un, jamais l'inverse.
+  edj-ember:
+    container_name: edj-ember
+    image: ghcr.io/alexandre-daubois/ember:${EMBER_VERSION}
+    restart: unless-stopped
+    environment:
+      EMBER_ADDR: unix//run/caddy/admin.sock
+    volumes:
+      - edj-caddy-admin:/run/caddy
+    networks:
+      - edj
+    depends_on:
+      - edj-php
+
+networks:
+  edj:
+    name: edj
+
+volumes:
+  edj-caddy-data:
+    name: edj-caddy-data
+  edj-caddy-config:
+    name: edj-caddy-config
+  edj-caddy-admin:
+    name: edj-caddy-admin
+  edj-database-data:
+    name: edj-database-data

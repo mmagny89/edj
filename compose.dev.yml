@@ -1,0 +1,38 @@
+# Override developpement. Autosuffisant avec compose.yml seul :
+#   docker compose -f compose.yml -f compose.dev.yml up -d
+# (ou "docker compose up -d" nu, via COMPOSE_FILE du .env racine).
+services:
+  edj-php:
+    build:
+      target: dev
+    image: edj-php:dev
+    environment:
+      XDEBUG_MODE: ${XDEBUG_MODE}
+    volumes:
+      - ./app:/app
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+      - "${HTTP3_PORT}:443/udp"
+
+  edj-database:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+
+  # Capture du courrier sortant en developpement uniquement : jamais dans
+  # compose.yml, donc jamais present en staging ni en production.
+  edj-mailpit:
+    container_name: edj-mailpit
+    image: axllent/mailpit:v${MAILPIT_VERSION}
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - edj
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT}:8025"
+
+  edj-ember:
+    ports:
+      - "${EMBER_PORT}:9191"

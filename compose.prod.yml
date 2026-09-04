@@ -1,0 +1,40 @@
+# Override prod. Serveur partage : Traefik en frontal. Lancement toujours explicite :
+#   docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local up -d --wait
+# --env-file REMPLACE le .env racine (conventions, section 3).
+services:
+  edj-php:
+    # Aucune section "build" : l'image est construite par la CI et poussee
+    # sur GHCR (.github/workflows/deploy.yml). Le VPS ne fait que "pull".
+    # PHP_IMAGE porte un tag immuable (le SHA du commit) ecrit par la CI :
+    # repointer un ancien SHA et relancer "up -d" suffit a revenir en
+    # arriere. Ecart assume au gabarit, qui suppose un build sur place.
+    image: ${PHP_IMAGE:?PHP_IMAGE est requis en prod (image GHCR a deployer) — ecrit par la CI dans .env.prod.local}
+    environment:
+      APP_SECRET: ${APP_SECRET:?APP_SECRET est requis en prod (secret applicatif Symfony) — fournir via --env-file .env.prod.local}
+    # Serveur partage : pas de port public direct, Traefik route par
+    # domaine sur le reseau partage "proxy" (a creer une fois sur
+    # l'hote : docker network create proxy).
+    expose:
+      - "80"
+    networks:
+      - edj
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.edj-prod.rule: Host(`${APP_DOMAIN:?APP_DOMAIN est requis en prod (domaine public route par Traefik) — fournir via --env-file .env.prod.local}`)
+      traefik.http.routers.edj-prod.entrypoints: websecure
+      traefik.http.routers.edj-prod.tls.certresolver: letsencrypt
+      traefik.http.services.edj-prod.loadbalancer.server.port: "80"
+
+  edj-ember:
+    profiles: [observability]
+    ports:
+      - "127.0.0.1:${EMBER_PORT}:9191"
+    networks:
+      - edj
+
+networks:
+  edj:
+  proxy:
+    name: ${PROXY_NETWORK}
+    external: true
