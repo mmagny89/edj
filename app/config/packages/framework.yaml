@@ -13,3 +13,20 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+
+# Derriere Traefik, qui termine le TLS et transmet l'origine reelle dans les
+# en-tetes X-Forwarded-*. Sans cette declaration, Symfony ignore ces en-tetes
+# et genere des URL absolues en http:// avec l'IP du conteneur — liens de
+# courriel casses, redirections vers la mauvaise origine.
+#
+# Uniquement en staging et production : en developpement aucun proxy ne se
+# trouve devant le conteneur, et TRUSTED_PROXIES y est vide.
+when@staging:
+    framework:
+        trusted_proxies: '%env(TRUSTED_PROXIES)%'
+        trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
+when@prod:
+    framework:
+        trusted_proxies: '%env(TRUSTED_PROXIES)%'
+        trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
