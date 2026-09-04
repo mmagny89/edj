@@ -1,56 +1,110 @@
-{% extends 'base.html.twig' %}
+{% extends 'app/layout.html.twig' %}
 
-{% block title %}Bulletins d'adhésion{% endblock %}
+{% block title %}Adhésions - Envie de jouer{% endblock %}
 
 {% block body %}
-    <h1>Bulletins d'adhésion</h1>
+    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div>
+            <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Adhésions</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Bulletins déposés depuis le site, du plus récent au plus ancien.
+            </p>
+        </div>
+    </div>
 
-    {% if applications is empty %}
-        <p>Aucun bulletin déposé pour le moment.</p>
-    {% else %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Déposé le</th>
-                    <th>Adhérent</th>
-                    <th>Naissance</th>
-                    <th>Contact</th>
-                    <th>Formule</th>
-                    <th>Adhérent principal</th>
-                    <th>Responsable légal</th>
-                    <th>Droit à l'image</th>
-                    <th>Philibert</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for application in applications %}
-                    <tr>
-                        <td>{{ application.submittedAt|date('d/m/Y H:i') }}</td>
-                        <td>{{ application.firstName }} {{ application.lastName }}</td>
-                        <td>
-                            {{ application.birthDate|date('d/m/Y') }}
-                            {% if application.isMinor %}<strong>(mineur)</strong>{% endif %}
-                        </td>
-                        <td>
-                            <a href="mailto:{{ application.email }}">{{ application.email }}</a>
-                            {% if application.phone %}<br>{{ application.phone }}{% endif %}
-                            <br>{{ application.postalCode }} {{ application.city }}
-                        </td>
-                        <td>{{ application.membershipType.label }}</td>
-                        <td>{{ application.principalMemberName ?: '—' }}</td>
-                        <td>
-                            {% if application.isMinor %}
-                                {{ application.guardianFirstName }} {{ application.guardianLastName }}
-                                <br>{{ application.guardianEmail }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                        <td>{{ application.imageRightsRefused ? 'refusé' : 'accepté' }}</td>
-                        <td>{{ application.philibertConsent ? 'oui' : 'non' }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl">
+        <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+            <h2 class="font-semibold text-gray-800 dark:text-gray-100">
+                Bulletins <span class="text-gray-400 dark:text-gray-500 font-medium">{{ applications|length }}</span>
+            </h2>
+        </header>
+
+        {% if applications is empty %}
+            <p class="px-5 py-8 text-sm text-gray-500 dark:text-gray-400">
+                Aucun bulletin déposé pour le moment.
+            </p>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="table-auto w-full dark:text-gray-300">
+                    <thead class="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/20">
+                        <tr>
+                            <th class="p-2 first:pl-5 last:pr-5 whitespace-nowrap"><div class="font-semibold text-left">Déposé le</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Adhérent</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Contact</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Formule</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Rattachement</div></th>
+                            <th class="p-2 last:pr-5 whitespace-nowrap"><div class="font-semibold text-center">Autorisations</div></th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
+                        {% for application in applications %}
+                            <tr>
+                                <td class="p-2 first:pl-5 last:pr-5 whitespace-nowrap align-top">
+                                    <div class="text-gray-800 dark:text-gray-100">{{ application.submittedAt|date('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-400 dark:text-gray-500">{{ application.submittedAt|date('H:i') }}</div>
+                                </td>
+
+                                <td class="p-2 align-top">
+                                    <div class="font-medium text-gray-800 dark:text-gray-100">
+                                        {{ application.firstName }} {{ application.lastName }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        Né(e) le {{ application.birthDate|date('d/m/Y') }}
+                                        {% if application.isMinor %}
+                                            <span class="inline-flex font-medium rounded-full text-center px-2 py-0.5 bg-amber-500/20 text-amber-700 ml-1">mineur</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td class="p-2 align-top">
+                                    <a class="text-violet-500 hover:underline" href="mailto:{{ application.email }}">{{ application.email }}</a>
+                                    {% if application.phone %}
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ application.phone }}</div>
+                                    {% endif %}
+                                    <div class="text-xs text-gray-400 dark:text-gray-500">
+                                        {% if application.address %}{{ application.address }}, {% endif %}
+                                        {{ application.postalCode }} {{ application.city }}
+                                    </div>
+                                </td>
+
+                                <td class="p-2 align-top">
+                                    <div class="text-gray-800 dark:text-gray-100">{{ application.membershipType.label }}</div>
+                                    <div class="text-xs text-gray-400 dark:text-gray-500">{{ application.membershipType.priceLabel }}</div>
+                                </td>
+
+                                <td class="p-2 align-top text-xs text-gray-500 dark:text-gray-400">
+                                    {% if application.principalMemberName %}
+                                        <div><span class="text-gray-400 dark:text-gray-500">Adhérent principal :</span><br>{{ application.principalMemberName }}</div>
+                                    {% endif %}
+                                    {% if application.isMinor %}
+                                        <div class="mt-1">
+                                            <span class="text-gray-400 dark:text-gray-500">Responsable légal :</span><br>
+                                            {{ application.guardianFirstName }} {{ application.guardianLastName }}<br>
+                                            <a class="text-violet-500 hover:underline" href="mailto:{{ application.guardianEmail }}">{{ application.guardianEmail }}</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if not application.principalMemberName and not application.isMinor %}—{% endif %}
+                                </td>
+
+                                {# Les deux reponses qui engagent l'association : un refus de droit
+                                   a l'image doit se voir sans avoir a lire la ligne. #}
+                                <td class="p-2 last:pr-5 align-top">
+                                    <div class="flex flex-col items-center gap-1">
+                                        {% if application.imageRightsRefused %}
+                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-red-500/20 text-red-700">Photos refusées</span>
+                                        {% else %}
+                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-green-500/20 text-green-700">Photos acceptées</span>
+                                        {% endif %}
+                                        {% if application.philibertConsent %}
+                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-violet-500/20 text-violet-700">Philibert</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
