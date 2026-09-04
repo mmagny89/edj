@@ -97,7 +97,7 @@ const buildSeasonEvents = () => {
       type: 'weekly',
       title: 'Soirée jeux du mardi',
       time: '18h30 - 00h',
-      description: 'Soirée de jeux à la Maison des Associations, de 18h30 à minuit.',
+      description: 'Soirée de jeux à la Maison des Associations.',
     });
     currentTuesday = addDays(currentTuesday, 7);
   }
@@ -108,7 +108,7 @@ const buildSeasonEvents = () => {
       type: 'monthly',
       title: 'Après-midi ludique',
       time: '14h - 18h',
-      description: "Après-midi ludique autour de la ludothèque, de 14h à 18h.",
+      description: "Après-midi ludique autour de la ludothèque.",
     });
   });
 
@@ -176,7 +176,7 @@ const updateNextEvent = (events, today) => {
   });
 
   document.querySelectorAll('[data-next-event-meta]').forEach((element) => {
-    element.textContent = `${nextEvent.time} - ${nextEvent.description}`;
+    element.textContent = `${nextEvent.time} · ${nextEvent.description}`;
   });
 };
 
