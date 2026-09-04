@@ -676,12 +676,11 @@ h1 {
 
 .membership__content {
     display: grid;
-    grid-template-columns: minmax(190px, 0.85fr) minmax(260px, 1.15fr) minmax(240px, 1fr) minmax(230px, 0.95fr);
+    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.25fr) minmax(230px, 0.85fr);
     gap: 16px;
     align-items: stretch;
 }
 
-.membership-season,
 .membership-benefits,
 .membership-prices,
 .membership-files,
@@ -691,7 +690,6 @@ h1 {
     box-shadow: 7px 7px 0 rgba(23, 25, 34, 0.18);
 }
 
-.membership-season,
 .membership-benefits,
 .membership-files {
     display: flex;
@@ -700,7 +698,17 @@ h1 {
     background: var(--paper);
 }
 
+/* Bandeau interne au bloc "ce que l'adhesion permet", plus une carte de la
+   grille : il tient sur une ligne et laisse une colonne de plus aux
+   cotisations. */
 .membership-season {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
     background: var(--red);
     color: white;
 }
@@ -708,24 +716,32 @@ h1 {
 .membership-season i {
     display: grid;
     place-items: center;
-    width: 52px;
-    height: 52px;
-    margin-bottom: 18px;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 46px;
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: var(--yellow);
     color: var(--ink);
-    font-size: 1.35rem;
+    font-size: 1.2rem;
 }
 
-.membership-season h3,
 .membership-benefits h3,
 .membership-files h3 {
     margin: 0;
     font-size: 1.35rem;
 }
 
-.membership-season p,
+.membership-season h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.membership-season p {
+    margin: 2px 0 0;
+    font-weight: 700;
+}
+
 .membership-benefits ul {
     margin: 12px 0 0;
     font-weight: 700;
