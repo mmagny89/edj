@@ -1,0 +1,160 @@
+# Deploiement en production. Declenche par tout push sur main.
+#
+# Chaine : build de l'image sur le runner GitHub -> push sur GHCR -> le VPS
+# tire l'image et redemarre. Le VPS ne construit jamais rien : son CPU reste
+# disponible pour servir le site pendant le deploiement, et l'image deployee
+# est exactement celle qui a ete testee.
+#
+# Docker Compose est pilote a distance via DOCKER_HOST=ssh:// : les fichiers
+# compose viennent du checkout du runner, les secrets des GitHub Secrets. Il
+# n'y a donc ni copie du depot ni fichier de secrets a maintenir sur le VPS.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  # Permet un redeploiement manuel (ou un rollback, en choisissant un autre
+  # commit) depuis l'onglet Actions.
+  workflow_dispatch:
+
+# Un seul deploiement a la fois, et pas d'annulation en cours de route : une
+# migration interrompue laisserait la base dans un etat intermediaire.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    name: Build, push GHCR et deploiement
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+
+      # Les versions d'images sont lues dans le .env racine, source de verite
+      # unique (conventions, section 5) : jamais recopiees ici, sans quoi une
+      # montee de version dans le .env laisserait la CI sur l'ancienne.
+      - name: Lire les versions du .env racine
+        run: grep -E '^(PHP_VERSION|FRANKENPHP_VERSION|PHP_EXTENSION_INSTALLER_VERSION|NODE_VERSION|POSTGRES_VERSION|EMBER_VERSION|MAILPIT_VERSION)=' .env >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Connexion a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Deux tags : le SHA du commit (immuable, c'est lui qui est deploye et
+      # qui permet un rollback exact) et "prod" (commodite de lecture, il
+      # bouge a chaque deploiement).
+      - name: Build et push de l'image de production
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: prod
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/edj-php:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/edj-php:prod
+          build-args: |
+            PHP_VERSION=${{ env.PHP_VERSION }}
+            FRANKENPHP_VERSION=${{ env.FRANKENPHP_VERSION }}
+            PHP_EXTENSION_INSTALLER_VERSION=${{ env.PHP_EXTENSION_INSTALLER_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Preparer l'acces SSH au VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # L'empreinte du serveur est fournie en secret et verifiee :
+          # jamais de StrictHostKeyChecking=no, qui accepterait n'importe
+          # quel hote se presentant a cette adresse.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          printf 'IdentityFile ~/.ssh/id_deploy\nIdentitiesOnly yes\n' > ~/.ssh/config
+
+      # --env-file REMPLACE le .env racine (conventions, section 3) : ce
+      # fichier porte donc TOUTES les cles, pas seulement les secrets, sans
+      # quoi DATABASE_URL serait assemblee sur les valeurs de developpement.
+      # Il est ecrit sur le runner, jamais sur le VPS, et disparait avec lui.
+      - name: Composer .env.prod.local a partir des secrets
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          MAILER_DSN: ${{ secrets.MAILER_DSN }}
+          APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+          PROXY_NETWORK: ${{ vars.PROXY_NETWORK }}
+        run: |
+          cat > .env.prod.local <<ENVFILE
+          PHP_VERSION=${PHP_VERSION}
+          FRANKENPHP_VERSION=${FRANKENPHP_VERSION}
+          PHP_EXTENSION_INSTALLER_VERSION=${PHP_EXTENSION_INSTALLER_VERSION}
+          NODE_VERSION=${NODE_VERSION}
+          POSTGRES_VERSION=${POSTGRES_VERSION}
+          EMBER_VERSION=${EMBER_VERSION}
+          MAILPIT_VERSION=${MAILPIT_VERSION}
+          MAILPIT_UI_PORT=8025
+          TARGET=prod
+          USER_ID=1000
+          GROUP_ID=1000
+          EMBER_PORT=9191
+          PROXY_NETWORK=${PROXY_NETWORK}
+          RUN_MIGRATIONS=0
+          POSTGRES_DB=edj
+          POSTGRES_USER=edj
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          APP_SECRET=${APP_SECRET}
+          APP_DOMAIN=${APP_DOMAIN}
+          SERVER_NAME=:80
+          MAILER_DSN=${MAILER_DSN}
+          TRUSTED_PROXIES=127.0.0.1,172.16.0.0/12
+          PHP_IMAGE=ghcr.io/${{ github.repository_owner }}/edj-php:${{ github.sha }}
+          ENVFILE
+
+      - name: Deploiement
+        env:
+          DOCKER_HOST: ssh://${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+          COMPOSE: docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local
+        run: |
+          set -euo pipefail
+
+          # Le reseau partage avec Traefik doit exister avant tout "up" : il
+          # est declare "external" cote compose, donc jamais cree par lui.
+          docker network inspect "${{ vars.PROXY_NETWORK }}" >/dev/null 2>&1 \
+            || { echo "::error title=Reseau absent::Le reseau Docker '${{ vars.PROXY_NETWORK }}' n'existe pas sur le VPS. Le creer une fois : docker network create ${{ vars.PROXY_NETWORK }}"; exit 1; }
+
+          $COMPOSE pull
+
+          # La base doit tourner avant la migration, et la migration avant que
+          # le nouveau code ne serve : RUN_MIGRATIONS vaut 0 en production
+          # (conventions, section 8), la migration est donc explicite ici.
+          $COMPOSE up -d --wait edj-database
+          $COMPOSE run --rm --no-deps edj-php php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
+
+          # --wait bloque jusqu'a l'etat healthy : l'etape echoue si le
+          # conteneur ne repond pas, au lieu de rendre la main sur un
+          # deploiement casse.
+          $COMPOSE up -d --wait --remove-orphans
+
+          $COMPOSE ps
+
+      # Les images des deploiements precedents s'accumulent sinon jusqu'a
+      # saturer le disque du VPS, qui heberge d'autres projets.
+      - name: Purge des images obsoletes sur le VPS
+        if: always()
+        env:
+          DOCKER_HOST: ssh://${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+        run: docker image prune -af --filter 'until=168h'
