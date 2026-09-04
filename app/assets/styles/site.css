@@ -683,8 +683,7 @@ h1 {
 
 .membership-benefits,
 .membership-prices,
-.membership-files,
-.document-links {
+.membership-files {
     border: 3px solid var(--ink);
     border-radius: 8px;
     box-shadow: 7px 7px 0 rgba(23, 25, 34, 0.18);
@@ -793,29 +792,74 @@ h1 {
     line-height: 1.1;
 }
 
+.membership-files__note {
+    margin: 8px 0 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
 .document-links {
     display: grid;
-    overflow: hidden;
-    background: white;
-    box-shadow: none;
+    gap: 10px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
 }
 
 .document-links a {
-    display: flex;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 12px;
-    min-height: 52px;
-    padding: 13px 16px;
-    border-bottom: 2px solid rgba(23, 25, 34, 0.12);
+    column-gap: 12px;
+    padding: 12px 14px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: white;
+}
+
+/* L'icone et le chevron de telechargement encadrent les deux lignes de
+   texte (libelle puis format) : sans le span explicite, ils se calent sur la
+   premiere ligne seule et le bloc parait de travers. */
+.document-links a > i:first-child {
+    display: grid;
+    place-items: center;
+    grid-row: 1 / span 2;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--yellow);
+    font-size: 1.05rem;
+}
+
+.document-links__label {
     font-weight: 900;
+    line-height: 1.2;
 }
 
-.document-links a:last-child {
-    border-bottom: 0;
+.document-links__meta {
+    grid-column: 2;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.document-links a:hover {
+.document-links__action {
+    grid-row: 1 / span 2;
+    grid-column: 3;
+    color: var(--muted);
+}
+
+.document-links a:hover,
+.document-links a:focus-visible {
     background: var(--board);
+}
+
+.document-links a:hover .document-links__action,
+.document-links a:focus-visible .document-links__action {
+    color: var(--ink);
 }
 
 .mascot-section {
