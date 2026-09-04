@@ -38,6 +38,14 @@ docker compose exec edj-php composer install
 cd app && npm ci && npm run watch
 ```
 
+> En developpement, utiliser `npm run dev` ou `npm run watch`, jamais
+> `npm run build`. Ce dernier compile en mode production, donc avec des noms
+> de fichiers horodates (`site.2f395926.css`) : WebpackEncoreBundle met
+> `entrypoints.json` en cache dans `var/cache` et ne le relit pas quand seul
+> le front est reconstruit — la page continue de demander l'ancien nom, qui
+> vient d'etre supprime, et le site s'affiche sans aucun style. Si ca arrive :
+> `docker compose exec edj-php php bin/console cache:clear`.
+
 > `npm` se lance depuis l'hote, pas depuis le conteneur : `app/node_modules`
 > est un bind mount, et Tailwind 4 y installe un binaire natif (lightningcss)
 > propre a la plateforme. Installer depuis le conteneur Linux casserait le
