@@ -35,9 +35,14 @@ dans `app/`, qui est aussi ce que voit le conteneur sous `/app`.
 cp app/.env.local.example app/.env.local   # puis renseigner APP_SECRET
 docker compose up -d --wait
 docker compose exec edj-php composer install
-docker compose exec edj-php npm ci
-docker compose exec edj-php npm run watch
+cd app && npm ci && npm run watch
 ```
+
+> `npm` se lance depuis l'hote, pas depuis le conteneur : `app/node_modules`
+> est un bind mount, et Tailwind 4 y installe un binaire natif (lightningcss)
+> propre a la plateforme. Installer depuis le conteneur Linux casserait le
+> `npm` de la machine, et inversement. En production la question ne se pose
+> pas : l'image compile son front elle-meme.
 
 Puis https://localhost (certificat auto-signe a accepter).
 
