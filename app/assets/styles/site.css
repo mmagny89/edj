@@ -279,6 +279,37 @@ h1 {
     background: white;
 }
 
+/* Bouton d'adhesion : present a quatre endroits de la page, il doit se
+   reconnaitre d'un coup d'oeil et ne jamais se confondre avec le bouton
+   rouge de l'action principale du hero. */
+.button--join {
+    background: var(--yellow);
+    color: var(--ink);
+}
+
+/* Bandeau de relance en fin de section des rendez-vous : on vient de lire
+   tout le programme, c'est le moment ou la question se pose. */
+.join-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: clamp(20px, 3vw, 32px);
+    padding: 20px 24px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--yellow-soft);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
+}
+
+.join-banner p {
+    margin: 0;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    line-height: 1.1;
+}
+
 .next-event {
     align-self: end;
     margin-bottom: clamp(0px, 4vw, 56px);
