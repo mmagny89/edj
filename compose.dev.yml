@@ -8,6 +8,23 @@ services:
     image: edj-php:dev
     environment:
       XDEBUG_MODE: ${XDEBUG_MODE}
+      # Le stage dev de l'image pose FRANKENPHP_WORKER_CONFIG=watch, sans
+      # argument : FrankenPHP surveille alors /app en entier. Or Symfony
+      # reecrit app/var/cache a chaque requete en developpement — le worker
+      # redemarre, reconstruit le cache, ce qui declenche un nouveau
+      # redemarrage, et le serveur finit par ne plus repondre du tout.
+      # app/vendor et app/node_modules ajoutent au passage plus de cent
+      # mille fichiers a surveiller pour rien.
+      #
+      # La surveillance est donc restreinte aux repertoires que l'on edite
+      # reellement. Les assets du front ont leur propre rechargement, par
+      # "npm run watch" : public/build est volontairement absent d'ici.
+      FRANKENPHP_WORKER_CONFIG: |-
+        watch /app/src
+        watch /app/templates
+        watch /app/config
+        watch /app/translations
+        watch /app/public/index.php
     volumes:
       - ./app:/app
     ports:
