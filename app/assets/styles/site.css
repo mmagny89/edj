@@ -878,6 +878,9 @@ h1 {
 }
 
 .partners-list {
+    /* Le titre du panneau a "margin: 0" : c'est la phrase d'attente supprimee
+       qui portait l'espacement, via son margin-bottom de 18px. */
+    margin-top: 18px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
