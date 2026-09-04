@@ -1,0 +1,40 @@
+# Configuration nominale : chargee par docker-entrypoint des que
+# /app/public/index.php existe. Voir Caddyfile.bootstrap pour la
+# configuration de secours utilisee tant que l'application n'est pas
+# installee.
+#
+# CADDY_GLOBAL_OPTIONS et FRANKENPHP_WORKER_CONFIG sont des points
+# d'extension : les overrides d'environnement (compose.dev.yml,
+# compose.staging.yml, compose.prod.yml, proprietes de stack-env-config)
+# les alimentent sans jamais avoir a modifier ce fichier.
+#
+# Le mode worker "watch" (rechargement a chaud en developpement) est deja
+# assure par FRANKENPHP_WORKER_CONFIG=watch : ne pas ajouter hot_reload,
+# qui exige un hub Mercure configure et ferait echouer le demarrage de
+# Caddy une fois l'application installee.
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		worker {
+			file /app/public/index.php
+			{$FRANKENPHP_WORKER_CONFIG}
+		}
+	}
+
+	# API d'administration de Caddy exposee uniquement via un socket Unix
+	# partage avec le conteneur Ember (observabilite) — jamais via un port
+	# TCP publie.
+	admin unix//run/caddy/admin.sock
+}
+
+{$SERVER_NAME:localhost} {
+	root * /app/public
+	encode zstd br gzip
+	log
+
+	route {
+		respond /health 200
+		php_server
+	}
+}

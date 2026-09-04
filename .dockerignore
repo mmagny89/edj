@@ -1,35 +1,28 @@
-**/*.log
-**/*.md
-**/*.php~
-**/*.dist.php
-**/*.dist
-**/*.cache
-**/._*
-**/.dockerignore
-**/.DS_Store
-**/.git/
-**/.gitattributes
-**/.gitignore
-**/.gitmodules
-**/compose.*.yaml
-**/compose.*.yml
-**/compose.yaml
-**/compose.yml
-**/docker-compose.*.yaml
-**/docker-compose.*.yml
-**/docker-compose.yaml
-**/docker-compose.yml
-**/Thumbs.db
-.github/
-docs/
-symfony/public/bundles/
-symfony/tests/
-symfony/var/
-symfony/vendor/
-symfony/node_modules/
-symfony/public/build/
-.editorconfig
-symfony/.env.*.local
-symfony/.env.local
-symfony/.env.local.php
-symfony/.env.test
+# Contexte de build : context: . (racine), dockerfile: docker/php/Dockerfile
+# (conventions, section 1). Exclut tout ce que le Dockerfile ne COPY pas
+# explicitement, et les .env qui ne doivent jamais entrer dans l'image.
+
+.git
+.idea
+.claude
+
+# .env* racine : jamais dans l'image (conventions, section 3).
+.env
+.env.*
+
+# Documentation et fichiers d'infra non necessaires au build.
+README.docker.md
+compose*.yml
+
+# Secrets et surcharges applicatives locales : jamais dans l'image.
+app/.env.local
+app/.env.*.local
+app/.env.local.php
+
+# Dependances et etat local eventuels de l'application.
+app/var/
+app/vendor/
+# node_modules et build du front : reinstalles et recompiles dans
+# prod_builder (npm ci), jamais envoyes dans le contexte de build.
+app/node_modules/
+app/public/build/

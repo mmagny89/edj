@@ -1,0 +1,18 @@
+# Configuration de secours : chargee par docker-entrypoint tant que le point
+# d'entree PHP n'existe pas encore (avant l'installation du framework —
+# public/index.php pour Symfony, web/index.php pour Drupal, index.php pour
+# WordPress, verifie par chaque docker-entrypoint.sh specifique au stack).
+# Aucun worker declare ici, volontairement : FrankenPHP n'a rien a executer
+# tant que l'application n'est pas installee.
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	admin unix//run/caddy/admin.sock
+}
+
+{$SERVER_NAME:localhost} {
+	route {
+		respond /health 200
+		respond "Application not installed yet. Run the install script inside the PHP container." 503
+	}
+}

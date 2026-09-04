@@ -1,0 +1,40 @@
+# Override staging. Serveur partage : Traefik en frontal. Lancement toujours explicite :
+#   docker compose -f compose.yml -f compose.staging.yml --env-file .env.staging.local up -d --wait
+# --env-file REMPLACE le .env racine (conventions, section 3).
+services:
+  edj-php:
+    # Aucune section "build" : l'image est construite par la CI et poussee
+    # sur GHCR (.github/workflows/deploy.yml). Le VPS ne fait que "pull".
+    # PHP_IMAGE porte un tag immuable (le SHA du commit) ecrit par la CI :
+    # repointer un ancien SHA et relancer "up -d" suffit a revenir en
+    # arriere. Ecart assume au gabarit, qui suppose un build sur place.
+    image: ${PHP_IMAGE:?PHP_IMAGE est requis en staging (image GHCR a deployer) — ecrit par la CI dans .env.staging.local}
+    environment:
+      APP_SECRET: ${APP_SECRET:?APP_SECRET est requis en staging (secret applicatif Symfony) — fournir via --env-file .env.staging.local}
+    # Serveur partage : pas de port public direct, Traefik route par
+    # domaine sur le reseau partage "proxy" (a creer une fois sur
+    # l'hote : docker network create proxy).
+    expose:
+      - "80"
+    networks:
+      - edj
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.edj-staging.rule: Host(`${APP_DOMAIN:?APP_DOMAIN est requis en staging (domaine public route par Traefik) — fournir via --env-file .env.staging.local}`)
+      traefik.http.routers.edj-staging.entrypoints: websecure
+      traefik.http.routers.edj-staging.tls.certresolver: letsencrypt
+      traefik.http.services.edj-staging.loadbalancer.server.port: "80"
+
+  edj-ember:
+    profiles: [observability]
+    ports:
+      - "127.0.0.1:${EMBER_PORT}:9191"
+    networks:
+      - edj
+
+networks:
+  edj:
+  proxy:
+    name: ${PROXY_NETWORK}
+    external: true
