@@ -26,6 +26,11 @@ services:
       traefik.http.routers.edj-prod.tls.certresolver: letsencrypt
       traefik.http.services.edj-prod.loadbalancer.server.port: "80"
 
+  edj-worker:
+    image: ${PHP_IMAGE}
+    networks:
+      - edj
+
   edj-ember:
     profiles: [observability]
     ports:

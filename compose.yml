@@ -38,6 +38,40 @@ services:
       edj-database:
         condition: service_healthy
 
+  # Consommateur Messenger. Les courriels sont routes vers le transport
+  # "async" (config/packages/messenger.yaml) : sans ce service, ils
+  # s'accumulent en base et aucune notification de bulletin d'adhesion ne
+  # part jamais. Ecart assume au manifeste, qui ne prevoit pas de worker.
+  #
+  # RUN_MIGRATIONS vaut 0 ici quel que soit l'environnement : la mise a jour
+  # de schema appartient au conteneur web, deux conteneurs qui migrent en
+  # parallele au demarrage se marchent dessus.
+  edj-worker:
+    container_name: edj-worker
+    image: edj-php:${TARGET}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@edj-database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
+      RUN_MIGRATIONS: 0
+      MAILER_DSN: ${MAILER_DSN}
+      SERVER_NAME: ${SERVER_NAME}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
+    # --time-limit fait sortir le worker toutes les heures ; restart le
+    # relance. C'est la parade recommandee a la derive memoire d'un processus
+    # PHP de longue duree.
+    command: ["php", "/app/bin/console", "messenger:consume", "async", "--time-limit=3600"]
+    # Le healthcheck de l'image sonde /health en HTTP : ce conteneur ne sert
+    # aucune page, il serait donc signale "unhealthy" en permanence et ferait
+    # echouer tout "up -d --wait". La sante du worker tient a son processus,
+    # deja surveille par restart: unless-stopped.
+    healthcheck:
+      disable: true
+    networks:
+      - edj
+    depends_on:
+      edj-database:
+        condition: service_healthy
+
   edj-database:
     container_name: edj-database
     image: postgres:${POSTGRES_VERSION}-alpine
