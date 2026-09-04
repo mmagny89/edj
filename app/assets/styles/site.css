@@ -999,3 +999,31 @@ h1 {
         grid-auto-columns: minmax(250px, 86vw);
     }
 }
+
+/* Rendez-vous de la saison — reutilise .info-board, deja defini plus haut. */
+.rendezvous-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 32px);
+    align-items: start;
+}
+
+.rendezvous-grid__title {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+@media (max-width: 920px) {
+    .rendezvous-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .rendezvous-grid {
+        grid-template-columns: 1fr;
+    }
+}
