@@ -22,6 +22,10 @@
                         <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
                         Voir les prochaines dates
                     </a>
+                    <a href="{{ path('membership_form') }}" class="button button--join">
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                        Adhérer en ligne
+                    </a>
                     <a href="mailto:enviedejouer89300@gmail.com" class="button button--quiet">
                         <i class="fa-solid fa-envelope" aria-hidden="true"></i>
                         Nous contacter
@@ -141,6 +145,14 @@
                     </div>
                 </div>
             </div>
+
+            <div class="join-banner">
+                <p>Tous ces rendez-vous sont ouverts par l'adhésion.</p>
+                <a href="{{ path('membership_form') }}" class="button button--join">
+                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                    Remplir le bulletin en ligne
+                </a>
+            </div>
         </section>
 
         <section id="association" class="section association-section">
@@ -188,7 +200,7 @@
             </div>
 
             <div class="form-actions membership__cta">
-                <a href="{{ path('membership_form') }}" class="button button--primary">
+                <a href="{{ path('membership_form') }}" class="button button--join">
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                     Remplir le bulletin en ligne
                 </a>
@@ -314,6 +326,10 @@
                         <a href="mailto:enviedejouer89300@gmail.com" class="button button--primary">
                             <i class="fa-solid fa-envelope" aria-hidden="true"></i>
                             enviedejouer89300@gmail.com
+                        </a>
+                        <a href="{{ path('membership_form') }}" class="button button--join">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                            Adhérer en ligne
                         </a>
                         <a href="https://www.facebook.com/EnviedeJouer89/" target="_blank" rel="noreferrer" class="button button--social">
                             <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
