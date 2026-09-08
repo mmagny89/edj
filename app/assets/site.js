@@ -50,75 +50,19 @@ const toDate = (value) => {
   return new Date(year, month - 1, day);
 };
 
-const addDays = (date, days) => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-};
-
-const getSeasonBounds = (referenceDate = new Date()) => {
-  const year = referenceDate.getMonth() >= 9
-    ? referenceDate.getFullYear()
-    : referenceDate.getFullYear() - 1;
-
-  return {
-    start: new Date(year, 9, 1),
-    end: new Date(year + 1, 8, 30),
-  };
-};
-
-const getFirstWeekdayOnOrAfter = (date, weekday) => {
-  const result = new Date(date);
-  const diff = (weekday + 7 - result.getDay()) % 7;
-  result.setDate(result.getDate() + diff);
-  return result;
-};
-
-const getThirdSaturday = (year, month) => {
-  const firstDay = new Date(year, month, 1);
-  const firstSaturdayOffset = (6 + 7 - firstDay.getDay()) % 7;
-  return new Date(year, month, 1 + firstSaturdayOffset + 14);
-};
-
-const getSeasonMonths = (seasonStart) => Array.from({ length: 12 }, (_, index) => (
-  new Date(seasonStart.getFullYear(), seasonStart.getMonth() + index, 1)
-));
-
 const buildSeasonEvents = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const { start, end } = getSeasonBounds(today);
-  const events = [];
-  let currentTuesday = getFirstWeekdayOnOrAfter(start, 2);
-
-  while (currentTuesday <= end) {
-    events.push({
-      date: new Date(currentTuesday),
-      type: 'weekly',
-      title: 'Soirée jeux du mardi',
-      time: '18h30 - 00h',
-      description: 'Soirée de jeux à la Maison des Associations.',
-    });
-    currentTuesday = addDays(currentTuesday, 7);
-  }
-
-  getSeasonMonths(start).forEach((monthDate) => {
-    events.push({
-      date: getThirdSaturday(monthDate.getFullYear(), monthDate.getMonth()),
-      type: 'monthly',
-      title: 'Après-midi ludique',
-      time: '14h - 18h',
-      description: "Après-midi ludique autour de la ludothèque.",
-    });
-  });
-
-  readManagedEvents().forEach((event) => {
-    const eventDate = toDate(event.date);
-    if (eventDate >= start && eventDate <= end) {
-      events.push({ ...event, date: eventDate });
-    }
-  });
+  // Le calendrier vient entierement du back-office : les mardis et les 3e
+  // samedis y sont saisis comme les manifestations. Ils etaient auparavant
+  // calcules ici, avec leur titre et leur horaire ecrits dans ce fichier —
+  // une date exceptionnelle, une soiree annulee ou un horaire modifie
+  // demandaient alors une modification du code et un deploiement.
+  const events = readManagedEvents().map((event) => ({
+    ...event,
+    date: toDate(event.date),
+  }));
 
   return {
     today,
