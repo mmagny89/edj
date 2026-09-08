@@ -59,7 +59,12 @@ services:
     # --time-limit fait sortir le worker toutes les heures ; restart le
     # relance. C'est la parade recommandee a la derive memoire d'un processus
     # PHP de longue duree.
-    command: ["php", "/app/bin/console", "messenger:consume", "async", "--time-limit=3600"]
+    # Deux transports : "async" pour les courriels, "scheduler_default" pour
+    # les taches recurrentes declarees dans App\Schedule (purge nocturne des
+    # evenements passes). Le planificateur ne tourne que tant qu'un
+    # consommateur ecoute ce transport : l'oublier ne provoque aucune erreur,
+    # la tache ne part simplement jamais.
+    command: ["php", "/app/bin/console", "messenger:consume", "async", "scheduler_default", "--time-limit=3600"]
     # Le healthcheck de l'image sonde /health en HTTP : ce conteneur ne sert
     # aucune page, il serait donc signale "unhealthy" en permanence et ferait
     # echouer tout "up -d --wait". La sante du worker tient a son processus,
