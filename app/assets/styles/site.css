@@ -1292,3 +1292,14 @@ h1 {
 .membership__cta {
     margin-bottom: 20px;
 }
+
+/* Lieu d'un evenement, sous sa description : une ligne discrete, distincte
+   de la description pour ne pas repeter l'endroit quand celle-ci le
+   mentionne deja. */
+.event-slide__place {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    opacity: 0.75;
+}
