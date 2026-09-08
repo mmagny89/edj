@@ -19,6 +19,13 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_CONTRIBUTOR')]
 final class EventController extends AbstractController
 {
+    /**
+     * A moins de six semaines de la fin de la saison, la generation proposee
+     * porte sur la saison suivante. Six semaines parce que c'est l'ordre de
+     * grandeur ou l'on prepare la rentree — pas une valeur a l'unite pres.
+     */
+    private const NEXT_SEASON_THRESHOLD_DAYS = 42;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventRepository $events,
@@ -43,7 +50,7 @@ final class EventController extends AbstractController
     {
         $generation = new SeasonGenerationRequest();
         $generation->from = new \DateTimeImmutable('today');
-        $generation->to = $this->endOfSeason($generation->from);
+        $generation->to = $this->suggestedEnd($generation->from);
 
         $form = $this->createForm(SeasonGenerationType::class, $generation);
         $form->handleRequest($request);
@@ -66,8 +73,30 @@ final class EventController extends AbstractController
     }
 
     /**
-     * La saison associative court du 1er octobre au 30 septembre suivant :
-     * la borne de fin proposee est celle de la saison en cours.
+     * Borne de fin proposee par defaut.
+     *
+     * En cours de saison, c'est la fin de la saison en cours. Quand celle-ci
+     * touche a sa fin, c'est celle de la suivante : a quelques semaines du
+     * 30 septembre, ce qu'on vient preparer est la rentree, pas les trois
+     * mardis qui restent.
+     *
+     * La borne de depart, elle, reste aujourd'hui dans les deux cas : la
+     * generation ne duplique rien, une periode large ne coute donc rien et
+     * couvre d'un coup la fin de la saison en cours et toute la suivante.
+     */
+    private function suggestedEnd(\DateTimeImmutable $reference): \DateTimeImmutable
+    {
+        $end = $this->endOfSeason($reference);
+
+        if ($end < $reference->modify(sprintf('+%d days', self::NEXT_SEASON_THRESHOLD_DAYS))) {
+            $end = $this->endOfSeason($end->modify('+1 day'));
+        }
+
+        return $end;
+    }
+
+    /**
+     * La saison associative court du 1er octobre au 30 septembre suivant.
      */
     private function endOfSeason(\DateTimeImmutable $reference): \DateTimeImmutable
     {
