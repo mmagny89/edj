@@ -70,10 +70,13 @@ const buildSeasonEvents = () => {
   };
 };
 
+// Toutes les dates a venir, sans plafond : le calendrier est desormais
+// saisi dans le back-office, ce qui y figure est ce qu'on veut montrer. Le
+// carrousel defile horizontalement et les filtres permettent de se
+// restreindre a un type de rendez-vous.
 const getUpcomingEvents = (events, filter, today) => events
   .filter((event) => event.date >= today)
-  .filter((event) => filter === 'all' || event.type === filter)
-  .slice(0, 14);
+  .filter((event) => filter === 'all' || event.type === filter);
 
 const renderCarousel = (events, filter, today) => {
   const eventTrack = document.querySelector('[data-event-track]');
