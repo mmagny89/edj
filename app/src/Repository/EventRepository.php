@@ -50,6 +50,34 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
+     * Cles "type|date" des evenements deja presents sur une periode, sous
+     * forme de tableau indexe : la generation d'une saison teste chaque date
+     * contre cet ensemble plutot que d'interroger la base des centaines de
+     * fois.
+     *
+     * @return array<string, true>
+     */
+    public function existingKeys(\DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        /** @var list<array{type: \App\Enum\EventType, startsAt: \DateTimeImmutable}> $rows */
+        $rows = $this->createQueryBuilder('e')
+            ->select('e.type', 'e.startsAt')
+            ->andWhere('e.startsAt BETWEEN :from AND :to')
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->getQuery()
+            ->getArrayResult();
+
+        $keys = [];
+
+        foreach ($rows as $row) {
+            $keys[$row['type']->value.'|'.$row['startsAt']->format('Y-m-d')] = true;
+        }
+
+        return $keys;
+    }
+
+    /**
      * Evenements termines avant la date donnee. Sert a annoncer ce que la
      * purge va supprimer avant de le faire.
      *

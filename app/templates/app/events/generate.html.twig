@@ -1,0 +1,49 @@
+{% extends 'app/layout.html.twig' %}
+
+{% block title %}Générer la saison - Envie de jouer{% endblock %}
+
+{% block body %}
+    <div class="mb-8">
+        <a href="{{ path('app_events') }}" class="text-sm text-violet-500 hover:underline">← Retour aux évènements</a>
+        <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold mt-2">Générer la saison</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Crée d'un coup toutes les dates qui reviennent, sur la période choisie.
+        </p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl max-w-2xl">
+        {{ form_start(form, {'attr': {'class': 'p-5 space-y-5 admin-form'}}) }}
+            {{ form_errors(form) }}
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                {{ form_row(form.from) }}
+                {{ form_row(form.to) }}
+            </div>
+
+            <fieldset class="space-y-2">
+                <legend class="text-sm font-medium text-gray-800 dark:text-gray-100 mb-2">Ce qu'il faut générer</legend>
+                {{ form_row(form.weekly) }}
+                {{ form_row(form.monthly) }}
+            </fieldset>
+
+            <div class="rounded-lg bg-gray-50 dark:bg-gray-900/20 px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                <p class="mb-1"><strong class="text-gray-800 dark:text-gray-100">Ce qui sera créé</strong></p>
+                <p>
+                    Chaque date devient un évènement ordinaire, avec son titre, son horaire et son lieu
+                    habituels — modifiable ou supprimable ensuite une par une, sans toucher aux autres.
+                </p>
+                <p class="mt-2">
+                    Relancer la génération sur une période déjà couverte ne crée rien en double :
+                    les dates déjà présentes sont laissées telles quelles.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit" class="bg-violet-500 hover:bg-violet-600 text-white rounded-lg px-4 py-2 text-sm font-medium">
+                    Générer les dates
+                </button>
+                <a href="{{ path('app_events') }}" class="text-sm text-gray-500 hover:underline">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
