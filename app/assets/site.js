@@ -1,29 +1,30 @@
 import './bootstrap.js';
 import './styles/site.css';
 
-const specialEvents = [
-  {
-    date: '2026-02-14',
-    type: 'special',
-    title: 'Nuit anniversaire',
-    time: 'Soirée',
-    description: "La Nuit du Jeu pour célébrer l'anniversaire de l'association.",
-  },
-  {
-    date: '2026-09-12',
-    type: 'special',
-    title: 'Nuit du Jeu de fin d\'année',
-    time: 'Soirée',
-    description: 'Un grand rendez-vous pour terminer la saison autour de grosses tables.',
-  },
-  {
-    date: '2026-10-10',
-    type: 'special',
-    title: 'Festival Le Sens du Jeu',
-    time: 'Journée',
-    description: 'Un rendez-vous ludique partenaire autour du jeu de société.',
-  },
-];
+// Evenements saisis dans le back-office, deposes en JSON sur le conteneur du
+// carrousel par le gabarit. Les mardis et les 3e samedis restent calcules
+// plus bas : ce sont des regles de recurrence, pas des donnees a ressaisir
+// cinquante fois par saison.
+const readManagedEvents = () => {
+  const carousel = document.querySelector('[data-event-carousel]');
+
+  if (!carousel || !carousel.dataset.events) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(carousel.dataset.events);
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    // Un attribut illisible ne doit pas emporter tout le calendrier : les
+    // dates recurrentes restent affichees.
+    console.error('Évènements illisibles :', error);
+
+    return [];
+  }
+};
+
 
 const eventTypeLabels = {
   weekly: 'Mardi soir',
@@ -112,7 +113,7 @@ const buildSeasonEvents = () => {
     });
   });
 
-  specialEvents.forEach((event) => {
+  readManagedEvents().forEach((event) => {
     const eventDate = toDate(event.date);
     if (eventDate >= start && eventDate <= end) {
       events.push({ ...event, date: eventDate });
