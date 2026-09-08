@@ -100,7 +100,8 @@ const renderCarousel = (events, filter, today) => {
         <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${eventTypeLabels[event.type]}</p>
         <h3>${event.title}</h3>
         <strong>${formatDate(event.date)} · ${event.time}</strong>
-        <small>${event.description}</small>
+        ${event.description ? `<small>${event.description}</small>` : ''}
+        ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${event.location}</small>` : ''}
       </div>
     </article>
   `).join('');

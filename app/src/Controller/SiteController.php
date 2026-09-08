@@ -29,7 +29,7 @@ final class SiteController extends AbstractController
      *
      * @param list<Event> $events
      *
-     * @return list<array{date: string, type: string, title: string, time: string, description: string}>
+     * @return list<array{date: string, type: string, title: string, time: string, description: string, location: string}>
      */
     private function serializeEvents(array $events): array
     {
@@ -49,10 +49,11 @@ final class SiteController extends AbstractController
                     'type' => $event->getType()?->value ?? 'special',
                     'title' => (string) $event->getTitle(),
                     'time' => (string) $event->getTimeLabel(),
-                    'description' => trim(implode(' ', array_filter([
-                        $event->getDescription(),
-                        $event->getLocation(),
-                    ]))),
+                    // Description et lieu voyagent separement : les coller
+                    // produisait des repetitions des que la description
+                    // mentionnait deja l'endroit.
+                    'description' => (string) $event->getDescription(),
+                    'location' => (string) $event->getLocation(),
                 ];
 
                 $day = $day->modify('+1 day');
