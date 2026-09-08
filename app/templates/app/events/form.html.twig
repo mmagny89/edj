@@ -1,0 +1,37 @@
+{% extends 'app/layout.html.twig' %}
+
+{% block title %}{{ isNew ? 'Nouvel évènement' : 'Modifier un évènement' }} - Envie de jouer{% endblock %}
+
+{% block body %}
+    <div class="mb-8">
+        <a href="{{ path('app_events') }}" class="text-sm text-violet-500 hover:underline">← Retour aux évènements</a>
+        <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold mt-2">
+            {{ isNew ? 'Nouvel évènement' : 'Modifier « ' ~ event.title ~ ' »' }}
+        </h1>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl max-w-3xl">
+        {{ form_start(form, {'attr': {'class': 'p-5 space-y-5 admin-form'}}) }}
+            {{ form_errors(form) }}
+
+            {{ form_row(form.title) }}
+            {{ form_row(form.type) }}
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                {{ form_row(form.startsAt) }}
+                {{ form_row(form.endsAt) }}
+                {{ form_row(form.timeLabel) }}
+                {{ form_row(form.location) }}
+            </div>
+
+            {{ form_row(form.description) }}
+
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit" class="bg-violet-500 hover:bg-violet-600 text-white rounded-lg px-4 py-2 text-sm font-medium">
+                    {{ isNew ? "Ajouter l'évènement" : 'Enregistrer' }}
+                </button>
+                <a href="{{ path('app_events') }}" class="text-sm text-gray-500 hover:underline">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
