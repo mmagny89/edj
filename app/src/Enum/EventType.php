@@ -27,6 +27,34 @@ enum EventType: string
         };
     }
 
+    /**
+     * Titre pose d'office quand le champ est laisse vide : les soirees du
+     * mardi et les apres-midi du 3e samedi portent toujours le meme nom, le
+     * ressaisir a chaque date n'apporte rien et finit par produire des
+     * variantes ("Soiree du mardi", "Soiree jeux mardi"...).
+     */
+    public function defaultTitle(): ?string
+    {
+        return match ($this) {
+            self::Weekly => 'Soirée jeux du mardi',
+            self::Monthly => 'Après-midi ludique',
+            self::Special => null,
+        };
+    }
+
+    /**
+     * Horaire pose d'office, meme raison que pour le titre. Une
+     * manifestation n'en a pas : sa duree change a chaque fois.
+     */
+    public function defaultTimeLabel(): ?string
+    {
+        return match ($this) {
+            self::Weekly => '18h30 - 00h',
+            self::Monthly => '14h - 18h',
+            self::Special => null,
+        };
+    }
+
     public function formLabel(): string
     {
         return match ($this) {
