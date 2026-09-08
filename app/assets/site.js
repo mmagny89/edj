@@ -160,7 +160,19 @@ const animateCounters = () => {
   });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+// turbo:load et non DOMContentLoaded : Turbo Drive remplace le corps de la
+// page a chaque navigation sans recharger le document, et DOMContentLoaded ne
+// se declenche donc qu'au tout premier chargement. Le carrousel, le prochain
+// rendez-vous et les compteurs n'etaient plus reconstruits ensuite — le
+// calendrier apparaissait vide des qu'on revenait sur l'accueil.
+//
+// turbo:load se declenche aussi au premier chargement : il remplace
+// DOMContentLoaded, il ne s'y ajoute pas. Les autres fichiers du projet
+// (modal.js, add-game.js, add-slate.js) ecoutent les deux, ce qui les fait
+// tourner deux fois au premier chargement — sans consequence chez eux, mais
+// ici les ecouteurs des filtres et des fleches seraient poses en double : un
+// clic sur "suivant" ferait defiler de deux cartes.
+document.addEventListener('turbo:load', () => {
   const { today, events } = buildSeasonEvents();
   const filters = document.querySelectorAll('.calendar-filter');
   const eventTrack = document.querySelector('[data-event-track]');
