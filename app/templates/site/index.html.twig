@@ -60,7 +60,12 @@
                 </p>
             </div>
 
-            <div class="event-carousel" data-event-carousel>
+            {# Les evenements saisis dans le back-office voyagent en JSON sur cet
+               attribut : le carrousel les fusionne avec les mardis et les 3e
+               samedis qu'il calcule lui-meme. Twig echappe la valeur, aucune
+               saisie ne peut donc s'echapper de l'attribut. #}
+            <div class="event-carousel" data-event-carousel
+                 data-events="{{ events|json_encode }}">
                 <div class="calendar-toolbar" aria-label="Filtrer les événements">
                     <button class="calendar-filter is-active" type="button" data-filter="all">Tous</button>
                     <button class="calendar-filter" type="button" data-filter="weekly">Mardis</button>
