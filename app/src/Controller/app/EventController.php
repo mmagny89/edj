@@ -2,9 +2,12 @@
 
 namespace App\Controller\app;
 
+use App\Dto\SeasonGenerationRequest;
 use App\Entity\Event;
 use App\Form\EventFormType;
+use App\Form\SeasonGenerationType;
 use App\Repository\EventRepository;
+use App\Service\SeasonGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,6 +32,66 @@ final class EventController extends AbstractController
             'events' => $this->events->findAllOrdered(),
             'today' => new \DateTimeImmutable('today'),
         ]);
+    }
+
+    /**
+     * Cree en une fois toutes les dates recurrentes d'une periode. Sans cela,
+     * couvrir une saison demandait une cinquantaine de saisies identiques.
+     */
+    #[Route('/generer', name: 'app_event_generate', methods: ['GET', 'POST'])]
+    public function generate(Request $request, SeasonGenerator $generator): Response
+    {
+        $generation = new SeasonGenerationRequest();
+        $generation->from = new \DateTimeImmutable('today');
+        $generation->to = $this->endOfSeason($generation->from);
+
+        $form = $this->createForm(SeasonGenerationType::class, $generation);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $result = $generator->generate($generation);
+
+            if (0 === $result['created'] && 0 === $result['skipped']) {
+                $this->addFlash('error', "Aucune date à créer sur cette période : vérifiez les bornes.");
+            } else {
+                $this->addFlash('success', $this->generationMessage($result));
+            }
+
+            return $this->redirectToRoute('app_events');
+        }
+
+        return $this->render('app/events/generate.html.twig', [
+            'form' => $form,
+        ]);
+    }
+
+    /**
+     * La saison associative court du 1er octobre au 30 septembre suivant :
+     * la borne de fin proposee est celle de la saison en cours.
+     */
+    private function endOfSeason(\DateTimeImmutable $reference): \DateTimeImmutable
+    {
+        $year = (int) $reference->format('n') >= 10
+            ? (int) $reference->format('Y') + 1
+            : (int) $reference->format('Y');
+
+        return $reference->setDate($year, 9, 30);
+    }
+
+    /**
+     * @param array{created: int, skipped: int} $result
+     */
+    private function generationMessage(array $result): string
+    {
+        $message = sprintf('%d date(s) ajoutée(s) au calendrier.', $result['created']);
+
+        if ($result['skipped'] > 0) {
+            // Sans cette precision, relancer la generation sur une periode
+            // deja couverte paraitrait sans effet.
+            $message .= sprintf(' %d date(s) étaient déjà présentes et n\'ont pas été dupliquées.', $result['skipped']);
+        }
+
+        return $message;
     }
 
     #[Route('/nouveau', name: 'app_event_new', methods: ['GET', 'POST'])]
