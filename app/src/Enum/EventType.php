@@ -55,6 +55,23 @@ enum EventType: string
         };
     }
 
+    /**
+     * Description posee d'office quand le champ est laisse vide. Le lieu
+     * s'affichant deja sur sa propre ligne sous la carte, elle n'a pas a le
+     * repeter : elle dit ce qu'on y fait.
+     *
+     * Une manifestation n'en a pas : c'est justement ce qui la distingue
+     * d'une date recurrente.
+     */
+    public function defaultDescription(): ?string
+    {
+        return match ($this) {
+            self::Weekly => 'Une soirée de jeux : tables ouvertes, ludothèque et explications.',
+            self::Monthly => 'Une après-midi de jeux autour de la ludothèque.',
+            self::Special => null,
+        };
+    }
+
     public function formLabel(): string
     {
         return match ($this) {

@@ -108,6 +108,7 @@ final readonly class SeasonGenerator
             ->setStartsAt($date)
             ->setTitle($type->defaultTitle() ?? '')
             ->setTimeLabel($type->defaultTimeLabel() ?? '')
+            ->setDescription($type->defaultDescription())
             ->setLocation(self::DEFAULT_LOCATION);
     }
 

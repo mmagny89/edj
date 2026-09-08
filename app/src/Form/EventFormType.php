@@ -71,7 +71,7 @@ final class EventFormType extends AbstractType
                 'label' => 'Description',
                 'required' => false,
                 'attr' => ['rows' => 3],
-                'help' => "Une phrase, affichée sous la date dans le calendrier.",
+                'help' => "Une phrase, affichée sous la date dans le calendrier. Laissée vide, la description habituelle du type choisi est reprise.",
             ])
             // PRE_SUBMIT et non POST_SUBMIT : les valeurs par defaut doivent
             // etre en place avant la validation, sinon un titre laisse vide
@@ -105,6 +105,10 @@ final class EventFormType extends AbstractType
 
         if ('' === trim((string) ($data['timeLabel'] ?? ''))) {
             $data['timeLabel'] = $type->defaultTimeLabel() ?? '';
+        }
+
+        if ('' === trim((string) ($data['description'] ?? ''))) {
+            $data['description'] = $type->defaultDescription() ?? '';
         }
 
         if ('' === trim((string) ($data['location'] ?? ''))) {
