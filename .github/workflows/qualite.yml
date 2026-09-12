@@ -147,7 +147,7 @@ jobs:
       # le serveur, par outils/deployer.sh. Ce job existe pour qu'un
       # Dockerfile casse se voie ici, et non au milieu d'un deploiement.
       - name: docker build (stage prod)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/php/Dockerfile
