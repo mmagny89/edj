@@ -97,6 +97,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Les dependances Composer AVANT celles de npm, comme le fait le stage
+      # prod_builder de l'image. package.json declare
+      # "@symfony/ux-turbo": "file:vendor/symfony/ux-turbo/assets" : sans
+      # vendor/, stimulus-bridge echoue a la compilation sur « The file
+      # "@symfony/ux-turbo/package.json" could not be found », loin de sa
+      # cause.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: composer install
+        run: composer install --no-dev --no-interaction --no-progress --no-scripts
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
