@@ -1,0 +1,46 @@
+# Publication d'une version. Declenchee par une etiquette v*, elle cree la
+# release GitHub dont le corps est la section correspondante de CHANGELOG.md.
+#
+# Le journal reste ecrit a la main — c'est lui qui dit ce qui change pour un
+# visiteur, ce qu'aucune liste de commits ne dit. Ce workflow ne fait que le
+# recopier, pour qu'une release ne puisse pas diverger du fichier.
+name: publication
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: publication-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Deduire la version de l'etiquette
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      # La section doit exister : une etiquette posee sans avoir complete le
+      # journal publierait une release vide. extraire-changelog.sh sort en
+      # erreur en listant les sections presentes, et se joue aussi en local
+      # avant d'etiqueter.
+      - name: Extraire la section du CHANGELOG
+        run: |
+          sh outils/extraire-changelog.sh "$VERSION" > /tmp/corps-release.md
+          cat /tmp/corps-release.md
+
+      - name: Publier la release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/corps-release.md \
+            --verify-tag
