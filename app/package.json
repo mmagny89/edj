@@ -1,4 +1,8 @@
 {
+    "name": "envie-de-jouer-site",
+    "description": "Assets front du site de l'association Envie de Jouer",
+    "license": "AGPL-3.0-or-later",
+    "private": true,
     "devDependencies": {
         "@babel/core": "^7.17.0",
         "@babel/preset-env": "^7.16.0",
@@ -12,8 +16,6 @@
         "webpack": "^5.74.0",
         "webpack-cli": "^5.1.0"
     },
-    "license": "UNLICENSED",
-    "private": true,
     "scripts": {
         "dev-server": "encore dev-server",
         "dev": "encore dev",
