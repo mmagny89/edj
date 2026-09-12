@@ -8,6 +8,19 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Modifie
+
+- Le deploiement se fait desormais sur le serveur (`outils/deployer.sh` appele
+  par une forced command SSH) au lieu d'une image poussee sur GHCR et d'un
+  Compose pilote a distance : plus de registre a gerer, et la logique de
+  deploiement se relit avec le reste du code.
+
+### Corrige
+
+- `outils/deployer.sh` ignorait silencieusement sa verification externe sur un
+  projet nommant son domaine `APP_DOMAIN` — soit exactement le controle pour
+  lequel elle existe.
+
 ## [1.0.0] - 2026-09-12
 
 Premiere version publiee : le site tel qu'il tourne, et la gouvernance d'un

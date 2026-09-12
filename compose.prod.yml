@@ -3,12 +3,13 @@
 # --env-file REMPLACE le .env racine (conventions, section 3).
 services:
   php:
-    # Aucune section "build" : l'image est construite par la CI et poussee
-    # sur GHCR (.github/workflows/deploy.yml). Le VPS ne fait que "pull".
-    # PHP_IMAGE porte un tag immuable (le SHA du commit) ecrit par la CI :
-    # repointer un ancien SHA et relancer "up -d" suffit a revenir en
-    # arriere. Ecart assume au gabarit, qui suppose un build sur place.
-    image: ${PHP_IMAGE:?PHP_IMAGE est requis en prod (image GHCR a deployer) — ecrit par la CI dans .env.prod.local}
+    # L'image est construite sur le serveur, depuis le clone, par
+    # outils/deployer.sh. Le stage et le tag sont figes ici plutot que laisses
+    # a ${TARGET} : un fichier de secrets incomplet ne doit pas pouvoir
+    # deployer l'image de developpement.
+    build:
+      target: prod
+    image: edj-php:prod
     environment:
       APP_SECRET: ${APP_SECRET:?APP_SECRET est requis en prod (secret applicatif Symfony) — fournir via --env-file .env.prod.local}
     # Serveur partage : pas de port public direct, Traefik route par
@@ -27,7 +28,7 @@ services:
       traefik.http.services.edj-prod.loadbalancer.server.port: "80"
 
   worker:
-    image: ${PHP_IMAGE}
+    image: edj-php:prod
     networks:
       - edj
 

@@ -50,10 +50,10 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
 - Les conteneurs, reseaux et volumes portent le suffixe `${ENV}` :
   `edj-dev-php`, `edj-prod-database-data`. Recette et production peuvent ainsi
   cohabiter sur un meme hote sans partager de volume.
-- Le deploiement construit l'image sur le runner GitHub, la pousse sur GHCR et
-  pilote Compose a distance (`DOCKER_HOST=ssh://`) : le serveur ne construit
-  jamais rien et ne porte ni clone ni fichier de secrets. Ecart assume aux
-  conventions (section 22), documente dans `README.docker.md`.
+- Le deploiement vit sur le serveur : `outils/deployer.sh`, versionne, appele
+  par une forced command SSH. Le workflow n'envoie aucune commande — l'argument
+  est fixe par `authorized_keys`. Le serveur porte le clone, construit l'image
+  et garde `.env.prod.local` ; aucune valeur applicative n'est un secret GitHub.
 - Une etiquette `v*` publie une release GitHub dont le corps est la section
   correspondante de `CHANGELOG.md` (`publication.yml`). Completer la section
   « Non publie » fait partie d'un changement visible de l'utilisateur.
