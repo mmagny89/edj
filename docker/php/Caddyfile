@@ -22,6 +22,13 @@
 		}
 	}
 
+	# Metriques Prometheus (conventions, section 9b) : c'est cette source,
+	# et non Ember, qu'une supervision doit scruter — Caddy expose de vrais
+	# histogrammes, Ember seulement des moyennes deja agregees. L'option est
+	# globale ; le handler est servi plus bas sur une ecoute interne :2020,
+	# jamais publiee sur l'hote.
+	metrics
+
 	# API d'administration de Caddy exposee uniquement via un socket Unix
 	# partage avec le conteneur Ember (observabilite) — jamais via un port
 	# TCP publie.
@@ -37,4 +44,10 @@
 		respond /health 200
 		php_server
 	}
+}
+
+# Ecoute interne des metriques — jamais publiee sur l'hote (conventions,
+# section 4) : Prometheus la joint par le reseau Docker, sur edj-<env>-php:2020.
+:2020 {
+	metrics /metrics
 }

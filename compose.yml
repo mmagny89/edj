@@ -1,10 +1,10 @@
 # Socle commun a tous les environnements (conventions, section 1). Genere
 # par .claude/scripts/setup-symfony.sh.
-name: edj
+name: edj-${ENV}
 
 services:
-  edj-php:
-    container_name: edj-php
+  php:
+    container_name: edj-${ENV:?ENV manquant — suffixe d'environnement des conteneurs, reseaux et volumes}-php
     build:
       context: .
       dockerfile: docker/php/Dockerfile
@@ -19,7 +19,7 @@ services:
     image: edj-php:${TARGET}
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@edj-database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
       RUN_MIGRATIONS: ${RUN_MIGRATIONS}
       # Ce que Caddy sert dans le conteneur : "localhost" en developpement
       # (TLS interne), ":80" en staging et production (Traefik termine le
@@ -27,7 +27,7 @@ services:
       # Traefik des overrides, via APP_DOMAIN.
       SERVER_NAME: ${SERVER_NAME}
       MAILER_DSN: ${MAILER_DSN}
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
+      SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     volumes:
       - edj-caddy-data:/data
       - edj-caddy-config:/config
@@ -35,7 +35,7 @@ services:
     networks:
       - edj
     depends_on:
-      edj-database:
+      database:
         condition: service_healthy
 
   # Consommateur Messenger. Les courriels sont routes vers le transport
@@ -46,16 +46,16 @@ services:
   # RUN_MIGRATIONS vaut 0 ici quel que soit l'environnement : la mise a jour
   # de schema appartient au conteneur web, deux conteneurs qui migrent en
   # parallele au demarrage se marchent dessus.
-  edj-worker:
-    container_name: edj-worker
+  worker:
+    container_name: edj-${ENV}-worker
     image: edj-php:${TARGET}
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@edj-database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
       RUN_MIGRATIONS: 0
       MAILER_DSN: ${MAILER_DSN}
       SERVER_NAME: ${SERVER_NAME}
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
+      SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     # --time-limit fait sortir le worker toutes les heures ; restart le
     # relance. C'est la parade recommandee a la derive memoire d'un processus
     # PHP de longue duree.
@@ -74,11 +74,11 @@ services:
     networks:
       - edj
     depends_on:
-      edj-database:
+      database:
         condition: service_healthy
 
-  edj-database:
-    container_name: edj-database
+  database:
+    container_name: edj-${ENV}-database
     image: postgres:${POSTGRES_VERSION}-alpine
     restart: unless-stopped
     environment:
@@ -100,8 +100,8 @@ services:
 
   # Sans profil ici (conventions, section 9) : les overrides staging/prod
   # lui en ajoutent un, jamais l'inverse.
-  edj-ember:
-    container_name: edj-ember
+  ember:
+    container_name: edj-${ENV}-ember
     image: ghcr.io/alexandre-daubois/ember:${EMBER_VERSION}
     restart: unless-stopped
     environment:
@@ -111,18 +111,18 @@ services:
     networks:
       - edj
     depends_on:
-      - edj-php
+      - php
 
 networks:
   edj:
-    name: edj
+    name: edj-${ENV}
 
 volumes:
   edj-caddy-data:
-    name: edj-caddy-data
+    name: edj-${ENV}-caddy-data
   edj-caddy-config:
-    name: edj-caddy-config
+    name: edj-${ENV}-caddy-config
   edj-caddy-admin:
-    name: edj-caddy-admin
+    name: edj-${ENV}-caddy-admin
   edj-database-data:
-    name: edj-database-data
+    name: edj-${ENV}-database-data
