@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.1.0] - 2026-09-12
+
 ### Modifie
 
 - Le deploiement se fait desormais sur le serveur (`outils/deployer.sh` appele
@@ -42,5 +44,6 @@ depot public.
 - Metriques Caddy sur une ecoute interne `:2020`, pour une supervision d'hote.
 - Attrapeur de courriels Mailpit en developpement.
 
-[Non publie]: https://github.com/mmagny89/edj/compare/v1.0.0...HEAD
+[Non publie]: https://github.com/mmagny89/edj/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/mmagny89/edj/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mmagny89/edj/releases/tag/v1.0.0
