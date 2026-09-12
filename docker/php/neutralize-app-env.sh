@@ -15,7 +15,7 @@ fi
 
 # Variables dont la valeur reelle est toujours fournie par le conteneur
 # (compose.yml ou ENV du Dockerfile) — jamais par app/.env.
-INJECTED_VARS="DATABASE_URL APP_ENV MAILER_DSN TRUSTED_PROXIES"
+INJECTED_VARS="DATABASE_URL APP_ENV MAILER_DSN SYMFONY_TRUSTED_PROXIES"
 
 for var in $INJECTED_VARS; do
 	awk -v var="$var" '

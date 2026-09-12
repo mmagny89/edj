@@ -19,14 +19,15 @@ when@test:
 # et genere des URL absolues en http:// avec l'IP du conteneur — liens de
 # courriel casses, redirections vers la mauvaise origine.
 #
-# Uniquement en staging et production : en developpement aucun proxy ne se
-# trouve devant le conteneur, et TRUSTED_PROXIES y est vide.
+# Les proxies de confiance eux-memes viennent de SYMFONY_TRUSTED_PROXIES, que
+# Symfony lit d'office (trusted_proxies vaut
+# %env(default::SYMFONY_TRUSTED_PROXIES)% par defaut) : rien a declarer ici.
+# Elle est vide en developpement, ou aucun proxy ne se trouve devant le
+# conteneur.
 when@staging:
     framework:
-        trusted_proxies: '%env(TRUSTED_PROXIES)%'
         trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
 
 when@prod:
     framework:
-        trusted_proxies: '%env(TRUSTED_PROXIES)%'
         trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
