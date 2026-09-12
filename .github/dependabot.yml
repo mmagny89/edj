@@ -1,0 +1,46 @@
+# Surveillance des dependances. Sans ce fichier, les montees de version de
+# securite restent manuelles, donc oubliees.
+version: 2
+updates:
+  # Composer — le code applicatif vit dans app/, jamais a la racine.
+  - package-ecosystem: composer
+    directory: /app
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      symfony:
+        patterns: ["symfony/*"]
+
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      front:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # Images de base du Dockerfile PHP. Les versions applicatives, elles, sont
+  # pilotees par le .env racine (conventions, section 5) : Dependabot ne les
+  # voit pas, elles se relevent a la main.
+  - package-ecosystem: docker
+    directory: /docker/php
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci(deps)"

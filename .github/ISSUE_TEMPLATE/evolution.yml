@@ -1,0 +1,21 @@
+name: Evolution
+description: Proposer une amelioration ou une nouvelle fonctionnalite.
+labels: [evolution]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Le besoin
+      description: Quel probleme concret cette evolution resout-elle, et pour qui ?
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Ce que vous proposez
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Ce qui existe deja, ou les autres pistes envisagees

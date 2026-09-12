@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Signaler une faille de securite
+    url: https://github.com/mmagny89/edj/security/advisories/new
+    about: Canal prive. N'ouvrez jamais d'issue publique pour une faille.
+  - name: Site de l'association
+    url: https://edj.mmagny.fr/
+    about: Question sur l'association ou ses activites, pas sur le code.
