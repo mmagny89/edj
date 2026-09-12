@@ -73,9 +73,11 @@ http://127.0.0.1:8025 — rien ne part reellement.
 
 ## Deploiement et versions
 
-Un push sur `main` suffit : les portes qualite passent, puis le meme workflow
-construit l'image, la pousse sur GHCR et le serveur la deploie derriere
-Traefik. Prealables, secrets a renseigner, rollback et operations manuelles :
+Un push sur `main` suffit : les portes qualite passent, puis le workflow ouvre
+une connexion SSH dont la *forced command* lance `outils/deployer.sh prod` sur
+le serveur — lequel tire la branche, construit l'image, joue les migrations et
+verifie que le site repond depuis l'exterieur. Prealables, secrets a
+renseigner, rollback et operations manuelles :
 **[README.docker.md](README.docker.md)**.
 
 Une etiquette `v*` publie une release GitHub dont le corps est la section

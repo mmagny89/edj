@@ -20,7 +20,7 @@ publie aucun port : il sert en clair sur son `:80` interne.
 | `.env.staging.local` / `.env.prod.local` | Secrets reels — **jamais** committes |
 | `compose.yml` | Socle : services `php`, `worker`, `database`, `ember`. Aucun port, aucun bind mount |
 | `compose.dev.yml` | Dev : ports publies, bind mount `./app`, Xdebug, Mailpit |
-| `compose.staging.yml` / `compose.prod.yml` | Traefik, image GHCR, Ember sous profil `observability` |
+| `compose.staging.yml` / `compose.prod.yml` | Traefik, stage d'image fige, Ember sous profil `observability` |
 | `docker/php/**` | Dockerfile multi-stage, Caddyfile nominal et de secours, entrypoint, healthcheck, scripts |
 | `.github/workflows/qualite.yml` | Portes qualite sur chaque PR et push, puis deploiement sur `main` |
 | `.github/workflows/publication.yml` | Release GitHub sur etiquette `v*`, corps repris de `CHANGELOG.md` |
@@ -107,81 +107,125 @@ l'hote (conventions, section 4).
 
 ## Deploiement
 
-Tout push sur `main` declenche le job `deploiement` de `.github/workflows/qualite.yml`, apres les portes qualite :
+Tout push sur `main` declenche le job `deploiement` de
+`.github/workflows/qualite.yml`, apres les portes qualite et le build de
+verification de l'image.
 
-1. le runner GitHub construit l'image (stage `prod`, front compile dedans) ;
-2. il la pousse sur GHCR sous deux tags : le SHA du commit et `prod` ;
-3. il pilote Docker Compose **a distance** via `DOCKER_HOST=ssh://` : les
-   fichiers compose viennent du depot, les secrets des GitHub Secrets. Il n'y
-   a donc ni copie du depot ni fichier de secrets a maintenir sur le VPS ;
-4. la base est demarree, les migrations jouees, puis le stack redemarre avec
-   `--wait` — l'etape echoue si le conteneur n'atteint pas l'etat `healthy`.
+Ce job **n'envoie aucune commande**. Il ouvre une connexion SSH, et c'est la
+*forced command* d'`authorized_keys` qui impose, cote serveur,
+`outils/deployer.sh prod`. La cle confiee a GitHub ne peut donc rien lancer
+d'autre, et les chemins comme les secrets ne quittent jamais la machine
+(conventions, section 22).
 
-Le VPS ne construit jamais d'image : son CPU reste disponible pour servir
-pendant le deploiement, et ce qui tourne est exactement ce qui a ete teste.
+`outils/deployer.sh`, versionne avec le projet, fait alors :
 
-### Prealables sur le VPS — une seule fois
+1. verifie que le clone est bien sur `main` — se deployer depuis la mauvaise
+   branche passerait sinon inapercu ;
+2. `git fetch` puis `merge --ff-only` : un deploiement ne fusionne rien et ne
+   resout aucun conflit. Si l'avance rapide est impossible, quelqu'un a
+   modifie le clone du serveur, et c'est a un humain de regarder ;
+3. `up -d --build --wait` : l'image est construite **sur le serveur**, depuis
+   le code qui vient d'etre tire ;
+4. les migrations, explicitement — `RUN_MIGRATIONS` vaut 0 en production
+   (conventions, section 8) ;
+5. le menage des images orphelines, sans quoi le disque se remplit en silence ;
+6. la seule verification qui compte : la reponse du site **depuis
+   l'exterieur**. Derriere Traefik, un conteneur peut se declarer `healthy`
+   alors que rien ne repond.
+
+### Prealables sur le serveur — une seule fois
+
+Le clone porte **le meme nom que le projet Compose**, suffixe d'environnement
+compris (conventions, section 22b) : une interface qui deduit le nom du projet
+du dossier afficherait sinon un projet fantome a cote du vrai, et la *forced
+command*, qui porte un chemin absolu, pointerait dans le vide apres un
+renommage.
 
 ```sh
 docker network create proxy
+git clone <depot> /srv/edj-prod && cd /srv/edj-prod
+cp .env.prod.local.dist .env.prod.local
+sh outils/renseigner-secrets.sh prod
+sh outils/installer-deploiement.sh serveur       # une fois par machine
+sh outils/installer-deploiement.sh projet prod   # une fois par projet
 ```
 
-Traefik doit ecouter sur ce reseau, avoir un entrypoint `websecure` et un
-resolveur ACME nomme `letsencrypt` (les noms utilises par les labels de
-`compose.prod.yml`). Le DNS de `edj.mmagny.fr` doit pointer sur le VPS.
+`renseigner-secrets.sh` se joue **avant** le premier build : les variables
+obligatoires etant declarees `${VAR:?}`, `docker compose build` lui-meme
+refuse de demarrer tant que l'une d'elles est vide. Il deduit du nom de chaque
+variable comment la produire, et n'affiche jamais la cle privee au terminal.
+
+`installer-deploiement.sh projet prod` cree la cle Actions, ecrit la ligne
+`authorized_keys` avec sa *forced command*, releve l'empreinte a l'adresse
+exacte que le workflow utilisera, et affiche les quatre secrets a coller dans
+GitHub.
+
+Traefik doit ecouter sur le reseau `proxy`, avoir un entrypoint `websecure` et
+un resolveur ACME nomme `letsencrypt` — les noms utilises par les labels de
+`compose.prod.yml`. Ils **se constatent sur l'hote**, ils ne se devinent pas :
+`sh outils/diagnostic-traefik.sh`. Le DNS de `edj.mmagny.fr` doit pointer sur
+le serveur.
+
+Eprouver le deploiement manuel **avant** l'automatique : enchainer les deux
+melerait deux sources d'echec, le stack et le dispositif SSH.
+
+```sh
+sh outils/deployer.sh prod
+```
 
 ### Prealables cote GitHub
 
-Secrets (Settings > Secrets and variables > Actions > Secrets) :
+Secrets (Settings > Secrets and variables > Actions > Secrets), tous produits
+par `installer-deploiement.sh projet prod` :
 
 | Secret | Contenu |
 |---|---|
 | `DEPLOIEMENT_HOTE` | Adresse du serveur |
 | `DEPLOIEMENT_UTILISATEUR` | Utilisateur de deploiement, membre du groupe `docker` |
-| `DEPLOIEMENT_CLE_PRIVEE` | Cle privee de deploiement (sa publique dans `~/.ssh/authorized_keys` du serveur) |
-| `DEPLOIEMENT_KNOWN_HOSTS` | Sortie de `ssh-keyscan <adresse-du-serveur>` — l'empreinte est verifiee, jamais ignoree |
-| `APP_SECRET` | Secret applicatif Symfony : `openssl rand -hex 32` |
-| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL de production |
-| `MAILER_DSN` | Optionnel. Absent, le deploiement retient `null://null` : rien n'est envoye |
+| `DEPLOIEMENT_CLE_PRIVEE` | Cle privee dont la publique est dans `authorized_keys`, derriere la forced command |
+| `DEPLOIEMENT_KNOWN_HOSTS` | Empreinte du serveur, a l'adresse exacte que le workflow utilise |
 
 Le prefixe `DEPLOIEMENT_` est normatif (conventions, section 22) : il dit le
-role, pas la machine, et les quatre cles se retrouvent groupees dans la liste
-alphabetique de GitHub. Le workflow controle leur presence avant de s'en
-servir — GitHub remplace un secret absent par une chaine vide, sans rien dire.
+role, pas la machine, et reste identique d'un depot a l'autre. Le workflow
+controle leur presence avant de s'en servir — GitHub remplace un secret absent
+par une chaine vide, sans rien signaler.
 
-Variables (meme page, onglet Variables) :
-
-| Variable | Valeur |
-|---|---|
-| `APP_DOMAIN` | `edj.mmagny.fr` |
-| `PROXY_NETWORK` | `proxy` |
+Les valeurs applicatives (`APP_SECRET`, `POSTGRES_PASSWORD`, `APP_DOMAIN`,
+`MAILER_DSN`) ne sont **pas** des secrets GitHub : elles vivent dans
+`.env.prod.local`, sur le serveur, ou `renseigner-secrets.sh` les a ecrites.
 
 `POSTGRES_PASSWORD` n'est lu qu'a la **premiere** initialisation du cluster :
 le changer plus tard ne change pas le mot de passe de la base existante.
 
 ### Rollback
 
-Le tag SHA est immuable. Pour revenir a un deploiement anterieur, relancer le
-workflow `qualite` depuis l'onglet Actions en choisissant le commit voulu
-(`workflow_dispatch`). Les migrations, elles, ne se rejouent pas a l'envers :
-un retour en arriere qui traverse une migration destructrice demande une
-restauration de sauvegarde.
-
-### Operations manuelles sur le VPS
-
-Depuis un poste ayant l'acces SSH et le depot :
+Le deploiement suivant la branche, un retour en arriere est un `git revert`
+pousse sur `main` : le workflow repart, le serveur tire et reconstruit. Pour
+un retour immediat sans attendre la CI, depuis le serveur :
 
 ```sh
-export DOCKER_HOST=ssh://<user>@<vps>
+cd /srv/edj-prod && git revert --no-edit <sha> && sh outils/deployer.sh prod
+```
+
+Les migrations, elles, ne se rejouent pas a l'envers : un retour en arriere
+qui traverse une migration destructrice demande une restauration de
+sauvegarde.
+
+### Operations manuelles sur le serveur
+
+En SSH sur le serveur, depuis le clone :
+
+```sh
+cd /srv/edj-prod
 docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local ps
-docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local logs -f edj-php
+docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local logs -f php
 ```
 
 Observabilite (Ember porte le profil `observability`, il ne demarre jamais
 tout seul en production) :
 
 ```sh
-docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local --profile observability up -d edj-ember
+docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local --profile observability up -d ember
 ```
 
 Son port n'est publie que sur `127.0.0.1` : y acceder par un tunnel SSH.
@@ -190,11 +234,9 @@ Son port n'est publie que sur `127.0.0.1` : y acceder par un tunnel SSH.
 
 | Ecart | Pourquoi |
 |---|---|
-| `compose.staging.yml` / `compose.prod.yml` n'ont pas de section `build:` ; l'image vient de `${PHP_IMAGE}` | Le VPS ne construit rien, il tire une image GHCR construite et testee par la CI |
 | Le Dockerfile ajoute un stage `node_upstream` et compile le front avec `npm ci && npm run build` dans `prod_builder` | Ce projet utilise Webpack Encore, la ou le gabarit `.claude/resources/symfony-docker` suppose AssetMapper + Tailwind CLI |
 | `SERVER_NAME` vaut `:80` en staging/prod, le domaine public passe par `APP_DOMAIN` | Deux roles distincts : ce que Caddy sert dans le conteneur, et ce que Traefik route. Les confondre casse le healthcheck et provoque une redirection 308 |
 | Service `worker` (consommateur Messenger) dans `compose.yml` | Le manifeste ne prevoit pas de worker ; sans lui, aucun courriel de bulletin d'adhesion ne part et les taches planifiees ne tournent jamais |
-| Le deploiement pilote Compose a distance (`DOCKER_HOST=ssh://`) au lieu du `outils/deployer.sh` appele par forced command | Rien a maintenir sur le serveur : ni clone, ni fichier de secrets. `outils/deployer.sh` reste fourni pour un deploiement manuel depuis un clone |
 | `MAILER_FROM` n'est pas injectee | L'expediteur est un parametre applicatif (`contactEmail`), pas une variable d'environnement. A basculer le jour ou un transport reel est en place |
 
 ## Outillage d'exploitation — `outils/`
@@ -205,7 +247,7 @@ jamais le poste de developpement).
 | Script | Quand |
 |---|---|
 | `sh outils/renseigner-secrets.sh prod` | Remplir `.env.prod.local` : le script deduit du nom de chaque variable comment la produire. A jouer **avant** le premier build, les `${VAR:?}` bloquant `docker compose build` lui-meme |
-| `sh outils/deployer.sh prod` | Deploiement manuel depuis un clone sur le serveur (`git pull`, build, migrations, verification externe) |
+| `sh outils/deployer.sh prod` | Le deploiement lui-meme (`git pull`, build, migrations, verification externe). Appele par la forced command SSH, ou a la main sur le serveur |
 | `sh outils/installer-deploiement.sh serveur\|projet prod` | Poser les acces du deploiement continu : cles, `authorized_keys`, empreinte, secrets a coller dans GitHub |
 | `sh outils/diagnostic-traefik.sh` | Relever sur l'hote le nom du reseau, l'entrypoint et le certresolver du Traefik en place — ils se constatent, ils ne se devinent pas |
 | `sh outils/extraire-changelog.sh 1.0.0` | Verifier en local la section que la release publiera |

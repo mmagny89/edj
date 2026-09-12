@@ -79,13 +79,19 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # derriere le proxy : le controle qui compte se fait depuis l'exterieur.
 #
 # En prod, SERVER_NAME est fige a ":80" (Traefik termine le TLS) et le domaine
-# vit dans SERVER_HOST ; en staging, Caddy sert le domaine lui-meme et c'est
-# SERVER_NAME qui le porte. On lit donc l'un puis l'autre.
+# vit ailleurs : SERVER_HOST, ou APP_DOMAIN selon la convention du projet. En
+# staging sur serveur dedie, Caddy sert le domaine lui-meme et c'est
+# SERVER_NAME qui le porte. On lit donc les trois, dans cet ordre.
+#
+# Sans APP_DOMAIN dans cette liste, un projet qui nomme ainsi son domaine
+# (cas de edj) voyait la verification externe silencieusement ignoree — soit
+# exactement le controle pour lequel ce bloc existe.
 lire_secret() {
 	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
 }
 
 DOMAINE=$(lire_secret SERVER_HOST)
+[ -n "$DOMAINE" ] || DOMAINE=$(lire_secret APP_DOMAIN)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret SERVER_NAME)
 
 case "$DOMAINE" in
