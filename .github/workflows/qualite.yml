@@ -44,7 +44,7 @@ jobs:
       MAILER_DSN: null://null
       SYMFONY_TRUSTED_PROXIES: ''
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Version PHP : celle du .env racine, source de verite unique
       # (conventions, section 5). GitHub Actions ne sait pas le lire, d'ou
@@ -95,7 +95,7 @@ jobs:
     name: Front — build Webpack Encore
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Les dependances Composer AVANT celles de npm, comme le fait le stage
       # prod_builder de l'image. package.json declare
@@ -134,7 +134,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Versions lues dans le .env racine, source de verite unique
       # (conventions, section 5) : jamais recopiees dans ce fichier.
