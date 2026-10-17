@@ -8,6 +8,16 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.2.0] - 2026-10-17
+
+### Corrige
+
+- Les liens Statuts, Reglement interieur et Annexes pointaient vers des PDF
+  absents du depot (erreur 404) : ils ouvrent maintenant les documents
+  heberges sur Google Drive, dans un nouvel onglet.
+- Mise en production : suppression des options de proxy Doctrine retirees par
+  ORM 3, qui empechaient toute commande de console en `prod`.
+
 ### Ajoute
 
 - Pages « Mentions legales » (`/mentions-legales`) et « Donnees personnelles »
