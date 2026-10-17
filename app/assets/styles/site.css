@@ -1226,7 +1226,9 @@ h1 {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
     gap: clamp(24px, 4vw, 56px);
-    align-items: stretch;
+    /* Le bloc des jeux garde sa hauteur : etire a celle du mode d'emploi, il
+       devenait une grande dalle jaune presque vide. */
+    align-items: start;
     margin-bottom: 34px;
 }
 
@@ -1287,35 +1289,74 @@ h1 {
 }
 
 .games-highlight {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: clamp(22px, 3vw, 36px);
+    align-self: center;
+    padding: clamp(20px, 2.5vw, 28px);
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: var(--yellow);
     box-shadow: 8px 8px 0 rgba(23, 25, 34, 0.18);
 }
 
+.games-highlight__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 14px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: white;
+    font-size: 1.25rem;
+}
+
 .games-highlight strong {
     display: block;
     font-family: "Akaya Kanadaka", cursive;
-    font-size: clamp(4.5rem, 9vw, 8rem);
-    line-height: 0.85;
+    font-size: clamp(3.4rem, 6vw, 5rem);
+    line-height: 0.9;
 }
 
 .games-highlight h3 {
-    margin: 20px 0 0;
-    font-size: 1.5rem;
+    margin: 8px 0 0;
+    font-size: 1.3rem;
     font-weight: 900;
     line-height: 1.15;
 }
 
-.games-highlight p {
-    margin: 14px 0 0;
-    padding-top: 14px;
+.games-highlight p:not(.stat-prefix) {
+    margin: 12px 0 0;
+    padding-top: 12px;
     border-top: 3px solid var(--ink);
     font-weight: 700;
+}
+
+/* « Environ », « Plus de » : la precision se lit avant le chiffre. */
+.stat-prefix {
+    margin: 0 0 2px;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.stats-grid .stat-prefix {
+    color: #303544;
+}
+
+.stat-prefix--spacer {
+    visibility: hidden;
+}
+
+.stats-grid i {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 1.1rem;
 }
 
 @media (max-width: 1100px) {
