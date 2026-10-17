@@ -212,40 +212,37 @@
                 <section class="membership-band membership-band--prices">
                     <h3>Ce que ça coûte</h3>
 
-                    <div class="price-cards">
-                        <article class="price-card price-card--lead">
-                            <p class="price-card__amount">10 €</p>
-                            <p class="price-card__for">par personne, pour la saison</p>
-                        </article>
+                    {# Deux groupes, deux echeances : la cotisation annuelle
+                       (10 € puis 5 € par personne en plus) tient dans un seul
+                       cadre, et le tarif a l'evenement se lit a part, sous son
+                       propre intitule — on ne les additionne pas. #}
+                    <div class="price-group price-group--year">
+                        <p class="price-group__label"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> À l'année</p>
+                        <p class="price-group__note">Valable toute la saison, quel que soit le nombre de venues.</p>
 
-                        <article class="price-card">
-                            <p class="price-card__amount">+ 5 €</p>
-                            <p class="price-card__for">par personne supplémentaire du même foyer</p>
-                        </article>
-
-                        <article class="price-card price-card--alt">
-                            <p class="price-card__amount">1 €</p>
-                            <p class="price-card__for">par événement, sans adhérer à l'année</p>
-                        </article>
+                        <div class="price-group__lines">
+                            <p class="price-line price-line--lead">
+                                <span class="price-line__amount">10 €</span>
+                                <span class="price-line__for">par personne</span>
+                            </p>
+                            <p class="price-line">
+                                <span class="price-line__amount">+ 5 €</span>
+                                <span class="price-line__for">par personne supplémentaire du même foyer</span>
+                            </p>
+                        </div>
                     </div>
 
-                    <p class="membership-band__note">
-                        La cotisation annuelle vaut pour toute la saison, quel que soit le nombre de venues.
-                        Le règlement se fait sur place, lors d'une de nos soirées.
-                    </p>
-                </section>
+                    <div class="price-group price-group--event">
+                        <p class="price-group__label"><i class="fa-solid fa-ticket" aria-hidden="true"></i> À l'événement</p>
+                        <p class="price-group__note">Sans adhérer : on paie seulement ce à quoi on vient.</p>
 
-                <section class="membership-band">
-                    <h3>Ce que l'adhésion ouvre</h3>
+                        <p class="price-line">
+                            <span class="price-line__amount">1 €</span>
+                            <span class="price-line__for">par événement</span>
+                        </p>
+                    </div>
 
-                    <ul class="membership-perks">
-                        <li>Les soirées du mardi, de 18h30 à minuit.</li>
-                        <li>Les après-midi ludiques du 1er samedi du mois.</li>
-                        <li>Les quatre Nuits du Jeu, dont celle de l'anniversaire.</li>
-                        <li>Le week-end du Jeu pour la Fête des Jeux.</li>
-                        <li>Nos sorties : le festival Le Sens du Jeu et la fête des associations.</li>
-                        <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
-                    </ul>
+                    <p class="membership-band__note">Le règlement se fait sur place, lors d'une de nos soirées.</p>
                 </section>
 
                 <section class="membership-band membership-band--join">
@@ -283,6 +280,18 @@
                                 <i class="fa-solid fa-download document-links__action" aria-hidden="true"></i>
                             </a>
                         </li>
+                    </ul>
+                </section>
+                <section class="membership-band membership-band--perks">
+                    <h3>Ce que l'adhésion ouvre</h3>
+
+                    <ul class="membership-perks">
+                        <li>Les soirées du mardi, de 18h30 à minuit.</li>
+                        <li>Les après-midi ludiques du 1er samedi du mois.</li>
+                        <li>Les quatre Nuits du Jeu, dont celle de l'anniversaire.</li>
+                        <li>Le week-end du Jeu pour la Fête des Jeux.</li>
+                        <li>Nos sorties : le festival Le Sens du Jeu et la fête des associations.</li>
+                        <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
                     </ul>
                 </section>
             </div>

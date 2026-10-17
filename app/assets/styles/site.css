@@ -710,8 +710,15 @@ h1 {
    d'un autre. */
 .membership__flow {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    max-width: 1100px;
+    align-items: stretch;
+}
+
+/* Les avantages passent sous les deux premiers bandeaux, sur toute la largeur :
+   c'est la lecture "combien, comment, puis pourquoi". */
+.membership-band--perks {
+    grid-column: 1 / -1;
 }
 
 .membership-band {
@@ -741,57 +748,83 @@ h1 {
     max-width: 68ch;
 }
 
-.price-cards {
+/* Un groupe = une echeance. L'annuel est cadre en bleu, l'evenement en
+   pointilles rouges : la bordure dit deja que ce n'est pas la meme chose. */
+.price-group {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    align-items: stretch;
-}
-
-.price-card {
-    display: grid;
-    align-content: start;
     gap: 6px;
-    padding: 18px 20px;
+    padding: 16px 18px;
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: white;
 }
 
-/* Le tarif de base porte le montant de reference : il est plus grand que le
-   complement par personne, pour que l'ordre de lecture soit "10 €, puis 5 € de
-   plus" et non deux prix de meme poids. */
-.price-card__amount {
-    margin: 0;
-    color: var(--blue);
-    font-family: "Akaya Kanadaka", cursive;
-    font-size: clamp(2.6rem, 5vw, 3.6rem);
-    line-height: 0.9;
+.price-group + .price-group {
+    margin-top: 14px;
 }
 
-.price-card--lead .price-card__amount {
-    font-size: clamp(3.4rem, 7vw, 4.8rem);
-}
-
-/* La formule a l'evenement n'est pas une cotisation annuelle : la couleur la
-   detache des deux montants qui s'additionnent. */
-.price-card--alt {
+.price-group--event {
+    border-style: dashed;
     background: var(--cream);
 }
 
-.price-card--alt .price-card__amount {
+.price-group__label {
+    margin: 0;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+    line-height: 1;
+}
+
+.price-group--year .price-group__label {
+    color: var(--blue);
+}
+
+.price-group--event .price-group__label {
     color: var(--red-dark);
 }
 
-.price-card__for {
-    margin: 0;
-    font-size: 1rem;
+.price-group__note {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
     font-weight: 700;
-    text-wrap: balance;
+    color: var(--muted);
 }
 
-/* Deux colonnes par "columns" et non par une grille : la liste garde ses
-   puces natives, qu'une grille supprime. */
+.price-group__lines {
+    display: grid;
+    gap: 6px;
+}
+
+.price-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0;
+}
+
+.price-line__amount {
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(2.2rem, 4vw, 2.8rem);
+    line-height: 1;
+}
+
+.price-line--lead .price-line__amount {
+    font-size: clamp(3.2rem, 6vw, 4.4rem);
+}
+
+.price-group--year .price-line__amount {
+    color: var(--blue);
+}
+
+.price-group--event .price-line__amount {
+    color: var(--red-dark);
+}
+
+.price-line__for {
+    font-weight: 700;
+}
+
 .membership-perks {
     /* Le preflight de Tailwind retire les puces de toute liste : elles se
        redeclarent la ou on les veut. */
@@ -818,17 +851,12 @@ h1 {
     width: auto;
 }
 
-/* Les trois documents tiennent sur une ligne : etires sur toute la largeur du
-   bandeau, le titre et l'icone de telechargement se retrouvaient aux deux
-   bouts d'une ligne vide. */
 .membership-band--join .document-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-top: 10px;
 }
 
 @media (max-width: 920px) {
-    .price-cards,
-    .membership-band--join .document-links {
+    .membership__flow {
         grid-template-columns: 1fr;
     }
 
@@ -1080,8 +1108,7 @@ h1 {
 
 @media (max-width: 680px) {
     .stats-grid,
-    .partners-list,
-    .price-cards {
+    .partners-list {
         grid-template-columns: 1fr;
     }
 
@@ -1112,30 +1139,6 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
-}
-
-/* Cotisations — deux groupes distincts : annuelle et a l'evenement. */
-.price-group {
-    display: grid;
-    gap: 10px;
-    align-content: start;
-}
-
-.price-group h3 {
-    margin: 0;
-    font-size: 1.15rem;
-}
-
-.price-group__note {
-    margin: -4px 0 2px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--muted);
-}
-
-.price-group--event {
-    padding-top: 14px;
-    border-top: 3px dashed var(--ink);
 }
 
 @media (max-width: 920px) {
