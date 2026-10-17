@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {# Une page d'administration ne s'indexe jamais : l'en-tete X-Robots-Tag le
+       dit deja, la balise le redit pour un client qui ignorerait l'en-tete. #}
+    <meta name="robots" content="noindex, nofollow">
+    {# Lu par Turbo pour la feuille de style de sa barre de progression, que la
+       politique de contenu n'autorise qu'avec ce nonce. #}
+    <meta name="csp-nonce" content="{{ csp_nonce() }}">
+    <title>{% block title %}Administration - Envie de Jouer{% endblock %}</title>
+    <link rel="icon" href="/img/edj-mascotte-transparent.png">
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('app') }}
+    {% endblock %}
+</head>
+<body class="min-h-screen">
+{% block body %}{% endblock %}
+{% block javascripts %}
+    {{ encore_entry_script_tags('app') }}
+{% endblock %}
+</body>
+</html>

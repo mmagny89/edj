@@ -1,0 +1,80 @@
+{#- Theme de formulaire de l'administration : Tailwind seul.
+    Il prolonge form_div_layout et ne redefinit que ce qui change l'aspect ou
+    l'accessibilite. Applique par {% form_theme %} dans les gabarits d'admin
+    uniquement : le bulletin d'adhesion public garde sa propre mise en page. -#}
+{% use 'form_div_layout.html.twig' %}
+
+{%- block form_row -%}
+    {%- set widget_attr = {} -%}
+    {%- if help is not empty -%}
+        {%- set widget_attr = {attr: {'aria-describedby': id ~ '_help'}} -%}
+    {%- endif -%}
+    <div>
+        {{- form_label(form) -}}
+        {{- form_widget(form, widget_attr) -}}
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row -%}
+
+{%- block form_label -%}
+    {%- if label is not same as(false) -%}
+        {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' mb-1.5 block text-sm font-semibold text-slate-800')|trim}) -%}
+        {%- if not compound -%}{%- set label_attr = label_attr|merge({'for': id}) -%}{%- endif -%}
+        {%- if required -%}{%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' required')|trim}) -%}{%- endif -%}
+        <{{ element|default('label') }}{% with {attr: label_attr} %}{{ block('attributes') }}{% endwith %}>
+            {{- label|default(name|humanize) -}}
+            {%- if required %} <span class="text-danger" aria-hidden="true">*</span>{% endif -%}
+        </{{ element|default('label') }}>
+    {%- endif -%}
+{%- endblock form_label -%}
+
+{%- block form_widget_simple -%}
+    {%- set type = type|default('text') -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-base text-slate-900 focus:border-brand ' ~ (errors|length ? 'border-danger' : 'border-slate-300'))|trim}) -%}
+    <input type="{{ type }}" {{ block('widget_attributes') }}{% if value is not empty %} value="{{ value }}"{% endif %}>
+{%- endblock form_widget_simple -%}
+
+{%- block textarea_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' block w-full rounded-lg border bg-white px-3 py-2 text-base text-slate-900 focus:border-brand ' ~ (errors|length ? 'border-danger' : 'border-slate-300'))|trim}) -%}
+    <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
+{%- endblock textarea_widget -%}
+
+{%- block choice_widget_collapsed -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-base text-slate-900 focus:border-brand ' ~ (errors|length ? 'border-danger' : 'border-slate-300'))|trim}) -%}
+    {{- parent() -}}
+{%- endblock choice_widget_collapsed -%}
+
+{%- block checkbox_row -%}
+    <div>
+        <div class="flex items-start gap-3">
+            {{- form_widget(form, {attr: {'aria-describedby': help is not empty ? id ~ '_help' : null}}) -}}
+            {{- form_label(form, null, {label_attr: {class: 'mb-0 font-medium'}}) -}}
+        </div>
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock checkbox_row -%}
+
+{%- block checkbox_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' mt-0.5 size-5 shrink-0 rounded border-slate-300 text-brand')|trim}) -%}
+    <input type="checkbox" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %}>
+{%- endblock checkbox_widget -%}
+
+{%- block form_help -%}
+    {%- if help is not empty -%}
+        <p id="{{ id }}_help" class="mt-1.5 text-sm text-slate-500">
+            {{- help -}}
+        </p>
+    {%- endif -%}
+{%- endblock form_help -%}
+
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        <ul class="mt-1.5 space-y-1 text-sm font-semibold text-danger" role="alert">
+            {%- for error in errors -%}
+                <li>{{ error.message }}</li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+{%- endblock form_errors -%}
