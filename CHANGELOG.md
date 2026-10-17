@@ -35,6 +35,16 @@ GitHub, par `.github/workflows/publication.yml`.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
   `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
+- Gestion des administrateurs (`/admin/utilisateurs`, super-administrateur) :
+  creer un compte avec un mot de passe provisoire affiche une seule fois,
+  bloquer et debloquer, changer le role, reinitialiser un mot de passe. Un
+  compte bloque ne se connecte plus et sa session ouverte est coupee a la
+  requete suivante, de meme qu'apres un changement de role ou de mot de passe.
+  On ne touche pas a son propre compte, et le dernier super-administrateur
+  actif est protege. Chacun change son mot de passe depuis « Mon compte », et
+  doit le faire avant tout autre ecran tant que le sien est provisoire.
+  Migration additive : les comptes existants apparaissent « crees » a la date de
+  la migration.
 - Commande `app:memberships:demo` : bulletins fictifs pour le developpement,
   refusee en production.
 - Refonte de l'administration en Tailwind seul : theme Mosaic et Alpine

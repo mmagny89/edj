@@ -1,0 +1,40 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Nouvel administrateur - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <a href="{{ path('app_users') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+        {{ ui.icon('arrow-left', 'size-4') }} Retour aux administrateurs
+    </a>
+    <h1 class="mt-3 text-3xl font-bold text-ink">Nouvel administrateur</h1>
+    <p class="mt-1 max-w-2xl text-slate-600">
+        Un mot de passe provisoire est généré et affiché une seule fois, à la page suivante : à vous de le
+        transmettre. La personne le change dès sa première connexion.
+    </p>
+
+    <div class="card mt-8 max-w-2xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-6', novalidate: 'novalidate'}}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.email) }}
+            <fieldset>
+                <legend class="mb-2 text-sm font-semibold text-slate-800">Rôle</legend>
+                <div class="space-y-3">
+                    {% for choice in form.role %}
+                        <div class="flex items-start gap-3">
+                            {{ form_widget(choice, {attr: {class: 'mt-1 size-5 shrink-0 border-slate-300 text-brand'}}) }}
+                            {{ form_label(choice, null, {label_attr: {class: 'font-medium'}}) }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.role) }}
+            </fieldset>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" class="btn btn-primary">{{ ui.icon('plus') }} Créer le compte</button>
+                <a href="{{ path('app_users') }}" class="btn btn-secondary">{{ ui.icon('x') }} Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

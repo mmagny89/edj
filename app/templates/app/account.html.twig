@@ -1,0 +1,28 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Mon compte - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Mon compte</h1>
+    <p class="mt-1 text-slate-600">Connecté en tant que <strong>{{ app.user.userIdentifier }}</strong>.</p>
+
+    {% if forced %}
+        <div class="mt-6 max-w-2xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" role="status">
+            Votre mot de passe est provisoire. Choisissez le vôtre pour accéder au reste de l'administration.
+        </div>
+    {% endif %}
+
+    <section class="card mt-8 max-w-2xl p-6" aria-labelledby="titre-mdp">
+        <h2 id="titre-mdp" class="text-lg font-bold text-ink">Changer mon mot de passe</h2>
+        {{ form_start(form, {attr: {class: 'mt-4 space-y-6', novalidate: 'novalidate'}}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.currentPassword) }}
+            {{ form_row(form.newPassword.first) }}
+            {{ form_row(form.newPassword.second) }}
+            <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Changer le mot de passe</button>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

@@ -45,6 +45,7 @@
                          icon: 'calendar'},
                     ] %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}
+                        {% set items = items|merge([{route: 'app_users', label: 'Administrateurs', active: route starts with 'app_user', icon: 'shield'}]) %}
                         {% set items = items|merge([{route: 'app_membership_applications', label: 'Adhésions', active: route == 'app_membership_applications',
                             icon: 'users'}]) %}
                     {% endif %}
@@ -65,7 +66,9 @@
 
                 {# En bas de la barre : qui est connecte, et la deconnexion. #}
                 <form method="post" action="{{ path('app_logout') }}" class="mt-6 border-t border-white/15 pt-4 lg:mt-auto">
-                    <p class="truncate px-3 pb-2 text-xs text-slate-400">{{ app.user.userIdentifier }}</p>
+                    <a href="{{ path('app_account') }}" class="block truncate rounded px-3 pb-2 text-xs text-slate-300 underline underline-offset-2 hover:text-white" {{ route == 'app_account' ? 'aria-current="page"' }}>
+                        {{ app.user.userIdentifier }}<span class="sr-only"> : mon compte</span>
+                    </a>
                     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
                     <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white">
                         {{ ui.icon('logout') }}

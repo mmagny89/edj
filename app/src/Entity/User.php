@@ -4,14 +4,19 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
+    public const ROLE_CONTRIBUTOR = 'ROLE_CONTRIBUTOR';
+
+    public const ROLE_SUPER_ADMIN = 'ROLE_SUPER_ADMIN';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -31,6 +36,126 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $createdAt;
+
+    /**
+     * Date du blocage, nulle tant que le compte est actif. Un compte bloque ne
+     * se connecte plus, et ses sessions ouvertes sont refusees a la requete
+     * suivante (voir isEqualTo()).
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $blockedAt = null;
+
+    /**
+     * Vrai tant que le mot de passe est un mot de passe provisoire, communique
+     * par un administrateur : le compte doit alors le changer avant toute autre
+     * action.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $mustChangePassword = false;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function getBlockedAt(): ?\DateTimeImmutable
+    {
+        return $this->blockedAt;
+    }
+
+    public function isBlocked(): bool
+    {
+        return null !== $this->blockedAt;
+    }
+
+    public function block(?\DateTimeImmutable $now = null): static
+    {
+        $this->blockedAt ??= $now ?? new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function unblock(): static
+    {
+        $this->blockedAt = null;
+
+        return $this;
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return $this->mustChangePassword;
+    }
+
+    public function setMustChangePassword(bool $mustChangePassword): static
+    {
+        $this->mustChangePassword = $mustChangePassword;
+
+        return $this;
+    }
+
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function recordLogin(?\DateTimeImmutable $now = null): static
+    {
+        $this->lastLoginAt = $now ?? new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return \in_array(self::ROLE_SUPER_ADMIN, $this->roles, true);
+    }
+
+    /**
+     * Decide si la session d'un utilisateur est toujours valable : Symfony
+     * recharge l'utilisateur depuis la base a chaque requete et compare.
+     *
+     * Une session est refusee si le compte est bloque, si son mot de passe a
+     * change ou si ses roles ont change. Sans cela, bloquer un compte ne
+     * coupait rien : la personne gardait sa session ouverte, pour de bon.
+     *
+     * Le mot de passe de la session est un condense CRC32C (voir __serialize),
+     * d'ou la comparaison par hash().
+     */
+    public function isEqualTo(UserInterface $user): bool
+    {
+        if (!$user instanceof self || $user->isBlocked()) {
+            return false;
+        }
+
+        if ($this->getUserIdentifier() !== $user->getUserIdentifier()) {
+            return false;
+        }
+
+        $stored = (string) $this->password;
+        $current = (string) $user->getPassword();
+        if ($stored !== $current && !hash_equals($stored, hash('crc32c', $current))) {
+            return false;
+        }
+
+        $mine = $this->getRoles();
+        $theirs = $user->getRoles();
+        sort($mine);
+        sort($theirs);
+
+        return $mine === $theirs;
+    }
 
     public function getId(): ?int
     {
