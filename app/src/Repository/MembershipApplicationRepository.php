@@ -27,4 +27,18 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Supprime les bulletins dont l'adresse se termine par le suffixe donne.
+     * Reserve aux bulletins fictifs : le suffixe est un domaine inexistant.
+     */
+    public function deleteDemo(string $emailSuffix): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->delete()
+            ->where('a.email LIKE :suffix')
+            ->setParameter('suffix', '%'.$emailSuffix)
+            ->getQuery()
+            ->execute();
+    }
 }
