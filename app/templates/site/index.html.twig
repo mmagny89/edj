@@ -66,14 +66,14 @@
                saisie ne peut donc s'echapper de l'attribut. #}
             <div class="event-carousel" data-event-carousel
                  data-events="{{ events|json_encode }}">
-                <div class="calendar-toolbar" aria-label="Filtrer les événements">
-                    <button class="calendar-filter is-active" type="button" data-filter="all">Tous</button>
-                    <button class="calendar-filter" type="button" data-filter="weekly">Mardis</button>
-                    <button class="calendar-filter" type="button" data-filter="monthly">1ers samedis</button>
-                    <button class="calendar-filter" type="button" data-filter="special">Manifestations</button>
+                <div class="calendar-toolbar" role="group" aria-label="Filtrer les événements">
+                    <button class="calendar-filter is-active" type="button" data-filter="all" aria-pressed="true">Tous</button>
+                    <button class="calendar-filter" type="button" data-filter="weekly" aria-pressed="false">Mardis</button>
+                    <button class="calendar-filter" type="button" data-filter="monthly" aria-pressed="false">1ers samedis</button>
+                    <button class="calendar-filter" type="button" data-filter="special" aria-pressed="false">Manifestations</button>
                 </div>
 
-                <div class="carousel-controls" aria-label="Navigation du carrousel">
+                <div class="carousel-controls" role="group" aria-label="Faire défiler les évènements">
                     <button type="button" data-carousel-prev aria-label="Événements précédents">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
                     </button>
@@ -82,7 +82,10 @@
                     </button>
                 </div>
 
-                <div class="event-track" data-event-track aria-live="polite"></div>
+                <p class="sr-only" role="status" data-event-status></p>
+                {# Zone qui defile : focusable pour se parcourir aux fleches du clavier,
+                   et nommee pour qu'on sache ce qu'on y a atteint. #}
+                <div class="event-track" data-event-track tabindex="0" role="region" aria-label="Prochains évènements"></div>
             </div>
         </section>
 
@@ -192,12 +195,12 @@
                     </ol>
                 </div>
 
-                <aside class="games-highlight" aria-labelledby="games-highlight-title">
+                <div class="games-highlight" role="group" aria-labelledby="games-highlight-title">
                     <div class="stat-head">
                         <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
                         <p class="stat-prefix">Environ</p>
                     </div>
-                    <strong class="counter" data-count="1300">0</strong>
+                    <strong class="counter" data-count="1300">1&#8239;300</strong>
                     <h3 id="games-highlight-title">jeux dans les collections de nos membres</h3>
                     <p>
                         L'association n'a pas de ludothèque à elle : ce sont les jeux de ses membres,
@@ -207,10 +210,10 @@
                         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                         <span>
                             Les ludothèques de nos membres sont recensées sur
-                            <a href="https://www.myludo.fr/" target="_blank" rel="noreferrer">MyLudo</a>.
+                            <a href="https://www.myludo.fr/" target="_blank" rel="noopener noreferrer">MyLudo<span class="sr-only"> (nouvel onglet)</span></a>.
                         </span>
                     </p>
-                </aside>
+                </div>
             </div>
 
             <div class="stats-grid" aria-label="Chiffres clés">
@@ -219,7 +222,7 @@
                         <i class="fa-solid fa-seedling" aria-hidden="true"></i>
                         
                     </div>
-                    <strong class="counter" data-count="2023">0</strong>
+                    <strong class="counter" data-count="2023" data-plain>2023</strong>
                     <span>création de l'association</span>
                 </article>
                 <article>
@@ -227,7 +230,7 @@
                         <i class="fa-solid fa-users" aria-hidden="true"></i>
                         
                     </div>
-                    <strong class="counter" data-count="40">0</strong>
+                    <strong class="counter" data-count="40">40</strong>
                     <span>adhérents en moyenne par an</span>
                 </article>
                 <article>
@@ -235,7 +238,7 @@
                         <i class="fa-solid fa-dice" aria-hidden="true"></i>
                         <p class="stat-prefix">Plus de</p>
                     </div>
-                    <strong class="counter" data-count="60">0</strong>
+                    <strong class="counter" data-count="60">60</strong>
                     <span>rencontres par an</span>
                 </article>
                 <article>
@@ -243,7 +246,7 @@
                         <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
                         <p class="stat-prefix">Plus de</p>
                     </div>
-                    <strong class="counter" data-count="150">0</strong>
+                    <strong class="counter" data-count="150">150</strong>
                     <span>événements déjà organisés</span>
                 </article>
             </div>
@@ -390,46 +393,46 @@
                             <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                             Adhérer en ligne
                         </a>
-                        <a href="{{ social_facebook }}" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_facebook }}" target="_blank" rel="noopener noreferrer" class="button button--social">
                             <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
-                            Facebook
+                            Facebook<span class="sr-only"> (nouvel onglet)</span>
                         </a>
-                        <a href="{{ social_instagram }}" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_instagram }}" target="_blank" rel="noopener noreferrer" class="button button--social">
                             <i class="fa-brands fa-instagram" aria-hidden="true"></i>
-                            Instagram
+                            Instagram<span class="sr-only"> (nouvel onglet)</span>
                         </a>
                     </div>
                 </div>
 
-                <aside id="partenaires" class="partners-panel">
+                <section id="partenaires" class="partners-panel" aria-labelledby="partenaires-titre">
                     <p class="eyebrow">Partenaires</p>
-                    <h2>Ils jouent avec nous</h2>
+                    <h2 id="partenaires-titre">Ils jouent avec nous</h2>
                     {# Les logos des partenaires sont servis depuis
                        public/img/partenaires : aucune ressource externe, le
                        site devant rester affichable sans acces a un CDN. #}
                     <div class="partners-list" aria-label="Liste des partenaires">
                         <article>
                             <img src="/img/partenaires/ville-de-joigny.png" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.ville-joigny.fr/" target="_blank" rel="noreferrer">Ville de Joigny</a></span>
+                            <span><a href="https://www.ville-joigny.fr/" target="_blank" rel="noopener noreferrer">Ville de Joigny<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/sens-ludique.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.sensludique.com/" target="_blank" rel="noreferrer">Sens Ludique</a></span>
+                            <span><a href="https://www.sensludique.com/" target="_blank" rel="noopener noreferrer">Sens Ludique<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/ludipassion.png" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://ludipassion.fr/" target="_blank" rel="noreferrer">LudiPassion</a></span>
+                            <span><a href="https://ludipassion.fr/" target="_blank" rel="noopener noreferrer">LudiPassion<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/la-crique-aux-jeux.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noreferrer">La Crique aux jeux</a></span>
+                            <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noopener noreferrer">La Crique aux jeux<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/cartes-sur-table.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.facebook.com/cartessurtable89" target="_blank" rel="noreferrer">Cartes sur table</a></span>
+                            <span><a href="https://www.facebook.com/cartessurtable89" target="_blank" rel="noopener noreferrer">Cartes sur table<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                     </div>
-                </aside>
+                </section>
             </div>
         </section>
     </main>

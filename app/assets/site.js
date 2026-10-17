@@ -38,6 +38,17 @@ const eventTypeIcons = {
   special: 'fa-star',
 };
 
+// Les titres, descriptions et lieux viennent du back-office : ils s'inserent
+// dans du HTML, donc ils s'echappent. Sans cela, un titre contenant « <img
+// onerror=... > » s'executerait chez chaque visiteur du site public.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}[char]));
+
 const formatDate = (date, options = {}) => new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
   day: 'numeric',
@@ -86,6 +97,16 @@ const renderCarousel = (events, filter, today) => {
 
   const upcomingEvents = getUpcomingEvents(events, filter, today);
 
+  // Le nombre d'evenements affiches s'annonce dans une zone de statut : la
+  // piste elle-meme n'est pas « live », qui relirait des dizaines de cartes a
+  // chaque changement de filtre.
+  const status = document.querySelector('[data-event-status]');
+  if (status) {
+    status.textContent = upcomingEvents.length
+      ? `${upcomingEvents.length} évènement${upcomingEvents.length > 1 ? 's' : ''} à venir.`
+      : 'Aucun évènement à venir pour cette sélection.';
+  }
+
   if (!upcomingEvents.length) {
     eventTrack.innerHTML = '<p class="agenda-empty">Aucun événement à venir pour cette sélection.</p>';
     return;
@@ -100,11 +121,11 @@ const renderCarousel = (events, filter, today) => {
         </time>
       </div>
       <div class="event-slide__content">
-        <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${eventTypeLabels[event.type]}</p>
-        <h3>${event.title}</h3>
-        <strong>${formatDate(event.date)} · ${event.time}</strong>
-        ${event.description ? `<small>${event.description}</small>` : ''}
-        ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${event.location}</small>` : ''}
+        <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${escapeHtml(eventTypeLabels[event.type])}</p>
+        <div class="event-slide__title">${escapeHtml(event.title)}</div>
+        <strong>${escapeHtml(formatDate(event.date))} · ${escapeHtml(event.time)}</strong>
+        ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ''}
+        ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(event.location)}</small>` : ''}
       </div>
     </article>
   `).join('');
@@ -132,7 +153,15 @@ const updateNextEvent = (events, today) => {
 const animateCounters = () => {
   const counters = document.querySelectorAll('.counter');
 
+  // Le HTML porte deja la valeur finale (visible sans JavaScript, et lue par
+  // les moteurs de recherche) : l'animation n'est qu'un plus, et seulement
+  // pour qui ne demande pas moins de mouvement.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   counters.forEach((counter) => {
+    counter.innerText = '0';
     const updateCount = () => {
       const target = Number(counter.getAttribute('data-count'));
       const current = Number(counter.innerText.replace(/[^0-9]/g, '')) || 0;
@@ -142,7 +171,8 @@ const animateCounters = () => {
         counter.innerText = Math.min(current + increment, target);
         window.setTimeout(updateCount, 18);
       } else {
-        counter.innerText = target.toLocaleString('fr-FR');
+        // Une annee ne prend pas de separateur de milliers : « 2 023 » est faux.
+        counter.innerText = counter.hasAttribute('data-plain') ? String(target) : target.toLocaleString('fr-FR');
       }
     };
 
@@ -187,7 +217,10 @@ document.addEventListener('turbo:load', () => {
   filters.forEach((filter) => {
     filter.addEventListener('click', () => {
       activeFilter = filter.dataset.filter;
-      filters.forEach((item) => item.classList.toggle('is-active', item === filter));
+      filters.forEach((item) => {
+        item.classList.toggle('is-active', item === filter);
+        item.setAttribute('aria-pressed', String(item === filter));
+      });
       refreshCarousel();
     });
   });
