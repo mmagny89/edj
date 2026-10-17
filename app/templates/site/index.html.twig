@@ -152,29 +152,55 @@
         </section>
 
         <section id="association" class="section association-section">
-            <div class="section__intro">
-                <p class="eyebrow">L'association</p>
-                <h2>Des joueurs et leurs jeux, à Joigny</h2>
-                <p>
-                    Créée en 2023, Envie de Jouer rassemble des passionnés de jeux de société
-                    autour de soirées régulières, d'après-midi ludiques et de manifestations.
-                </p>
-            </div>
-
-            {# L'association n'a pas de ludotheque a elle : le dire en toutes
-               lettres evite qu'on vienne y chercher un pret de jeux. #}
-            <aside class="shared-games" aria-labelledby="shared-games-title">
-                <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+            <div class="association-layout">
                 <div>
-                    <h3 id="shared-games-title">Pas de ludothèque : celle de nos membres</h3>
-                    <p>
-                        L'association ne possède pas de ludothèque. Les jeux qu'on trouve sur les tables
-                        sont ceux de nos membres : chacun apporte des jeux de sa collection et les met à
-                        disposition des autres le temps d'une soirée. Ensemble, cela fait plus de
-                        1&nbsp;300&nbsp;jeux.
-                    </p>
+                    <div class="section__intro">
+                        <p class="eyebrow">L'association</p>
+                        <h2>Une association de joueurs</h2>
+                        <p>
+                            Créée en 2023, Envie de Jouer rassemble à Joigny des passionnés de jeux de société
+                            autour de soirées régulières, d'après-midi ludiques et de manifestations.
+                        </p>
+                    </div>
+
+                    {# L'association n'a pas de ludotheque a elle : les etapes disent
+                       d'ou viennent les jeux, pour qu'on ne vienne pas y chercher un
+                       pret. #}
+                    <h3 class="association-subtitle">Comment ça marche ?</h3>
+                    <ol class="how-steps">
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">1</span>
+                            <div>
+                                <strong>Chacun apporte</strong>
+                                <p>des jeux de sa collection, selon l'envie du jour.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">2</span>
+                            <div>
+                                <strong>On met en commun</strong>
+                                <p>les jeux sont à la disposition de tous, le temps d'une soirée.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">3</span>
+                            <div>
+                                <strong>On joue ensemble</strong>
+                                <p>les membres expliquent les règles, on essaie, on rit, on recommence.</p>
+                            </div>
+                        </li>
+                    </ol>
                 </div>
-            </aside>
+
+                <aside class="games-highlight" aria-labelledby="games-highlight-title">
+                    <strong class="counter" data-count="1300">0</strong>
+                    <h3 id="games-highlight-title">jeux dans les collections de nos membres</h3>
+                    <p>
+                        L'association n'a pas de ludothèque à elle : ce sont les jeux de ses membres,
+                        mis en commun, qui garnissent les tables.
+                    </p>
+                </aside>
+            </div>
 
             <div class="stats-grid" aria-label="Chiffres clés">
                 <article>
@@ -184,10 +210,6 @@
                 <article>
                     <strong class="counter" data-count="70">0</strong>
                     <span>adhérents 2025</span>
-                </article>
-                <article>
-                    <strong class="counter" data-count="1300">0</strong>
-                    <span>jeux dans les collections de nos membres</span>
                 </article>
                 <article>
                     <strong class="counter" data-count="110">0</strong>

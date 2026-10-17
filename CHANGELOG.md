@@ -47,8 +47,8 @@ GitHub, par `.github/workflows/publication.yml`.
 ### Modifie
 
 - Le site ne parle plus d'une ludotheque de l'association, qui n'en a pas :
-  les jeux sont ceux de ses membres, et un encadre de la section
-  « L'association » le dit. Les descriptions par defaut des evenements sont
+  les jeux sont ceux de ses membres, et la section « L'association » le dit
+  (le mode d'emploi en trois etapes, et le chiffre de 1 300 jeux mis en avant). Les descriptions par defaut des evenements sont
   reformulees, et une migration remplace l'ancien texte la ou il n'a pas ete
   reecrit a la main.
 - La zone « Nos rendez-vous » est refaite : une carte par rendez-vous, avec son

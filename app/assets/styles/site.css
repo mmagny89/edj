@@ -635,7 +635,7 @@ h1 {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
 }
 
@@ -1218,40 +1218,103 @@ h1 {
     font-size: 1.05rem;
 }
 
-/* Les jeux viennent des membres : le dire en toutes lettres, dans un cadre qui
-   se remarque, pour qu'on ne cherche pas un pret de jeux a l'association. */
-.shared-games {
-    display: flex;
-    gap: 18px;
-    align-items: flex-start;
-    max-width: 900px;
+/* Section « L'association » : l'histoire et le mode d'emploi a gauche, le
+   chiffre qui compte — les jeux des membres — a droite, en grand. */
+.association-layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: stretch;
     margin-bottom: 34px;
-    padding: 20px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: white;
-    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
 }
 
-.shared-games > i {
+.association-layout .section__intro {
+    margin-bottom: 26px;
+}
+
+.association-subtitle {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+.how-steps {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.how-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 5px 5px 0 rgba(23, 25, 34, 0.14);
+}
+
+.how-steps__number {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 54px;
-    height: 54px;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: var(--yellow);
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.how-steps strong {
+    display: block;
+    font-size: 1.15rem;
+}
+
+.how-steps p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.games-highlight {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(22px, 3vw, 36px);
+    border: 3px solid var(--ink);
     border-radius: 8px;
     background: var(--yellow);
-    font-size: 1.35rem;
+    box-shadow: 8px 8px 0 rgba(23, 25, 34, 0.18);
 }
 
-.shared-games h3 {
-    margin: 0 0 6px;
-    font-size: 1.25rem;
+.games-highlight strong {
+    display: block;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(4.5rem, 9vw, 8rem);
+    line-height: 0.85;
+}
+
+.games-highlight h3 {
+    margin: 20px 0 0;
+    font-size: 1.5rem;
     font-weight: 900;
+    line-height: 1.15;
 }
 
-.shared-games p {
-    margin: 0;
+.games-highlight p {
+    margin: 14px 0 0;
+    padding-top: 14px;
+    border-top: 3px solid var(--ink);
     font-weight: 700;
 }
 
@@ -1261,14 +1324,16 @@ h1 {
     }
 }
 
+@media (max-width: 920px) {
+    .association-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 680px) {
     .rdv-grid,
     .rdv-grid--outside {
         grid-template-columns: 1fr;
-    }
-
-    .shared-games {
-        flex-direction: column;
     }
 }
 
