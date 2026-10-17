@@ -246,7 +246,13 @@
                 </section>
 
                 <section class="membership-band membership-band--join">
-                    <h3>Adhérer</h3>
+                    <div class="membership-band__head">
+                        <h3>Adhérer</h3>
+                        <a href="{{ path('membership_form') }}" class="button button--join">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                            Remplir le bulletin en ligne
+                        </a>
+                    </div>
 
                     <p class="membership-band__label">L'adhésion ouvre :</p>
                     <ul class="membership-perks">
@@ -258,10 +264,6 @@
                         <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
                     </ul>
 
-                    <a href="{{ path('membership_form') }}" class="button button--join">
-                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                        Remplir le bulletin en ligne
-                    </a>
 
                     <p class="membership-band__note">À lire avant d'adhérer :</p>
 

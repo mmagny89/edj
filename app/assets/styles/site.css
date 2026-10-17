@@ -840,6 +840,21 @@ h1 {
     color: var(--red);
 }
 
+/* Titre et bouton sur une ligne, le bouton passant dessous quand la place
+   manque ; le h3 perd sa marge basse, portee par le conteneur. */
+.membership-band__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin-bottom: 18px;
+}
+
+.membership-band__head h3 {
+    margin: 0;
+}
+
 .membership-band__label {
     margin: 0 0 10px;
     font-weight: 900;
