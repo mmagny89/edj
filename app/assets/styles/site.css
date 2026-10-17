@@ -1309,3 +1309,48 @@ h1 {
     margin-top: 4px;
     opacity: 0.75;
 }
+
+/* ---------------------------------------------------------------------------
+   Pages legales
+   ------------------------------------------------------------------------ */
+.legal-page {
+    display: grid;
+    gap: clamp(20px, 3vw, 32px);
+}
+
+.legal-block {
+    max-width: 70ch;
+    padding: clamp(16px, 2.5vw, 24px);
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    background: white;
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.18);
+}
+
+.legal-block h3 {
+    margin: 0 0 12px;
+}
+
+.legal-block p,
+.legal-block ul {
+    margin: 0 0 12px;
+    line-height: 1.6;
+}
+
+.legal-block > :last-child {
+    margin-bottom: 0;
+}
+
+.legal-block ul {
+    padding-left: 1.2em;
+}
+
+.legal-block li + li {
+    margin-top: 6px;
+}
+
+.form-privacy {
+    max-width: 70ch;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}

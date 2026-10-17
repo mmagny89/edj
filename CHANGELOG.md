@@ -8,6 +8,25 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- Pages « Mentions legales » (`/mentions-legales`) et « Donnees personnelles »
+  (`/donnees-personnelles`), reliees depuis le pied de page ; le bulletin
+  d'adhesion porte desormais l'information de collecte exigee par l'article 13
+  du RGPD. Le pied de page renvoyait jusqu'ici vers une page inexistante.
+- Logos reels des cinq partenaires, servis depuis `public/img/partenaires/` et
+  lies a leur site, en remplacement de la mascotte utilisee comme vignette
+  d'attente.
+- Tests du generateur de saison, qui n'en avait aucun.
+
+### Modifie
+
+- Les apres-midi mensuelles tombent desormais le **1er samedi** du mois et non
+  plus le 3e : generation des dates (`SeasonGenerator`), libelles du
+  back-office, du carrousel et de la page d'accueil.
+- Le nombre de Nuits du Jeu annonce sur la page d'accueil passe de trois a
+  quatre, en accord avec le reste de la page.
+
 ### Securite
 
 - Montee de Symfony 8.0 vers 8.1 : la branche 8.0 ne recoit pas de correctif

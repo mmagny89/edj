@@ -109,6 +109,16 @@
                 </button>
                 <a href="{{ path('site_index') }}#adhesion" class="button button--quiet">Retour à l'adhésion</a>
             </div>
+
+            {# Information obligatoire au moment de la collecte (RGPD, art. 13) :
+               elle doit figurer sur le formulaire lui-meme, pas seulement dans
+               le pied de page. #}
+            <p class="form-privacy">
+                Les informations recueillies servent à instruire votre adhésion et à la gestion
+                de l'association. Vous disposez d'un droit d'accès, de rectification et
+                d'effacement : voir la page
+                <a href="{{ path('site_privacy') }}">Données personnelles</a>.
+            </p>
         {{ form_end(form) }}
     </main>
 {% endblock %}
