@@ -22,15 +22,14 @@
 		}
 	}
 
-	# Metriques Prometheus (conventions, section 9b) : c'est cette source,
-	# et non Ember, qu'une supervision doit scruter — Caddy expose de vrais
-	# histogrammes, Ember seulement des moyennes deja agregees. L'option est
+	# Metriques Prometheus (conventions, section 9) : Caddy expose de vrais
+	# histogrammes (percentiles calculables). L'option est
 	# globale ; le handler est servi plus bas sur une ecoute interne :2020,
 	# jamais publiee sur l'hote.
 	metrics
 
 	# API d'administration de Caddy exposee uniquement via un socket Unix
-	# partage avec le conteneur Ember (observabilite) — jamais via un port
+	# partage (volume caddy-admin) — jamais via un port
 	# TCP publie.
 	admin unix//run/caddy/admin.sock
 }
