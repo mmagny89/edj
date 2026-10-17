@@ -44,7 +44,9 @@ class EventRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('e')
-            ->orderBy('e.startsAt', 'DESC')
+            // Du plus proche au plus lointain : la liste s'ouvre sur ce qui arrive,
+            // et les evenements passes, purges chaque nuit, restent en tete.
+            ->orderBy('e.startsAt', 'ASC')
             ->getQuery()
             ->getResult();
     }
