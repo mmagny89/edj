@@ -41,11 +41,8 @@ conception (Mylene Magny, mmagny.fr) figurent dans
   tiers, pas de la page officielle. La **LCEN** demande aussi le **numero de
   telephone** de l'hebergeur : le relever sur la page « Mentions legales » du
   site d'Hostinger et l'ajouter.
-- La page « Donnees personnelles » affirme que les donnees restent **dans
-  l'Union europeenne**. C'est vrai si le VPS est dans un centre de donnees
-  europeen (France, Lituanie, Pays-Bas, Allemagne : oui ; Royaume-Uni, Etats-Unis
-  et le reste du monde : non). A confirmer dans le panneau Hostinger, rubrique du VPS ; sinon,
-  corriger le texte.
+- Le centre de donnees du VPS est **en France** (confirme) : la page « Donnees
+  personnelles » le dit, et aucune donnee ne quitte l'Union europeenne.
 
 ### 0.2 Courriel sortant : Brevo
 
