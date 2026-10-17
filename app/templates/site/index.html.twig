@@ -199,30 +199,46 @@
                 <p class="eyebrow">Adhésion</p>
                 <h2>Rejoindre l'association</h2>
                 <p>
-                    L'adhésion ouvre l'ensemble de nos rendez-vous — soirées du mardi, après-midi du
-                    1er samedi, grands événements de la saison — et l'accès à la vie associative.
+                    Une cotisation par saison, du 1<sup>er</sup> octobre au 30 septembre suivant,
+                    qui ouvre tous nos rendez-vous et l'accès à la vie associative.
                 </p>
             </div>
 
-            <div class="form-actions membership__cta">
-                <a href="{{ path('membership_form') }}" class="button button--join">
-                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                    Remplir le bulletin en ligne
-                </a>
-            </div>
+            {# La section se lit de haut en bas : ce que ca coute, ce que ca
+               ouvre, puis comment adherer. Les trois panneaux cote a cote
+               d'avant se lisaient en parallele, et le bouton d'adhesion
+               flottait au-dessus sans rien conclure. #}
+            <div class="membership__flow">
+                <section class="membership-band membership-band--prices">
+                    <h3>Ce que ça coûte</h3>
 
-            <div class="membership__content">
-                <div class="membership-benefits">
-                    <div class="membership-season">
-                        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-                        <div>
-                            <h3>Saison associative</h3>
-                            <p>Du <strong>1er octobre</strong> au <strong>30 septembre</strong> suivant.</p>
-                        </div>
+                    <div class="price-cards">
+                        <article class="price-card price-card--lead">
+                            <p class="price-card__amount">10 €</p>
+                            <p class="price-card__for">par personne, pour la saison</p>
+                        </article>
+
+                        <article class="price-card">
+                            <p class="price-card__amount">+ 5 €</p>
+                            <p class="price-card__for">par personne supplémentaire du même foyer</p>
+                        </article>
+
+                        <article class="price-card price-card--alt">
+                            <p class="price-card__amount">1 €</p>
+                            <p class="price-card__for">par événement, sans adhérer à l'année</p>
+                        </article>
                     </div>
 
-                    <h3>Ce que l'adhésion permet</h3>
-                    <ul>
+                    <p class="membership-band__note">
+                        La cotisation annuelle vaut pour toute la saison, quel que soit le nombre de venues.
+                        Le règlement se fait sur place, lors d'une de nos soirées.
+                    </p>
+                </section>
+
+                <section class="membership-band">
+                    <h3>Ce que l'adhésion ouvre</h3>
+
+                    <ul class="membership-perks">
                         <li>Les soirées du mardi, de 18h30 à minuit.</li>
                         <li>Les après-midi ludiques du 1er samedi du mois.</li>
                         <li>Les quatre Nuits du Jeu, dont celle de l'anniversaire.</li>
@@ -230,35 +246,17 @@
                         <li>Nos sorties : le festival Le Sens du Jeu et la fête des associations.</li>
                         <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
                     </ul>
-                </div>
+                </section>
 
-                <div class="membership-prices">
-                    <section class="price-group">
-                        <h3>À l'année</h3>
-                        <p class="price-group__note">Valable sur toute la saison, quel que soit le nombre de venues.</p>
-                        <article>
-                            <span>Individuelle</span>
-                            <strong>10 €</strong>
-                        </article>
-                        <article>
-                            <span>Famille</span>
-                            <strong>10 € <small>+ 5 € / pers. suppl.</small></strong>
-                        </article>
-                    </section>
+                <section class="membership-band membership-band--join">
+                    <h3>Adhérer</h3>
 
-                    <section class="price-group price-group--event">
-                        <h3>À l'événement</h3>
-                        <p class="price-group__note">Sans engagement sur l'année, on paie ce à quoi on vient.</p>
-                        <article>
-                            <span>Consommateur</span>
-                            <strong>Gratuite <small>+ 1 € / événement</small></strong>
-                        </article>
-                    </section>
-                </div>
+                    <a href="{{ path('membership_form') }}" class="button button--join">
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                        Remplir le bulletin en ligne
+                    </a>
 
-                <div class="membership-files">
-                    <h3>Documents</h3>
-                    <p class="membership-files__note">À lire avant d'adhérer.</p>
+                    <p class="membership-band__note">À lire avant d'adhérer :</p>
 
                     <ul class="document-links">
                         <li>
@@ -286,7 +284,7 @@
                             </a>
                         </li>
                     </ul>
-                </div>
+                </section>
             </div>
         </section>
 

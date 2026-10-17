@@ -705,129 +705,136 @@ h1 {
     background: var(--cream);
 }
 
-.membership__content {
+/* Les trois bandeaux se lisent de haut en bas : cout, contenu, adhesion.
+   Chacun occupe toute la largeur, pour qu'aucun ne se lise en parallele
+   d'un autre. */
+.membership__flow {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.25fr) minmax(230px, 0.85fr);
     gap: 16px;
-    align-items: stretch;
+    max-width: 1100px;
 }
 
-.membership-benefits,
-.membership-prices,
-.membership-files {
+.membership-band {
+    padding: clamp(20px, 3vw, 30px);
     border: 3px solid var(--ink);
     border-radius: 8px;
+    background: var(--paper);
     box-shadow: 7px 7px 0 rgba(23, 25, 34, 0.18);
 }
 
-.membership-benefits,
-.membership-files {
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    background: var(--paper);
+.membership-band h3 {
+    margin: 0 0 18px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+    line-height: 1;
 }
 
-/* Bandeau interne au bloc "ce que l'adhesion permet", plus une carte de la
-   grille : il tient sur une ligne et laisse une colonne de plus aux
-   cotisations. */
-.membership-season {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding: 14px 16px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--red);
-    color: white;
-}
-
-.membership-season i {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 46px;
-    height: 46px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--yellow);
-    color: var(--ink);
-    font-size: 1.2rem;
-}
-
-.membership-benefits h3,
-.membership-files h3 {
-    margin: 0;
-    font-size: 1.35rem;
-}
-
-.membership-season h3 {
-    margin: 0;
-    font-size: 1.15rem;
-}
-
-.membership-season p {
-    margin: 2px 0 0;
-    font-weight: 700;
-}
-
-.membership-benefits ul {
-    margin: 12px 0 0;
-    font-weight: 700;
-}
-
-.membership-benefits ul {
-    display: grid;
-    gap: 10px;
-    padding-left: 22px;
-    color: var(--muted);
-}
-
-.membership-prices {
-    display: grid;
-    gap: 12px;
+.membership-band--prices {
     background: var(--yellow-soft);
-    padding: 16px;
 }
 
-.membership-prices article {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 82px;
-    padding: 16px;
+.membership-band__note {
+    margin: 18px 0 0;
+    color: #2b3040;
+    font-size: 0.95rem;
+    font-weight: 700;
+    max-width: 68ch;
+}
+
+.price-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+}
+
+.price-card {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 18px 20px;
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: white;
 }
 
-.membership-prices span {
-    font-weight: 900;
-}
-
-.membership-prices strong {
+/* Le tarif de base porte le montant de reference : il est plus grand que le
+   complement par personne, pour que l'ordre de lecture soit "10 €, puis 5 € de
+   plus" et non deux prix de meme poids. */
+.price-card__amount {
+    margin: 0;
     color: var(--blue);
     font-family: "Akaya Kanadaka", cursive;
-    font-size: clamp(2.4rem, 5vw, 4rem);
-    line-height: 0.86;
-    text-align: right;
+    font-size: clamp(2.6rem, 5vw, 3.6rem);
+    line-height: 0.9;
 }
 
-.membership-prices small {
-    display: block;
-    color: var(--ink);
-    font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
-    font-size: 0.82rem;
-    line-height: 1.1;
+.price-card--lead .price-card__amount {
+    font-size: clamp(3.4rem, 7vw, 4.8rem);
 }
 
-.membership-files__note {
-    margin: 8px 0 0;
-    font-size: 0.9rem;
+/* La formule a l'evenement n'est pas une cotisation annuelle : la couleur la
+   detache des deux montants qui s'additionnent. */
+.price-card--alt {
+    background: var(--cream);
+}
+
+.price-card--alt .price-card__amount {
+    color: var(--red-dark);
+}
+
+.price-card__for {
+    margin: 0;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--muted);
+    text-wrap: balance;
+}
+
+/* Deux colonnes par "columns" et non par une grille : la liste garde ses
+   puces natives, qu'une grille supprime. */
+.membership-perks {
+    /* Le preflight de Tailwind retire les puces de toute liste : elles se
+       redeclarent la ou on les veut. */
+    list-style: disc;
+    columns: 2;
+    column-gap: 36px;
+    margin: 0;
+    padding-left: 22px;
+    color: #2b3040;
+    font-weight: 700;
+}
+
+.membership-perks li {
+    margin-bottom: 12px;
+    break-inside: avoid;
+    text-wrap: pretty;
+}
+
+.membership-perks li::marker {
+    color: var(--red);
+}
+
+.membership-band--join .button {
+    width: auto;
+}
+
+/* Les trois documents tiennent sur une ligne : etires sur toute la largeur du
+   bandeau, le titre et l'icone de telechargement se retrouvaient aux deux
+   bouts d'une ligne vide. */
+.membership-band--join .document-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 10px;
+}
+
+@media (max-width: 920px) {
+    .price-cards,
+    .membership-band--join .document-links {
+        grid-template-columns: 1fr;
+    }
+
+    .membership-perks {
+        columns: 1;
+    }
 }
 
 .document-links {
@@ -1006,13 +1013,8 @@ h1 {
 }
 
 @media (max-width: 1180px) {
-    .stats-grid,
-    .membership__content {
+    .stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .membership-files {
-        grid-column: auto;
     }
 }
 
@@ -1078,13 +1080,9 @@ h1 {
 
 @media (max-width: 680px) {
     .stats-grid,
-    .membership__content,
-    .partners-list {
+    .partners-list,
+    .price-cards {
         grid-template-columns: 1fr;
-    }
-
-    .membership-files {
-        grid-column: auto;
     }
 
     .button {
@@ -1315,26 +1313,33 @@ h1 {
    ------------------------------------------------------------------------ */
 .legal-page {
     display: grid;
-    gap: clamp(20px, 3vw, 32px);
+    gap: clamp(16px, 2.5vw, 22px);
 }
 
 .legal-block {
-    max-width: 70ch;
-    padding: clamp(16px, 2.5vw, 24px);
+    max-width: 78ch;
+    padding: clamp(18px, 2.5vw, 28px) clamp(18px, 3vw, 32px);
     border: 3px solid var(--ink);
     border-radius: 10px;
-    background: white;
+    background: var(--paper);
     box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.18);
 }
 
+/* Les titres de section reprennent la police d'affichage du site : sans
+   cela, un h3 sort a la taille par defaut du navigateur et se confond avec
+   le paragraphe qui le suit. */
 .legal-block h3 {
-    margin: 0 0 12px;
+    margin: 0 0 14px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    line-height: 1.05;
 }
 
 .legal-block p,
 .legal-block ul {
-    margin: 0 0 12px;
-    line-height: 1.6;
+    margin: 0 0 14px;
+    color: #2b3040;
+    line-height: 1.65;
 }
 
 .legal-block > :last-child {
