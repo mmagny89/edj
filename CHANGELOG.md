@@ -46,6 +46,14 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Le site ne parle plus d'une ludotheque de l'association, qui n'en a pas :
+  les jeux sont ceux de ses membres, et un encadre de la section
+  « L'association » le dit. Les descriptions par defaut des evenements sont
+  reformulees, et une migration remplace l'ancien texte la ou il n'a pas ete
+  reecrit a la main.
+- La zone « Nos rendez-vous » est refaite : une carte par rendez-vous, avec son
+  rythme (chaque semaine, chaque mois, quatre fois par an, une fois par an) en
+  etiquette, ses horaires, puis les sorties hors de nos murs.
 - Les apres-midi mensuelles tombent desormais le **1er samedi** du mois et non
   plus le 3e : generation des dates (`SeasonGenerator`), libelles du
   back-office, du carrousel et de la page d'accueil.

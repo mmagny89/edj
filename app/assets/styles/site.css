@@ -614,44 +614,6 @@ h1 {
     align-items: start;
 }
 
-.info-board {
-    display: grid;
-    gap: 14px;
-}
-
-.info-board article {
-    display: grid;
-    grid-template-columns: 54px minmax(0, 1fr);
-    column-gap: 16px;
-    padding: 20px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--paper);
-    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
-}
-
-.info-board i {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    border-radius: 8px;
-    background: var(--yellow);
-    font-size: 1.35rem;
-}
-
-.info-board h3 {
-    margin: 0 0 4px;
-    font-size: 1.25rem;
-}
-
-.info-board p {
-    grid-column: 2;
-    margin: 0;
-    color: var(--muted);
-    font-weight: 700;
-}
-
 .association-section {
     position: relative;
     overflow: hidden;
@@ -1175,31 +1137,138 @@ h1 {
     }
 }
 
-/* Rendez-vous de la saison — reutilise .info-board, deja defini plus haut. */
-.rendezvous-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(20px, 3vw, 32px);
-    align-items: start;
-}
-
-.rendezvous-grid__title {
-    margin: 0 0 14px;
+/* Rendez-vous de la saison : une carte par rendez-vous, avec son rythme en
+   etiquette — c'est la premiere chose qu'on cherche (« quand est-ce qu'on se
+   retrouve ? »), avant le titre. */
+.rdv-zone-title {
+    margin: 34px 0 14px;
     font-size: 1.05rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
 }
 
-@media (max-width: 920px) {
-    .rendezvous-grid {
+.rdv-zone-title:first-of-type {
+    margin-top: 0;
+}
+
+.rdv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(14px, 2vw, 22px);
+    align-items: stretch;
+}
+
+.rdv-grid--outside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rdv-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
+}
+
+.rdv-card h4 {
+    margin: 4px 0 0;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.7rem;
+    line-height: 1.05;
+}
+
+.rdv-card p {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.rdv-card__rhythm {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: var(--yellow);
+    color: var(--ink) !important;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rdv-card--monthly .rdv-card__rhythm {
+    background: var(--blue);
+    color: white !important;
+}
+
+.rdv-card--yearly .rdv-card__rhythm {
+    background: var(--red);
+    color: white !important;
+}
+
+.rdv-card--outside .rdv-card__rhythm {
+    background: var(--soft-green);
+}
+
+.rdv-card__when {
+    color: var(--ink) !important;
+    font-size: 1.05rem;
+}
+
+/* Les jeux viennent des membres : le dire en toutes lettres, dans un cadre qui
+   se remarque, pour qu'on ne cherche pas un pret de jeux a l'association. */
+.shared-games {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    max-width: 900px;
+    margin-bottom: 34px;
+    padding: 20px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: white;
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
+}
+
+.shared-games > i {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 8px;
+    background: var(--yellow);
+    font-size: 1.35rem;
+}
+
+.shared-games h3 {
+    margin: 0 0 6px;
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+.shared-games p {
+    margin: 0;
+    font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+    .rdv-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 680px) {
-    .rendezvous-grid {
+    .rdv-grid,
+    .rdv-grid--outside {
         grid-template-columns: 1fr;
+    }
+
+    .shared-games {
+        flex-direction: column;
     }
 }
 

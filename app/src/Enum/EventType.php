@@ -66,8 +66,8 @@ enum EventType: string
     public function defaultDescription(): ?string
     {
         return match ($this) {
-            self::Weekly => 'Une soirée de jeux : tables ouvertes, ludothèque et explications.',
-            self::Monthly => 'Une après-midi de jeux autour de la ludothèque.',
+            self::Weekly => 'Une soirée de jeux : tables ouvertes, jeux apportés par les membres et explications.',
+            self::Monthly => 'Une après-midi de jeux, avec les jeux apportés par les membres.',
             self::Special => null,
         };
     }
