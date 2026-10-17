@@ -7,6 +7,10 @@ parameters:
     app.social.facebook: 'https://www.facebook.com/EnviedeJouer89/'
     app.social.instagram: 'https://www.instagram.com/envie_de_jouer_89/'
 
+    # Le site est-il indexable ? Vient de l'environnement (compose.yml) : 0 sous un
+    # domaine provisoire ou en recette, 1 le jour de la mise en ligne definitive.
+    app.seo.indexable: '%env(bool:SITE_INDEXABLE)%'
+
     # Groupe Facebook des adherents : sa page est publique, l'acces y est
     # soumis a l'approbation d'un administrateur du groupe. Le parametre de suivi
     # « ?ref=share » du lien partage est retire.

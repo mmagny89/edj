@@ -10,23 +10,24 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * robots.txt et sitemap.xml, produits par l'application plutot que figes : les
- * adresses absolues suivent le domaine de la requete, et la recette n'est
- * jamais ouverte aux moteurs de recherche.
+ * adresses absolues suivent le domaine de la requete, et le site ne s'ouvre
+ * aux moteurs de recherche que quand SITE_INDEXABLE le dit.
  */
 final class SeoController extends AbstractController
 {
     public function __construct(
-        #[Autowire('%kernel.environment%')]
-        private readonly string $environment,
+        #[Autowire('%app.seo.indexable%')]
+        private readonly bool $indexable,
     ) {
     }
 
     #[Route('/robots.txt', name: 'seo_robots', methods: ['GET'])]
     public function robots(Request $request): Response
     {
-        // Hors production : tout est interdit. Un domaine de recette indexe
-        // ferait concurrence au vrai site dans les resultats.
-        if ('prod' !== $this->environment) {
+        // Domaine provisoire, recette ou developpement : tout est interdit. Un
+        // domaine provisoire indexe ferait concurrence au vrai site dans les
+        // resultats, avec le meme contenu.
+        if (!$this->indexable) {
             return $this->text("User-agent: *\nDisallow: /\n");
         }
 

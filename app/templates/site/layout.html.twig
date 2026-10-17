@@ -8,9 +8,9 @@
     {% set page_description %}{% block description %}Envie de Jouer, association de jeux de société à Joigny (Yonne) : soirées jeux le mardi, après-midi le 1er samedi, Nuits du Jeu. Adhésion dès 10 € par an.{% endblock %}{% endset %}
     {% set page_title %}{{ block('title') }}{% endset %}
     <meta name="description" content="{{ page_description|striptags|trim }}">
-    {# La recette et le developpement ne s'indexent jamais : seul le domaine de
-       production est visible des moteurs de recherche. #}
-    <meta name="robots" content="{% block robots %}{{ app.environment == 'prod' ? 'index, follow' : 'noindex, nofollow' }}{% endblock %}">
+    {# Seul le domaine definitif est visible des moteurs de recherche : SITE_INDEXABLE
+       vaut 0 en developpement, en recette et sous un domaine provisoire. #}
+    <meta name="robots" content="{% block robots %}{{ site_indexable ? 'index, follow' : 'noindex, nofollow' }}{% endblock %}">
     <link rel="canonical" href="{{ base_url }}{{ app.request.pathInfo }}">
     <meta name="theme-color" content="#a8b7df">
     {# Lu par Turbo pour la feuille de style de sa barre de progression, que la

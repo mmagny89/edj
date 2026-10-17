@@ -5,6 +5,7 @@ twig:
     globals:
         social_facebook: '%app.social.facebook%'
         social_instagram: '%app.social.instagram%'
+        site_indexable: '%app.seo.indexable%'
         social_facebook_group: '%app.social.facebook_group%'
 when@dev:
     twig:

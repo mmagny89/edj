@@ -102,4 +102,46 @@ final class SeoTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(404);
     }
+
+    /**
+     * Le jour de la mise en ligne sous le domaine definitif, SITE_INDEXABLE=1
+     * ouvre le site aux moteurs : pages en « index », robots.txt qui autorise
+     * l'accueil, ferme l'administration et annonce le plan du site.
+     */
+    public function testAnIndexableSiteOpensToSearchEngines(): void
+    {
+        $_SERVER['SITE_INDEXABLE'] = $_ENV['SITE_INDEXABLE'] = '1';
+
+        try {
+            $client = static::createClient();
+            $crawler = $client->request('GET', '/');
+            self::assertSame('index, follow', $crawler->filter('meta[name="robots"]')->attr('content'));
+
+            $client->request('GET', '/robots.txt');
+            $robots = (string) $client->getResponse()->getContent();
+            self::assertStringContainsString("Allow: /\n", $robots);
+            self::assertStringContainsString('Disallow: /admin', $robots);
+            self::assertStringContainsString('Disallow: /login', $robots);
+            self::assertStringContainsString('Sitemap: http://localhost/sitemap.xml', $robots);
+            self::assertStringNotContainsString("Disallow: /\n", $robots);
+        } finally {
+            $_SERVER['SITE_INDEXABLE'] = $_ENV['SITE_INDEXABLE'] = '0';
+            static::ensureKernelShutdown();
+        }
+    }
+
+    public function testThePrivatePagesStayOutOfSearchEnginesEvenOnAnIndexableSite(): void
+    {
+        $_SERVER['SITE_INDEXABLE'] = $_ENV['SITE_INDEXABLE'] = '1';
+
+        try {
+            $client = static::createClient();
+            $client->request('GET', '/login');
+
+            self::assertStringContainsString('noindex', (string) $client->getResponse()->headers->get('X-Robots-Tag'));
+        } finally {
+            $_SERVER['SITE_INDEXABLE'] = $_ENV['SITE_INDEXABLE'] = '0';
+            static::ensureKernelShutdown();
+        }
+    }
 }

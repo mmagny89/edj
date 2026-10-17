@@ -35,6 +35,12 @@ services:
       # est vide, jamais une valeur a recopier. Jamais committe : c'est une
       # invitation, qui donne l'acces a quiconque la detient.
       MEMBERS_WHATSAPP_URL: ${MEMBERS_WHATSAPP_URL-}
+      # Le site se declare-t-il indexable par les moteurs de recherche ? 0 tant
+      # que le domaine definitif n'est pas en service (domaine provisoire :
+      # robots.txt interdit tout et chaque page est en noindex), 1 ensuite.
+      # Facultative, sans « :? » : un oubli laisse le site invisible — le sens
+      # sur — et non un deploiement qui echoue. Repli a 0, jamais a 1.
+      SITE_INDEXABLE: ${SITE_INDEXABLE-0}
       SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     volumes:
       - edj-caddy-data:/data
