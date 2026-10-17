@@ -1,15 +1,17 @@
 # Portes qualite, puis deploiement (conventions, section 22). Un seul
 # fichier : un workflow decrit le chemin de main vers la production.
 #
-# Ordre fail-fast : ce qui echoue vite passe en premier, les etapes Docker
-# (les plus lentes) en dernier.
-name: qualite
+# Une porte = un job, nomme par ce qu'il prouve (skill ci-pipeline-standards).
+# Les portes s'enchainent par cout croissant ; celles qui ne se doivent rien
+# tournent en parallele. Le nom du workflow est le texte du badge du README
+# (badges-readme.md) : il ne se renomme pas.
+name: Qualité et déploiement
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
   # Redeploiement manuel, ou rollback en choisissant un autre commit.
   workflow_dispatch:
 
@@ -23,94 +25,218 @@ permissions:
   contents: read
 
 # Le code applicatif vit dans app/, la racine ne porte que l'infrastructure
-# (conventions, section 1). Le job de deploiement remet "." : il ne travaille
-# que sur les fichiers Compose de la racine.
+# (conventions, section 1). Les jobs qui ne font aucun checkout, ou qui ne
+# travaillent que sur les fichiers de la racine, remettent ".".
 defaults:
   run:
     working-directory: app
 
+# La CI n'utilise pas Docker Compose : rien n'injecte les variables que
+# compose.yml fournit au conteneur. Sans elles, le post-install-cmd de Composer
+# compile le conteneur et echoue sur « Environment variable not found », dans
+# toutes les portes, y compris celles qui ne touchent jamais la base
+# (conventions, sections 8b et 22).
+env:
+  # Suit PHP_VERSION du .env racine, source de verite unique (section 5) :
+  # jamais plus recente que l'image de production. Toute montee de version
+  # touche aussi le defaut de .github/actions/php/action.yml.
+  PHP_VERSION: '8.4'
+  APP_ENV: test
+  APP_SECRET: ci-only-not-a-real-secret
+  DATABASE_URL: postgresql://edj:edj@127.0.0.1:5432/edj?serverVersion=18&charset=utf8
+  MAILER_DSN: null://null
+  SYMFONY_TRUSTED_PROXIES: ''
+
 jobs:
-  php:
-    name: PHP — lint, audit, tests
+  # --- Porte 1 — rien en amont : la moins chere, elle garde les autres.
+  coherence:
+    name: Cohérence du dépôt
     runs-on: ubuntu-latest
-    # La CI n'utilise pas Docker Compose : rien n'injecte les variables que
-    # compose.yml fournit au conteneur. Sans elles, le post-install-cmd de
-    # Composer compile le conteneur et echoue sur « Environment variable not
-    # found », dans tous les jobs (conventions, sections 8b et 22).
-    env:
-      APP_ENV: test
-      APP_SECRET: ci-only-not-a-real-secret
-      DATABASE_URL: postgresql://edj:edj@127.0.0.1:5432/edj_test?serverVersion=18&charset=utf8
-      MAILER_DSN: null://null
-      SYMFONY_TRUSTED_PROXIES: ''
     steps:
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
 
-      # Version PHP : celle du .env racine, source de verite unique
-      # (conventions, section 5). GitHub Actions ne sait pas le lire, d'ou
-      # cette duplication assumee — jamais une version plus recente que celle
-      # de l'image de production.
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          coverage: none
-          tools: composer:v2
-
-      - name: composer validate
-        run: composer validate --no-check-publish
-
-      - uses: ramsey/composer-install@v4
-        with:
-          working-directory: app
-
-      # Vulnerabilites connues des dependances installees. Bloquant : une
-      # faille connue ne doit pas atteindre main.
-      - name: Audit de securite des dependances
-        run: composer audit --locked
+      - name: Coherence de composer.json
+        run: composer validate --strict --no-check-publish
 
       - name: Lint PHP
         run: find src config public -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
 
-      - name: Lint des conteneurs et de la configuration Symfony
+      - name: Lints Symfony
         run: |
           php bin/console lint:yaml config --parse-tags
           php bin/console lint:container
+          php bin/console lint:twig templates
 
-      - name: Lint des templates Twig
-        run: php bin/console lint:twig templates
+  # --- Porte 2 — ne depend de rien : une vulnerabilite connue est vraie que
+  # le code soit propre ou non, et c'est la seule porte dont l'echec peut
+  # exiger une action le jour meme. Bloquante : jamais de « || true ».
+  securite:
+    name: Audit des dépendances
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      - name: Audit des dependances
+        run: composer audit --locked
+
+  # --- Porte 3
+  style:
+    name: Style de code
+    needs: coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      # Une porte ignoree doit se voir sans ouvrir le job : sinon elle le
+      # reste pour toujours. D'ou le resume d'execution, lisible depuis la
+      # pull request.
+      - name: Style du code
+        run: |
+          if [ -x vendor/bin/php-cs-fixer ]; then
+            vendor/bin/php-cs-fixer fix --dry-run --diff
+          else
+            echo "⊘ **Style de code** — PHP CS Fixer absent. L'activer : \`composer require --dev friendsofphp/php-cs-fixer\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "PHP CS Fixer absent — porte ignoree."
+          fi
+
+  # --- Porte 4
+  analyse:
+    name: Analyse statique
+    needs: coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      - name: Analyse statique
+        run: |
+          if [ -x vendor/bin/phpstan ]; then
+            # phpstan-symfony lit le conteneur compile en environnement dev,
+            # chemin fige dans phpstan.neon. La CI tournant en APP_ENV=test,
+            # var/cache/dev n'existe pas sans ce rechauffage et l'analyse
+            # echoue sur « Container ... does not exist ».
+            php bin/console cache:warmup --env=dev
+            vendor/bin/phpstan analyse --no-progress --error-format=github
+          else
+            echo "⊘ **Analyse statique** — PHPStan absent. L'activer : \`composer require --dev phpstan/phpstan\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "PHPStan absent — porte ignoree."
+          fi
+
+  # --- Porte 5 — frontieres entre couches ou modules.
+  frontieres:
+    name: Frontières du code
+    needs: coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      - name: Frontieres du code
+        run: |
+          if [ -x vendor/bin/deptrac ] && [ -f deptrac.yaml ]; then
+            vendor/bin/deptrac analyse --no-progress
+          else
+            echo "⊘ **Frontières du code** — Deptrac non configuré. L'activer : \`composer require --dev deptrac/deptrac\`, puis écrire \`deptrac.yaml\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Deptrac non configure — porte ignoree."
+          fi
+
+  # --- Porte 6 — la plus chere des portes PHP : elle attend que le code soit
+  # propre et analyse avant d'allumer une base de donnees.
+  tests:
+    name: Tests unitaires et d'intégration
+    needs: [style, analyse]
+    runs-on: ubuntu-latest
+    # Suit POSTGRES_VERSION du .env racine, comme PHP_VERSION ci-dessus.
+    services:
+      database:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: edj
+          POSTGRES_PASSWORD: edj
+          POSTGRES_DB: edj
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edj"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      # Le schema de test (suffixe _test de Doctrine) se construit par les
+      # migrations, comme en production. Sans cette etape, tout test qui ecrit
+      # echoue sur « relation ... does not exist ».
+      - name: Base de test
+        run: |
+          php bin/console doctrine:database:create --env=test --if-not-exists --no-interaction
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
 
       # Le repertoire tests/ ne contient pour l'instant que son bootstrap :
-      # l'etape se saute d'elle-meme tant qu'aucun test n'est ecrit, plutot
-      # que d'echouer sur "No tests executed" ou de faire croire a une
-      # couverture qui n'existe pas.
-      - name: PHPUnit
+      # l'etape se saute d'elle-meme tant qu'aucun test n'est ecrit, plutot que
+      # d'echouer sur « No tests executed » ou de faire croire a une couverture
+      # qui n'existe pas. Le resume la rend visible depuis la pull request.
+      - name: Tests
         run: |
           if [ -n "$(find tests -name '*Test.php' -print -quit)" ]; then
             vendor/bin/phpunit
           else
-            echo "::warning title=Aucun test::app/tests/ ne contient aucun *Test.php — etape sautee."
+            echo "⊘ **Tests** — app/tests/ ne contient aucun \`*Test.php\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "Aucun test — porte ignoree."
           fi
 
+  # --- Porte 7 — job distinct, et non une etape du precedent : une suite de
+  # tests construit souvent son schema sans passer par les migrations. Rejouees
+  # sur la meme base, celles-ci echoueraient sur « table ... already exists »,
+  # un faux echec qui ne dit rien de l'etat reel des migrations. Un job separe
+  # recoit une base neuve.
+  migrations:
+    name: Schéma et migrations
+    needs: coherence
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: edj
+          POSTGRES_PASSWORD: edj
+          POSTGRES_DB: edj
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edj"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/php
+
+      - name: Schema en phase avec les entites
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --no-interaction
+          php bin/console doctrine:migrations:migrate --no-interaction
+          php bin/console doctrine:schema:validate
+
+  # --- Porte 8 — build Webpack Encore.
   front:
     name: Front — build Webpack Encore
+    needs: coherence
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
       # Les dependances Composer AVANT celles de npm, comme le fait le stage
-      # prod_builder de l'image. package.json declare
-      # "@symfony/ux-turbo": "file:vendor/symfony/ux-turbo/assets" : sans
+      # prod_builder de l'image : package.json declare
+      # "@symfony/ux-turbo": "file:vendor/symfony/ux-turbo/assets". Sans
       # vendor/, stimulus-bridge echoue a la compilation sur « The file
       # "@symfony/ux-turbo/package.json" could not be found », loin de sa
       # cause.
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          coverage: none
-          tools: composer:v2
-
-      - name: composer install
-        run: composer install --no-dev --no-interaction --no-progress --no-scripts
+      - uses: ./.github/actions/php
 
       - uses: actions/setup-node@v7
         with:
@@ -126,9 +252,10 @@ jobs:
       - name: npm run build
         run: npm run build
 
+  # --- Porte 9 — la plus lente, donc la derniere.
   image:
     name: Image — build du stage prod
-    needs: [php, front]
+    needs: [coherence, front]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -144,8 +271,8 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       # Build seul, jamais de push : l'image de production est construite sur
-      # le serveur, par outils/deployer.sh. Ce job existe pour qu'un
-      # Dockerfile casse se voie ici, et non au milieu d'un deploiement.
+      # le serveur, par outils/deployer.sh. Ce job existe pour qu'un Dockerfile
+      # casse se voie ici, et non au milieu d'un deploiement.
       - name: docker build (stage prod)
         uses: docker/build-push-action@v7
         with:
@@ -161,6 +288,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # --- Agregateur : le seul controle requis par la protection de branche.
+  # Ajouter ou renommer une porte ne casse plus la regle GitHub en silence.
+  portes:
+    name: Portes qualité
+    needs: [coherence, securite, style, analyse, frontieres, tests, migrations, front, image]
+    if: always()
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      # Par env: et non en interpolation directe — un resultat interpole est
+      # recopie dans le corps du script avant execution.
+      - name: Verdict des portes
+        env:
+          RESULTATS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultats : $RESULTATS"
+          case "$RESULTATS" in
+            *failure*|*cancelled*)
+              echo "Au moins une porte qualite a cede." >&2
+              exit 1
+              ;;
+          esac
+          echo "Toutes les portes qualite sont vertes."
+
   # Le deploiement lui-meme vit sur le serveur : outils/deployer.sh, versionne
   # avec le projet, appele par une forced command SSH (conventions, section
   # 22). Ce job n'envoie donc aucune commande — l'argument "prod" est fixe par
@@ -168,7 +321,7 @@ jobs:
   # jamais la machine, et la cle confiee a GitHub ne peut rien lancer d'autre.
   deploiement:
     name: Deploiement en production
-    needs: [php, front, image]
+    needs: portes
     # Jamais sur une demande de fusion : une PR d'un depot tiers deploierait
     # du code non relu.
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'

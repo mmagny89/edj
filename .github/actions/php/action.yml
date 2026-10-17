@@ -1,0 +1,34 @@
+# Preparation commune a toutes les portes qualite : PHP, cache Composer,
+# dependances. Appelee par .github/workflows/qualite.yml.
+name: Préparation PHP
+description: Installe PHP et les dépendances Composer de app/.
+
+inputs:
+  php-version:
+    description: Version de PHP. Suit PHP_VERSION du .env racine.
+    required: false
+    default: '8.4'
+
+runs:
+  using: composite
+  steps:
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        extensions: pdo_pgsql, intl, zip
+        coverage: none
+        tools: composer:v2
+
+    - name: Cache des dependances Composer
+      uses: actions/cache@v4
+      with:
+        path: app/vendor
+        key: composer-${{ runner.os }}-php${{ inputs.php-version }}-${{ hashFiles('app/composer.lock') }}
+        restore-keys: composer-${{ runner.os }}-php${{ inputs.php-version }}-
+
+    # working-directory explicite : les defaults du workflow appelant ne
+    # traversent pas une action composite.
+    - name: Installation des dependances
+      shell: bash
+      working-directory: app
+      run: composer install --prefer-dist --no-progress --no-interaction
