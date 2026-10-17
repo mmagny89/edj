@@ -12,6 +12,7 @@ services:
     image: edj-php:prod
     environment:
       APP_SECRET: ${APP_SECRET:?APP_SECRET est requis en prod (secret applicatif Symfony) — fournir via --env-file .env.prod.local}
+      MAILER_FROM: ${MAILER_FROM:?MAILER_FROM est requis en prod (adresse d'expedition, sur un domaine authentifie chez le fournisseur de courriel) — fournir via --env-file .env.prod.local}
     # Serveur partage : pas de port public direct, Traefik route par
     # domaine sur le reseau partage "proxy" (a creer une fois sur
     # l'hote : docker network create proxy).

@@ -109,6 +109,11 @@ final class MembershipConfirmationEmailTest extends WebTestCase
         $email = $this->confirmation();
 
         self::assertSame($this->email, $email->getTo()[0]->getAddress());
+        // Expediteur : MAILER_FROM, domaine authentifie chez le fournisseur. La
+        // reponse, elle, revient a la boite de l'association.
+        self::assertSame(static::getContainer()->getParameter('app.mailer_from'), $email->getFrom()[0]->getAddress());
+        self::assertNotSame('enviedejouer89300@gmail.com', $email->getFrom()[0]->getAddress(), 'Jamais un expediteur gmail.com : DMARC le refuserait.');
+        self::assertSame('enviedejouer89300@gmail.com', $email->getReplyTo()[0]->getAddress());
         self::assertCount(1, $email->getTo());
 
         $html = (string) $email->getHtmlBody();

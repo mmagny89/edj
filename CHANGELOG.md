@@ -71,6 +71,15 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Mentions legales completees (RNA, SIRET, presidente, hebergeur Hostinger,
+  credit de conception) et signature « Site cree par Mylene Magny » en pied de
+  page ; la page « Donnees personnelles » nomme ses deux sous-traitants,
+  Hostinger et Brevo.
+- Courriels : l'expediteur (`MAILER_FROM`) est separe de l'adresse de contact.
+  Brevo exige un domaine authentifie chez lui et remplace sinon l'expediteur ;
+  une adresse gmail.com ne peut jamais l'etre. L'association continue de
+  recevoir et de repondre sur sa boite habituelle. Variable obligatoire en
+  staging et en production : a declarer dans `.env.prod.local`.
 - Mise en production : procedure complete dans `docs/MISE-EN-PRODUCTION.md`
   (preparation du VPS, premier deploiement, deploiement continu, exploitation,
   bascule d'un domaine provisoire vers le domaine definitif), et trois outils :

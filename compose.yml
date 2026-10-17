@@ -27,6 +27,11 @@ services:
       # Traefik des overrides, via APP_DOMAIN.
       SERVER_NAME: ${SERVER_NAME}
       MAILER_DSN: ${MAILER_DSN}
+      # Adresse d'expedition des courriels du site. Obligatoire en staging et en
+      # production (compose.prod.yml), ou elle doit appartenir a un domaine que
+      # l'association controle : un fournisseur d'envoi (Brevo) refuse ou remplace
+      # l'expediteur d'un domaine qui n'est pas authentifie chez lui.
+      MAILER_FROM: ${MAILER_FROM}
       # Lien d'invitation du groupe WhatsApp des adherents. FACULTATIF : sans lui,
       # l'e-mail de confirmation omet simplement ce lien. Declaree sans « :? »,
       # contrairement aux secrets obligatoires (conventions, section 5) : une

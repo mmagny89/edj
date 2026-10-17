@@ -11,7 +11,7 @@ commandes, avec ce qu'il faut verifier a chaque etape.
 
 | Phase | Quoi | Duree |
 |---|---|---|
-| 0 | Points a regler **avant** de mettre en ligne (mentions legales, courriel) | 30 min |
+| 0 | Points a regler **avant** de mettre en ligne (mentions legales : fait ; courriel Brevo) | 30 min |
 | A | Preparer le VPS : Docker, Traefik, DNS, utilisateur | 30 min |
 | B | Premier deploiement **manuel**, compte administrateur, controles | 30 min |
 | C | Deploiement continu depuis GitHub | 20 min |
@@ -28,41 +28,77 @@ les deux melerait deux sources d'echec, le stack et le dispositif SSH.
 Ce sont des **obligations legales ou des fonctions qui ne marchent pas sans** :
 a regler avant d'annoncer l'adresse a qui que ce soit.
 
-### 0.1 Mentions legales : trois blancs a remplir
+### 0.1 Mentions legales — renseignees
 
-`app/templates/site/legal_notice.html.twig` affiche encore « a completer » pour :
+Le RNA (W893006812), le SIRET (920 202 488 00028), la presidente (Celine
+Gregoire), l'hebergeur (Hostinger International Ltd., Larnaca) et le credit de
+conception (Mylene Magny, mmagny.fr) figurent dans
+`app/templates/site/legal_notice.html.twig`.
 
-| Information | Ou la trouver |
-|---|---|
-| Numero **RNA** (W89...) | Recepisse de declaration en prefecture |
-| Numero **SIRET** | Avis de situation Sirene, s'il existe (sinon retirer la mention) |
-| **Directeur de la publication** | Le president ou la presidente en exercice |
-| **Hebergeur** : raison sociale, adresse, telephone | Le fournisseur du VPS (OVHcloud, Scaleway, Hetzner...) |
+**A verifier par vous**, que je ne peux pas confirmer depuis ici :
 
-Sans ces mentions, le site est en infraction a la LCEN (art. 6) — c'est
-l'hebergeur et l'editeur qui doivent etre identifiables. Les renseigner, committer
-sur `develop`, fusionner dans `main`.
+- L'adresse d'Hostinger vient du registre RIPE et de mentions legales de sites
+  tiers, pas de la page officielle. La **LCEN** demande aussi le **numero de
+  telephone** de l'hebergeur : le relever sur la page « Mentions legales » du
+  site d'Hostinger et l'ajouter.
+- La page « Donnees personnelles » affirme que les donnees restent **dans
+  l'Union europeenne**. C'est vrai si le VPS est dans un centre de donnees
+  europeen (France, Lituanie, Pays-Bas, Allemagne : oui ; Royaume-Uni, Etats-Unis
+  et le reste du monde : non). A confirmer dans le panneau Hostinger, rubrique du VPS ; sinon,
+  corriger le texte.
 
-### 0.2 Courriel sortant : `null://null` n'envoie RIEN
+### 0.2 Courriel sortant : Brevo
 
 Par defaut `MAILER_DSN=null://null` : les messages sont acceptes et **jetes**,
-sans erreur ni journal. Or le site envoie deux courriels a chaque bulletin :
-l'avis au conseil d'administration et la confirmation a l'adherent. Il faut un
-vrai transport SMTP **avant** d'ouvrir le formulaire au public.
+sans erreur ni journal. Le site envoie deux courriels a chaque bulletin (l'avis
+au conseil d'administration, la confirmation a l'adherent) : il faut un vrai
+transport **avant** d'ouvrir le formulaire au public.
 
-Solution la plus simple en attendant un domaine de messagerie : le compte
-`enviedejouer89300@gmail.com` avec un **mot de passe d'application** (Compte
-Google > Securite > Validation en deux etapes > Mots de passe des applications) :
+**Piege : l'adresse d'expedition.** Brevo exige que le domaine de l'expediteur
+soit **authentifie chez lui** (depuis fevrier 2024). Un domaine non authentifie
+voit son expediteur **remplace** par une adresse `brevo...`, et une adresse
+`gmail.com` ne peut jamais l'etre : le domaine n'est pas a vous. Le site separe
+donc deux adresses :
+
+| Variable | Role | Valeur |
+|---|---|---|
+| `MAILER_FROM` | **Expediteur** des courriels du site | une adresse sur un domaine authentifie dans Brevo |
+| (`app.contact_email`) | Destinataire des avis, adresse de **reponse** | `enviedejouer89300@gmail.com` (inchange) |
+
+L'adherent recoit donc un courriel de `MAILER_FROM`, et sa reponse arrive dans
+la boite Gmail de l'association.
+
+**Dans Brevo** (Parametres > Expediteurs, domaines et IP dédiées) :
+
+1. **Domaines** > ajouter le domaine d'expedition : `mmagny.fr` en attendant,
+   puis `enviedejouer89.fr` (phase E). Brevo donne des enregistrements DNS a
+   creer chez le registrar : un TXT de verification (`brevo-code:...`), le
+   **DKIM**, et on y ajoute un **DMARC** (`v=DMARC1; p=none; rua=mailto:...`
+   suffit pour commencer). Attendre que Brevo affiche « Authentifie ».
+2. **Expediteurs** > ajouter l'adresse choisie (`noreply@mmagny.fr`, par
+   exemple) — elle n'a pas besoin d'exister comme boite de reception.
+3. **Securite > Adresses IP autorisees** : sur les comptes recents, Brevo refuse
+   les connexions d'une IP inconnue (« unauthorized: IP not authorized ») :
+   **ajouter l'IP du VPS**.
+4. **SMTP et API > SMTP** : relever le serveur `smtp-relay.brevo.com`, le port
+   `587` et le **login** ; generer une **cle SMTP** (elle n'est affichee qu'une
+   fois).
+
+**Dans `.env.prod.local`** (phase B.2) :
 
 ```
-MAILER_DSN=smtp://enviedejouer89300%40gmail.com:MOT_DE_PASSE_APPLICATION@smtp.gmail.com:587
+MAILER_FROM=noreply@mmagny.fr
+MAILER_DSN=smtp://LOGIN_BREVO:CLE_SMTP@smtp-relay.brevo.com:587
 ```
 
-(le `@` de l'adresse s'ecrit `%40`). Limites : ~500 messages par jour, et
-l'expediteur est forcement cette adresse Gmail — c'est deja celle que le site
-utilise. A terme, une adresse `contact@enviedejouer89.fr` chez le registrar ou
-chez un fournisseur transactionnel (Brevo, Mailjet...) sera plus propre : voir
-phase E.
+Si le login ou la cle contiennent `@`, `/`, `+` ou `:`, les encoder en
+pourcentage (`@` devient `%40`). Le transport generique `smtp://` suffit : le
+paquet `symfony/brevo-mailer` (`brevo+smtp://`) n'est pas installe.
+
+L'offre gratuite de Brevo est limitee a ~300 courriels par jour, largement
+au-dessus des besoins d'une association. Apres les premiers envois, controler
+dans Brevo > Transactionnel > Journaux que les messages sont **delivres**, pas
+seulement « envoyes ».
 
 ### 0.3 Lien du groupe WhatsApp (facultatif)
 
@@ -72,35 +108,59 @@ Ce lien **ne va jamais dans le depot** (public).
 
 ---
 
-## Phase A — Preparer le VPS
+## Phase A — Le VPS existant
 
-A faire une fois, sur la machine. Le reste du document suppose Debian/Ubuntu.
+Le VPS (Hostinger) tourne deja avec Docker et un **Traefik partage** qui sert
+d'autres sites. Il n'y a donc **rien a installer** : on verifie que le stack
+pourra s'y brancher, **sans modifier ce qui existe**.
 
-### A.1 Systeme
+> Ne touchez ni a la configuration de Traefik, ni au pare-feu, ni aux autres
+> projets : un Traefik partage est un point sensible, et ce dossier ne demande
+> aucune modification de ces elements.
 
-```sh
-apt update && apt upgrade -y
-apt install -y git curl ufw fail2ban unattended-upgrades
-dpkg-reconfigure -plow unattended-upgrades        # mises a jour de securite automatiques
-```
-
-Pare-feu : n'ouvrir que SSH, HTTP et HTTPS.
+### A.1 Ce qui doit deja etre vrai
 
 ```sh
-ufw default deny incoming && ufw default allow outgoing
-ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp
-ufw enable
+docker --version && docker compose version     # Docker et le plugin Compose
+docker network ls | grep proxy                 # le reseau de Traefik (nom a relever)
+sudo ufw status | head -5                      # 80 et 443 ouverts (deja le cas : d'autres sites y sont)
 ```
 
-SSH : cle uniquement, pas de connexion root par mot de passe
-(`PasswordAuthentication no`, `PermitRootLogin prohibit-password` dans
-`/etc/ssh/sshd_config`, puis `systemctl reload ssh`). **Garder une session
-ouverte** pendant le test d'une seconde connexion.
+### A.2 Relever la configuration de Traefik
 
-### A.2 Docker et utilisateur de deploiement
+Trois valeurs dont `compose.prod.yml` depend, qui **se constatent** : le nom du
+reseau, de l'entrypoint HTTPS, du resolveur ACME.
 
-Installer Docker Engine + le plugin Compose (documentation officielle de Docker),
-puis un utilisateur dedie, membre du groupe `docker`, proprietaire du clone :
+```sh
+# apres le clone (phase B.1), ou en copiant le script sur le serveur
+sh outils/diagnostic-traefik.sh
+```
+
+Le script lit les arguments de Traefik, ses variables, son fichier statique et
+**les etiquettes des sites deja routes** — la source la plus sure. Comparer au
+projet :
+
+| Dans `compose.prod.yml` | Doit valoir (relever sur un site voisin) |
+|---|---|
+| `traefik.http.routers.edj-prod.entrypoints` | `websecure` ? |
+| `traefik.http.routers.edj-prod.tls.certresolver` | `letsencrypt` ? |
+| `PROXY_NETWORK` (dans `.env.prod.local`) | `proxy` ? |
+
+Si un nom differe, **corriger `compose.prod.yml`** (ou `PROXY_NETWORK`) avant le
+premier deploiement : un label que Traefik ignore ne produit **aucune erreur** —
+le site ne repond pas, et les journaux du conteneur sont muets.
+
+### A.3 DNS
+
+`edj.mmagny.fr` est deja cree. Verifier depuis un autre poste :
+
+```sh
+dig +short edj.mmagny.fr      # doit afficher l'IP du VPS
+```
+
+### A.4 Utilisateur de deploiement
+
+Si un utilisateur dedie n'existe pas deja pour les autres projets :
 
 ```sh
 adduser --disabled-password --gecos "" deploiement
@@ -108,41 +168,9 @@ usermod -aG docker deploiement
 mkdir -p /srv/sauvegardes && chown deploiement: /srv/sauvegardes
 ```
 
-`root` fonctionnerait, mais une cle qui fuite s'executerait avec les droits les
-plus eleves de la machine : l'utilisateur dedie limite la portee.
-
-### A.3 DNS
-
-Chez le registrar de `mmagny.fr`, un enregistrement **A** (et **AAAA** si le VPS
-a une IPv6) :
-
-```
-edj.mmagny.fr.   A   <IP du VPS>
-```
-
-Verifier la propagation depuis un autre poste : `dig +short edj.mmagny.fr`.
-Let's Encrypt echouera tant que le DNS ne pointe pas sur le serveur.
-
-### A.4 Traefik
-
-Le deploiement suppose un Traefik **deja en service** sur le reseau Docker
-`proxy`, avec un entrypoint `websecure` et un resolveur ACME `letsencrypt`
-(les noms que les labels de `compose.prod.yml` utilisent). Ils se **constatent**,
-ils ne se devinent pas :
-
-```sh
-docker network create proxy 2>/dev/null || true
-sh outils/diagnostic-traefik.sh     # apres le clone (phase B.1), ou en copiant le script
-```
-
-Si les noms different (`https`, `le`...), les corriger dans
-`compose.prod.yml` (labels `entrypoints` et `tls.certresolver`) **avant** le
-premier deploiement : une generation qui les invente produit des labels que le
-proxy ignore en silence — le site ne repond pas et rien n'apparait dans les
-journaux du conteneur.
-
-Si aucun Traefik n'existe : en installer un (redirection HTTP→HTTPS globale,
-ACME HTTP-01, reseau `proxy`) est un prealable a part entiere.
+S'il existe (un utilisateur du groupe `docker` propre a ce projet), le reutiliser
+convient. `root` fonctionnerait, mais une cle qui fuite s'executerait avec les
+droits les plus eleves de la machine.
 
 ---
 
@@ -183,7 +211,8 @@ et demande le reste. Valeurs :
 | `SERVER_NAME` | `:80` (deja pose — ne pas y mettre le domaine) |
 | `SYMFONY_TRUSTED_PROXIES` | `private_ranges` (deja pose) |
 | `SITE_INDEXABLE` | `0` — **le domaine est provisoire** : `robots.txt` interdit tout et chaque page est en `noindex` |
-| `MAILER_DSN` | le DSN SMTP de la phase 0.2 (a editer **a la main** apres le script : il est pre-rempli a `null://null`) |
+| `MAILER_FROM` | l'adresse d'expedition de la phase 0.2 (`noreply@mmagny.fr` en attendant) — le script la demande |
+| `MAILER_DSN` | le DSN Brevo de la phase 0.2 (a editer **a la main** apres le script : il est pre-rempli a `null://null`) |
 | `MEMBERS_WHATSAPP_URL` | le lien d'invitation, ou vide |
 
 Puis controler :
@@ -268,17 +297,46 @@ Le second affiche les **quatre secrets** a coller dans GitHub. La cle privee
 n'est jamais affichee au terminal : le script indique le `cat` a lancer au
 moment de la coller.
 
-### C.2 Cote GitHub
+### C.2 Cote GitHub — pas a pas
 
-1. **Settings > Secrets and variables > Actions** : `DEPLOIEMENT_HOTE`,
-   `DEPLOIEMENT_UTILISATEUR`, `DEPLOIEMENT_CLE_PRIVEE`, `DEPLOIEMENT_KNOWN_HOSTS`.
-   `DEPLOIEMENT_HOTE` doit etre **l'adresse exacte** utilisee a la generation de
-   `known_hosts` (une IP et un nom sont deux entrees distinctes).
-2. **Settings > Environments** : creer l'environnement **`production`** (le
-   workflow le reference). Option : exiger une validation manuelle avant chaque
-   deploiement.
-3. **Settings > Branches > Protection de `main`** : exiger le controle
-   `Portes qualite (agregateur)` avant fusion, interdire le push direct.
+Depot : `github.com/mmagny89/edj`. Les reglages se trouvent dans l'onglet
+**Settings** (il faut etre proprietaire du depot).
+
+**1. Les quatre secrets** — *Settings > Secrets and variables > Actions >
+Secrets > New repository secret*. Les valeurs sortent de
+`installer-deploiement.sh projet prod` (C.1) ; un secret par entree, nom exact :
+
+| Secret | Contenu |
+|---|---|
+| `DEPLOIEMENT_HOTE` | L'adresse de connexion SSH du VPS — la **meme** que celle utilisee pour generer `known_hosts` (une IP et un nom sont deux entrees distinctes) |
+| `DEPLOIEMENT_UTILISATEUR` | `deploiement` (ou l'utilisateur retenu en A.4) |
+| `DEPLOIEMENT_CLE_PRIVEE` | La cle privee **entiere**, lignes `-----BEGIN` et `-----END` comprises, sans ligne en trop |
+| `DEPLOIEMENT_KNOWN_HOSTS` | L'empreinte du serveur, une ligne |
+
+Une valeur oubliee n'est pas signalee par GitHub (secret vide) : le workflow
+controle leur presence avant de s'en servir et nomme ceux qui manquent.
+
+**2. L'environnement `production`** — *Settings > Environments > New
+environment* > nom exact `production`. Le workflow le reference : sans lui, le
+job echoue ou en cree un vide. Option recommandee : cocher **Required
+reviewers** et vous designer — chaque deploiement attend alors votre clic
+« Approve », ce qui evite qu'une fusion distraite parte en ligne.
+
+**3. La protection de `main`** — *Settings > Branches > Add branch protection
+rule* > pattern `main` :
+
+- **Require a pull request before merging** ;
+- **Require status checks to pass before merging**, puis chercher et cocher
+  **`Portes qualité`** (le job agregateur du workflow ; il n'apparait dans la
+  liste qu'apres une premiere execution du workflow) ;
+- **Do not allow bypassing the above settings**.
+
+Un seul controle requis : ajouter ou renommer une porte ne casse plus la regle.
+
+**4. Les actions GitHub** — *Settings > Actions > General* : « Allow all
+actions » ou « Allow actions created by GitHub + verified creators », et
+« Workflow permissions » en lecture seule (le workflow n'ecrit pas dans le
+depot).
 
 ### C.3 Premier essai automatique
 
@@ -373,8 +431,10 @@ Si l'association veut `contact@enviedejouer89.fr` :
    fournisseur) : sans eux, les confirmations d'adhesion finissent en
    indesirables. Un sous-domaine n'herite pas de l'authentification de son
    parent cote fournisseur.
-3. Changer `app.contact_email` dans `app/config/services.yaml`, le `MAILER_DSN`
-   dans `.env.prod.local`, et l'adresse affichee sur le site
+3. Authentifier `enviedejouer89.fr` dans Brevo (phase 0.2, etape Domaines),
+   passer `MAILER_FROM` a `contact@enviedejouer89.fr` dans `.env.prod.local`
+   et, si la boite devient l'adresse de contact, changer `app.contact_email` dans
+   `app/config/services.yaml` ainsi que l'adresse affichee sur le site
    (`app/templates/site/index.html.twig`, `legal_notice.html.twig`,
    `privacy.html.twig`). Committer, fusionner.
 
@@ -466,7 +526,8 @@ redeployer. Le TTL bas de la veille rend le DNS reversible en quelques minutes.
 | `POSTGRES_PASSWORD` | oui | Mot de passe de la base — lu a la **creation** du cluster seulement |
 | `SERVER_NAME` | oui | `:80` — jamais le domaine |
 | `SYMFONY_TRUSTED_PROXIES` | oui | `private_ranges` derriere Traefik |
-| `MAILER_DSN` | non | Transport des courriels ; `null://null` n'envoie rien |
+| `MAILER_FROM` | **oui** | Expediteur des courriels : adresse sur un domaine authentifie dans Brevo (phase 0.2) |
+| `MAILER_DSN` | non | Transport des courriels ; `null://null` n'envoie rien. Brevo : `smtp://LOGIN:CLE@smtp-relay.brevo.com:587` |
 | `MEMBERS_WHATSAPP_URL` | non | Lien du groupe WhatsApp, dans le courriel de confirmation |
 | `SITE_INDEXABLE` | non | `0` (defaut) : invisible des moteurs ; `1` : ouvert |
 | `ANCIEN_DOMAINE` | non | Active la redirection 301 de l'ancien domaine |

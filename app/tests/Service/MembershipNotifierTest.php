@@ -37,7 +37,7 @@ final class MembershipNotifierTest extends KernelTestCase
             new InMemoryStorage(),
         );
 
-        return [new MembershipNotifier($mailer, static::getContainer()->get('twig'), $limiter, 'asso@example.test', ''), $sent];
+        return [new MembershipNotifier($mailer, static::getContainer()->get('twig'), $limiter, 'asso@example.test', 'noreply@example.test', ''), $sent];
     }
 
     private function application(string $email): MembershipApplication

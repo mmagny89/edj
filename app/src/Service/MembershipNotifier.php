@@ -27,6 +27,8 @@ final class MembershipNotifier
         private readonly RateLimiterFactoryInterface $membershipConfirmationEmailLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
+        #[Autowire('%app.mailer_from%')]
+        private readonly string $mailerFrom,
         // Lien du groupe WhatsApp : passe au seul gabarit du courriel, jamais
         // expose en variable globale Twig, donc jamais rendu sur une page.
         #[Autowire('%app.social.members_whatsapp%')]
@@ -37,7 +39,7 @@ final class MembershipNotifier
     public function notifyBoard(MembershipApplication $application): void
     {
         $email = (new Email())
-            ->from(new Address($this->contactEmail, 'Site Envie de Jouer'))
+            ->from(new Address($this->mailerFrom, 'Site Envie de Jouer'))
             ->to($this->contactEmail)
             // L'adresse saisie sert de "repondre a", jamais d'expediteur :
             // usurper le From ferait tomber le message dans les indesirables.
@@ -82,7 +84,7 @@ final class MembershipNotifier
         ];
 
         $email = (new Email())
-            ->from(new Address($this->contactEmail, 'Envie de Jouer'))
+            ->from(new Address($this->mailerFrom, 'Envie de Jouer'))
             ->to(...$recipients)
             ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
             ->subject('Bienvenue à Envie de Jouer : votre bulletin est bien reçu')
