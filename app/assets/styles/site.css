@@ -1788,7 +1788,7 @@ html[data-contrast="high"] .how-steps p {
     cursor: pointer;
 }
 
-.contrast-toggle[aria-pressed="true"] {
+.contrast-toggle[aria-expanded="true"] {
     background: var(--ink);
     color: white;
 }
@@ -1932,4 +1932,113 @@ html[data-contrast="high"] .how-steps p {
 .form-required-note {
     margin: 0 0 18px;
     font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Reglages d'accessibilite : panneau et options
+   ------------------------------------------------------------------------ */
+.a11y-menu {
+    position: relative;
+}
+
+.a11y-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 70;
+    width: min(340px, calc(100vw - 32px));
+    padding: 16px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.2);
+}
+
+.a11y-panel[hidden] {
+    display: none;
+}
+
+.a11y-panel__title {
+    margin: 0 0 8px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.4rem;
+}
+
+.a11y-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 2px solid rgba(23, 25, 34, 0.12);
+    cursor: pointer;
+}
+
+.a11y-option span {
+    display: grid;
+    gap: 1px;
+}
+
+.a11y-option small {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.a11y-option input {
+    appearance: none;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    margin-top: 1px;
+    border: 3px solid var(--ink);
+    border-radius: 7px;
+    background: white;
+    cursor: pointer;
+}
+
+.a11y-option input:checked {
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 80% no-repeat;
+}
+
+.a11y-option input:focus-visible {
+    outline: 3px solid var(--red);
+    outline-offset: 3px;
+}
+
+.a11y-reset {
+    margin-top: 6px;
+    padding: 8px 14px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* Texte plus grand : tout ce qui est en rem suit. */
+html[data-text="large"] {
+    font-size: 120%;
+}
+
+/* Liens soulignes : l'information ne repose plus sur la couleur seule. */
+html[data-links="underline"] a:not(.button):not(.brand):not(.skip-link) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* Sans animation : meme effet que la preference systeme, a la demande. */
+html[data-motion="reduce"] {
+    scroll-behavior: auto;
+}
+
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
 }

@@ -71,10 +71,13 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
-- Mode « contraste renforce » du site public : un bouton de l'en-tete (et la
-  preference systeme « contraste eleve ») remplace le rouge de la charte, a
-  3,15:1 sous du texte blanc, par un rouge a plus de 5:1. La charte reste
-  intacte par defaut. Un lien d'evitement est ajoute.
+- Reglages d'accessibilite du site public : un bouton d'en-tete ouvre un panneau
+  de quatre options, memorisees dans le navigateur — contraste renforce (le
+  rouge de la charte, a 3,15:1 sous du texte blanc, passe a un rouge a plus de
+  5:1 ; la preference systeme « contraste eleve » l'active d'office), texte
+  20 % plus grand, liens soulignes, sans animation —, avec un bouton pour tout
+  reinitialiser. La charte reste intacte par defaut. Un lien d'evitement est
+  ajoute.
 - Referencement : description, URL canonique, Open Graph et Twitter sur chaque
   page, donnees structurees schema.org (l'association et ses dix prochains
   evenements), `robots.txt` et `sitemap.xml` generes par l'application, image de

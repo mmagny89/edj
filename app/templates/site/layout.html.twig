@@ -63,14 +63,39 @@
             <a href="{{ path('site_index') }}#adhesion">Adhésion</a>
             <a href="{{ path('site_index') }}#partenaires">Partenaires</a>
             <a href="{{ path('site_index') }}#contact">Contact</a>
-            {# Mode accessible : le rouge de la charte, trop clair sous du texte
-               blanc, passe a un rouge plus fonce. Masque sans JavaScript, qui
-               est ce qui le fait fonctionner. #}
-            <button type="button" class="contrast-toggle" hidden aria-pressed="false" data-contrast-toggle
-                    data-tooltip="Contraste renforcé">
-                <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
-                <span class="sr-only">Contraste renforcé</span>
-            </button>
+            {# Reglages d'accessibilite : un bouton qui ouvre un panneau de quatre
+               options, memorisees dans le navigateur. Cache sans JavaScript, qui
+               est ce qui les fait fonctionner. #}
+            <div class="a11y-menu" data-a11y-menu hidden>
+                <button type="button" class="contrast-toggle" aria-expanded="false" aria-controls="a11y-panel"
+                        data-tooltip="Accessibilité" data-a11y-button>
+                    <i class="fa-solid fa-universal-access" aria-hidden="true"></i>
+                    <span class="sr-only">Réglages d'accessibilité</span>
+                </button>
+
+                <div id="a11y-panel" class="a11y-panel" role="group" aria-labelledby="a11y-title" hidden>
+                    <p id="a11y-title" class="a11y-panel__title">Réglages d'accessibilité</p>
+
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="contrast">
+                        <span><strong>Contraste renforcé</strong><small>Rouges plus foncés, textes plus noirs</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="text">
+                        <span><strong>Texte plus grand</strong><small>Agrandit tous les textes de 20 %</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="links">
+                        <span><strong>Liens soulignés</strong><small>Les liens se distinguent sans la couleur</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="motion">
+                        <span><strong>Sans animation</strong><small>Plus de défilement doux ni de compteurs animés</small></span>
+                    </label>
+
+                    <button type="button" class="a11y-reset" data-a11y-reset>Réinitialiser</button>
+                </div>
+            </div>
         </nav>
     </header>
 

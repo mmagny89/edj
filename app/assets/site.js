@@ -167,7 +167,8 @@ const animateCounters = () => {
   // Le HTML porte deja la valeur finale (visible sans JavaScript, et lue par
   // les moteurs de recherche) : l'animation n'est qu'un plus, et seulement
   // pour qui ne demande pas moins de mouvement.
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    || document.documentElement.dataset.motion === 'reduce') {
     return;
   }
 
@@ -263,51 +264,114 @@ document.addEventListener('turbo:load', () => {
 });
 
 
-// Contraste renforce : preference memorisee dans le navigateur, appliquee sur
-// <html>. Le bouton est cache dans le HTML et revele ici. L'etat est relu a
-// chaque navigation Turbo, qui remplace le corps de la page.
-const CONTRAST_KEY = 'edj-contrast';
+// Reglages d'accessibilite : quatre options, memorisees ensemble dans le
+// navigateur et appliquees sur <html> (data-contrast, data-text, data-links,
+// data-motion), que le CSS lit. L'etat est relu a chaque navigation Turbo, qui
+// remplace le corps de la page.
+const A11Y_KEY = 'edj-a11y';
+const A11Y_ATTRIBUTES = {
+  contrast: ['data-contrast', 'high'],
+  text: ['data-text', 'large'],
+  links: ['data-links', 'underline'],
+  motion: ['data-motion', 'reduce'],
+};
 
-const readContrast = () => {
+const readA11y = () => {
   try {
-    return window.localStorage.getItem(CONTRAST_KEY);
+    return JSON.parse(window.localStorage.getItem(A11Y_KEY) || '{}');
   } catch (error) {
-    return null;
+    return {};
   }
 };
 
-const applyContrast = (value) => {
-  if (value === 'high' || value === 'normal') {
-    document.documentElement.dataset.contrast = value;
-  } else {
-    delete document.documentElement.dataset.contrast;
+const writeA11y = (state) => {
+  try {
+    window.localStorage.setItem(A11Y_KEY, JSON.stringify(state));
+  } catch (error) {
+    // Navigation privee : le choix vaut pour la page, sans etre memorise.
   }
 };
 
-applyContrast(readContrast());
+// « Contraste eleve » demande au systeme : actif tant que le visiteur n'a pas
+// choisi lui-meme.
+const systemWantsContrast = () => window.matchMedia('(prefers-contrast: more)').matches;
+
+const applyA11y = (state) => {
+  Object.entries(A11Y_ATTRIBUTES).forEach(([option, [attribute, value]]) => {
+    const active = option === 'contrast' && state.contrast === undefined
+      ? systemWantsContrast()
+      : Boolean(state[option]);
+    if (active) {
+      document.documentElement.setAttribute(attribute, value);
+    } else if (option === 'contrast' && state.contrast === false) {
+      // Refus explicite : « normal » l'emporte sur la preference systeme que le
+      // CSS lirait sinon, l'attribut absent la laissant s'appliquer.
+      document.documentElement.setAttribute(attribute, 'normal');
+    } else {
+      document.documentElement.removeAttribute(attribute);
+    }
+  });
+};
+
+applyA11y(readA11y());
 
 document.addEventListener('turbo:load', () => {
-  applyContrast(readContrast());
+  const state = readA11y();
+  applyA11y(state);
 
-  const toggle = document.querySelector('[data-contrast-toggle]');
-  if (!toggle) {
+  const menu = document.querySelector('[data-a11y-menu]');
+  if (!menu) {
     return;
   }
 
-  toggle.hidden = false;
-  const isHigh = () => document.documentElement.dataset.contrast === 'high'
-    || (document.documentElement.dataset.contrast === undefined
-      && window.matchMedia('(prefers-contrast: more)').matches);
-  toggle.setAttribute('aria-pressed', String(isHigh()));
+  menu.hidden = false;
+  const button = menu.querySelector('[data-a11y-button]');
+  const panel = menu.querySelector('.a11y-panel');
+  const boxes = [...menu.querySelectorAll('[data-a11y-option]')];
 
-  toggle.addEventListener('click', () => {
-    const next = isHigh() ? 'normal' : 'high';
-    applyContrast(next);
-    toggle.setAttribute('aria-pressed', String(next === 'high'));
-    try {
-      window.localStorage.setItem(CONTRAST_KEY, next);
-    } catch (error) {
-      // Navigation privee : le choix vaut pour la page, sans etre memorise.
+  const sync = () => {
+    const current = readA11y();
+    boxes.forEach((box) => {
+      const option = box.dataset.a11yOption;
+      box.checked = option === 'contrast' && current.contrast === undefined
+        ? systemWantsContrast()
+        : Boolean(current[option]);
+    });
+  };
+  sync();
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+  };
+
+  button.addEventListener('click', () => setOpen(panel.hidden));
+
+  boxes.forEach((box) => {
+    box.addEventListener('change', () => {
+      const next = readA11y();
+      next[box.dataset.a11yOption] = box.checked;
+      writeA11y(next);
+      applyA11y(next);
+    });
+  });
+
+  menu.querySelector('[data-a11y-reset]').addEventListener('click', () => {
+    writeA11y({});
+    applyA11y({});
+    sync();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !panel.hidden) {
+      setOpen(false);
+      button.focus();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!panel.hidden && !menu.contains(event.target)) {
+      setOpen(false);
     }
   });
 });
