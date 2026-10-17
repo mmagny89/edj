@@ -32,13 +32,6 @@ services:
     networks:
       - edj
 
-  ember:
-    profiles: [observability]
-    ports:
-      - "127.0.0.1:${EMBER_PORT}:9191"
-    networks:
-      - edj
-
 networks:
   edj:
   proxy:
