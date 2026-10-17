@@ -40,16 +40,20 @@
                 <a href="{{ social_instagram }}" style="color:#255db0;font-weight:bold;">Instagram</a>
             </p>
 
-            {% if membersGroupUrl %}
-                <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Le groupe des adhérents</h2>
-                <p style="margin:0;">
-                    Pour échanger entre adhérents et organiser des parties, rejoignez notre groupe privé :
-                    <a href="{{ membersGroupUrl }}" style="color:#255db0;font-weight:bold;">rejoindre le groupe</a>.
-                </p>
-                <p style="margin:8px 0 0;font-size:13px;color:#64748b;">
-                    Ce lien est réservé aux adhérents : merci de ne pas le partager.
-                </p>
-            {% endif %}
+            <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Les groupes des adhérents</h2>
+            <p style="margin:0 0 8px;">Pour échanger entre adhérents et organiser des parties :</p>
+            <p style="margin:0;">
+                <a href="{{ social_facebook_group }}" style="color:#255db0;font-weight:bold;">Groupe Facebook</a>
+                {% if membersWhatsappUrl %}
+                    &nbsp;·&nbsp;
+                    <a href="{{ membersWhatsappUrl }}" style="color:#255db0;font-weight:bold;">Groupe WhatsApp</a>
+                {% endif %}
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#64748b;">
+                Ces groupes sont réservés aux adhérents : sur Facebook, votre demande est validée
+                par un administrateur du groupe.
+                {% if membersWhatsappUrl %}Merci de ne pas partager le lien WhatsApp.{% endif %}
+            </p>
 
             <p style="margin:24px 0 0;">À très bientôt autour des tables !<br>L'équipe d'Envie de Jouer</p>
         </td>

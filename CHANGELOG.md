@@ -29,10 +29,11 @@ GitHub, par `.github/workflows/publication.yml`.
   CSV des adresses a transmettre a Philibert — celles dont le titulaire a coche
   l'autorisation, jamais un bulletin anonymise, adresse seule.
 - Courriel de confirmation envoye a l'adherent (et au responsable legal d'un
-  mineur) au depot du bulletin, avec les reseaux sociaux publics et, si
-  `MEMBERS_GROUP_URL` est renseignee sur le serveur, le lien du groupe prive.
+  mineur) au depot du bulletin, avec les reseaux sociaux publics, le groupe
+  Facebook des adherents et, si `MEMBERS_WHATSAPP_URL` est renseignee sur le
+  serveur, le lien du groupe WhatsApp.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
-  `.env.prod.local`, vide si le groupe n'existe pas, sinon `compose` refuse de
+  `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
 - Commande `app:memberships:demo` : bulletins fictifs pour le developpement,
   refusee en production.

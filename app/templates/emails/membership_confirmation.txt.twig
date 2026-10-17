@@ -15,12 +15,12 @@ Calendrier : {{ url('site_index') }}#calendrier
 SUIVRE L'ASSOCIATION
 Facebook : {{ social_facebook }}
 Instagram : {{ social_instagram }}
-{% if membersGroupUrl %}
 
-LE GROUPE DES ADHÉRENTS
-Pour échanger entre adhérents et organiser des parties : {{ membersGroupUrl }}
-Ce lien est réservé aux adhérents : merci de ne pas le partager.
-{% endif %}
+LES GROUPES DES ADHÉRENTS
+Pour échanger entre adhérents et organiser des parties :
+Groupe Facebook : {{ social_facebook_group }}
+{% if membersWhatsappUrl %}Groupe WhatsApp : {{ membersWhatsappUrl }}
+{% endif %}Ces groupes sont réservés aux adhérents : sur Facebook, votre demande est validée par un administrateur du groupe.{% if membersWhatsappUrl %} Merci de ne pas partager le lien WhatsApp.{% endif %}
 
 À très bientôt autour des tables !
 L'équipe d'Envie de Jouer

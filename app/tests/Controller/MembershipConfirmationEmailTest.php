@@ -114,12 +114,15 @@ final class MembershipConfirmationEmailTest extends WebTestCase
         self::assertNotNull($email->getTextBody(), 'Une version texte accompagne le HTML.');
     }
 
-    public function testPrivateGroupBlockIsOmittedWhenNoLinkIsConfigured(): void
+    public function testFacebookGroupIsAlwaysListedAndWhatsappOnlyWhenConfigured(): void
     {
-        // MEMBERS_GROUP_URL est vide dans .env.test.
+        // MEMBERS_WHATSAPP_URL est vide dans .env.test.
         $this->submit('1990-04-02');
+        $html = (string) $this->confirmation()->getHtmlBody();
 
-        self::assertStringNotContainsString('groupe privé', (string) $this->confirmation()->getHtmlBody());
+        self::assertStringContainsString('facebook.com/groups/enviedejouer89/', $html);
+        self::assertStringNotContainsString('?ref=share', $html);
+        self::assertStringNotContainsString('WhatsApp', $html);
     }
 
     public function testGuardianIsAlsoAddressedForAMinor(): void
@@ -147,10 +150,10 @@ final class MembershipConfirmationEmailTest extends WebTestCase
     }
 
     /**
-     * Le bloc du groupe prive se rend quand un lien est fourni, et seulement
-     * alors : rendu directement, car MEMBERS_GROUP_URL est vide en test.
+     * Le lien WhatsApp se rend quand un lien est fourni, et seulement
+     * alors : rendu directement, car MEMBERS_WHATSAPP_URL est vide en test.
      */
-    public function testPrivateGroupLinkIsRenderedWhenConfigured(): void
+    public function testWhatsappLinkIsRenderedWhenConfigured(): void
     {
         $application = (new MembershipApplication())
             ->setFirstName('Camille')
@@ -158,13 +161,14 @@ final class MembershipConfirmationEmailTest extends WebTestCase
             ->setMembershipType(\App\Enum\MembershipType::Individual);
         $twig = static::getContainer()->get('twig');
 
-        $html = $twig->render('emails/membership_confirmation.html.twig', ['application' => $application, 'membersGroupUrl' => 'https://groupe.example.test/invitation']);
-        $text = $twig->render('emails/membership_confirmation.txt.twig', ['application' => $application, 'membersGroupUrl' => 'https://groupe.example.test/invitation']);
-        $without = $twig->render('emails/membership_confirmation.html.twig', ['application' => $application, 'membersGroupUrl' => null]);
+        $html = $twig->render('emails/membership_confirmation.html.twig', ['application' => $application, 'membersWhatsappUrl' => 'https://groupe.example.test/invitation']);
+        $text = $twig->render('emails/membership_confirmation.txt.twig', ['application' => $application, 'membersWhatsappUrl' => 'https://groupe.example.test/invitation']);
+        $without = $twig->render('emails/membership_confirmation.html.twig', ['application' => $application, 'membersWhatsappUrl' => null]);
 
         self::assertStringContainsString('https://groupe.example.test/invitation', $html);
         self::assertStringContainsString('https://groupe.example.test/invitation', $text);
-        self::assertStringContainsString('ne pas le partager', $html);
+        self::assertStringContainsString('Groupe WhatsApp', $html);
         self::assertStringNotContainsString('groupe.example.test', $without);
+        self::assertStringNotContainsString('Groupe WhatsApp', $without);
     }
 }

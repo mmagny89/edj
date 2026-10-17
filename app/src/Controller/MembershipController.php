@@ -27,8 +27,8 @@ final class MembershipController extends AbstractController
         private readonly string $contactEmail,
         // Lien du groupe prive : passe au seul gabarit de l'e-mail, jamais
         // expose en variable globale Twig, donc jamais rendu sur une page.
-        #[Autowire('%app.social.members_group%')]
-        private readonly string $membersGroupUrl,
+        #[Autowire('%app.social.members_whatsapp%')]
+        private readonly string $membersWhatsappUrl,
     ) {
     }
 
@@ -116,7 +116,7 @@ final class MembershipController extends AbstractController
 
         $context = [
             'application' => $application,
-            'membersGroupUrl' => '' !== $this->membersGroupUrl ? $this->membersGroupUrl : null,
+            'membersWhatsappUrl' => '' !== $this->membersWhatsappUrl ? $this->membersWhatsappUrl : null,
         ];
 
         $email = (new Email())
