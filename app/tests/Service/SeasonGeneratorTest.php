@@ -6,6 +6,7 @@ use App\Dto\SeasonGenerationRequest;
 use App\Entity\Event;
 use App\Enum\EventType;
 use App\Repository\EventRepository;
+use App\Service\FrenchHolidays;
 use App\Service\SeasonGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -66,6 +67,44 @@ final class SeasonGeneratorTest extends TestCase
     }
 
     /**
+     * Le 1er mai 2027 est a la fois un samedi et un jour ferie : l'apres-midi
+     * n'est pas creee. C'est le cas qui a motive la regle.
+     */
+    public function testMonthlyEventOnAHolidayIsNotCreated(): void
+    {
+        $request = new SeasonGenerationRequest();
+        $request->from = new \DateTimeImmutable('2027-04-01');
+        $request->to = new \DateTimeImmutable('2027-06-30');
+        $request->weekly = false;
+
+        $dates = array_map(
+            static fn (Event $event) => $event->getStartsAt()?->format('Y-m-d'),
+            $this->generate($request),
+        );
+
+        self::assertSame(['2027-04-03', '2027-06-05'], $dates);
+    }
+
+    /**
+     * Le mardi 14 juillet 2026 est ferie, de meme que le mardi 25 decembre
+     * 2029 : aucun des deux ne doit apparaitre.
+     */
+    public function testWeeklyEventsSkipHolidays(): void
+    {
+        $request = new SeasonGenerationRequest();
+        $request->from = new \DateTimeImmutable('2026-07-07');
+        $request->to = new \DateTimeImmutable('2026-07-21');
+        $request->monthly = false;
+
+        $dates = array_map(
+            static fn (Event $event) => $event->getStartsAt()?->format('Y-m-d'),
+            $this->generate($request),
+        );
+
+        self::assertSame(['2026-07-07', '2026-07-21'], $dates);
+    }
+
+    /**
      * @return list<Event>
      */
     private function generate(SeasonGenerationRequest $request): array
@@ -82,7 +121,7 @@ final class SeasonGeneratorTest extends TestCase
         $events = $this->createStub(EventRepository::class);
         $events->method('existingKeys')->willReturn([]);
 
-        (new SeasonGenerator($entityManager, $events))->generate($request);
+        (new SeasonGenerator($entityManager, $events, new FrenchHolidays()))->generate($request);
 
         return $persisted;
     }
