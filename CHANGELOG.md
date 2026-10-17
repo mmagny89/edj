@@ -35,6 +35,12 @@ GitHub, par `.github/workflows/publication.yml`.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
   `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
+- Un destinataire ne recoit plus que trois courriels de confirmation par
+  jour : saisir l'adresse d'un tiers dans le bulletin ne permet plus de
+  l'inonder depuis des IP differentes.
+- Administration : textes gris assombris (contraste WCAG AA) et cases de
+  selection des adhesions nommees pour les lecteurs d'ecran ; axe-core ne
+  releve plus aucune erreur sur les neuf pages.
 - En-tetes de securite sur tout le site, plus seulement l'administration :
   politique de contenu stricte a nonce (aucun script ni style en ligne, aucune
   ressource externe), HSTS, interdiction d'etre place dans un cadre,

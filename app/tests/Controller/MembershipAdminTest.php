@@ -18,10 +18,14 @@ final class MembershipAdminTest extends WebTestCase
 
     private EntityManagerInterface $entityManager;
 
+    /** Adresse propre a chaque cas : le plafond de confirmations par destinataire survit entre deux lancements. */
+    private string $paperEmail;
+
     protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->paperEmail = 'a-'.bin2hex(random_bytes(5)).'@papier.example.test';
         $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
         $this->logIn('admin@example.test');
     }
@@ -208,7 +212,7 @@ final class MembershipAdminTest extends WebTestCase
             'paper_membership[birthDate]' => '1985-03-12',
             'paper_membership[postalCode]' => '89300',
             'paper_membership[city]' => 'Joigny',
-            'paper_membership[email]' => 'alice@papier.example.test',
+            'paper_membership[email]' => $this->paperEmail,
         ], $overrides);
         foreach ($values as $name => $value) {
             $form[$name] = $value;
@@ -229,7 +233,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->submitPaperForm();
 
         self::assertResponseRedirects();
-        $stored = $this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => 'alice@papier.example.test']);
+        $stored = $this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => $this->paperEmail]);
         self::assertNotNull($stored);
         self::assertTrue($stored->isPaper());
         self::assertSame('2026-10-10', $stored->getSubmittedAt()->format('Y-m-d'), 'La date est celle de la fiche papier.');
@@ -242,7 +246,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->submitPaperForm(attest: false);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertNull($this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => 'alice@papier.example.test']));
+        self::assertNull($this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => $this->paperEmail]));
     }
 
     public function testThePaperFormKeepsTheSameRulesAsTheOnlineOne(): void

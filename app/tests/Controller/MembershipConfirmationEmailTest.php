@@ -20,9 +20,13 @@ final class MembershipConfirmationEmailTest extends WebTestCase
 {
     private KernelBrowser $client;
 
+    /** Adresse propre a chaque cas : le plafond par destinataire survit entre deux lancements. */
+    private string $email;
+
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        $this->email = 'c-'.bin2hex(random_bytes(5)).'@confirmation.example.test';
         static::getContainer()->get(EntityManagerInterface::class)
             ->createQuery('DELETE FROM '.MembershipApplication::class.' a WHERE a.email LIKE :d')
             ->setParameter('d', '%@confirmation.example.test')
@@ -53,7 +57,7 @@ final class MembershipConfirmationEmailTest extends WebTestCase
             'membership_application[birthDate]' => $birth,
             'membership_application[postalCode]' => '89300',
             'membership_application[city]' => 'Joigny',
-            'membership_application[email]' => 'camille@confirmation.example.test',
+            'membership_application[email]' => $this->email,
             'membership_application[signaturePlace]' => 'Joigny',
             'membership_application[signatureName]' => 'Camille Martin',
         ], $extra);
@@ -104,7 +108,7 @@ final class MembershipConfirmationEmailTest extends WebTestCase
         self::assertResponseRedirects('/adhesion/bulletin/merci');
         $email = $this->confirmation();
 
-        self::assertSame('camille@confirmation.example.test', $email->getTo()[0]->getAddress());
+        self::assertSame($this->email, $email->getTo()[0]->getAddress());
         self::assertCount(1, $email->getTo());
 
         $html = (string) $email->getHtmlBody();
@@ -138,7 +142,7 @@ final class MembershipConfirmationEmailTest extends WebTestCase
             static fn ($a) => $a->getAddress(),
             $this->confirmation()->getTo(),
         );
-        self::assertSame(['camille@confirmation.example.test', 'sam@confirmation.example.test'], $addresses);
+        self::assertSame([$this->email, 'sam@confirmation.example.test'], $addresses);
     }
 
     public function testNoConfirmationIsSentWhenTheFormIsInvalid(): void

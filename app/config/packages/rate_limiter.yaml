@@ -14,3 +14,11 @@ framework:
             policy: 'sliding_window'
             limit: 40
             interval: '1 hour'
+        # Courriel de confirmation : une adresse ne recoit que trois messages par
+        # jour. Le plafond par IP ci-dessus borne un expediteur ; celui-ci borne
+        # un destinataire, que l'on pourrait sinon inonder depuis des IP
+        # differentes en saisissant son adresse dans le bulletin.
+        membership_confirmation_email:
+            policy: 'sliding_window'
+            limit: 3
+            interval: '1 day'

@@ -8,6 +8,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Twig\Environment;
 
 /**
@@ -23,6 +24,7 @@ final class MembershipNotifier
     public function __construct(
         private readonly MailerInterface $mailer,
         private readonly Environment $twig,
+        private readonly RateLimiterFactoryInterface $membershipConfirmationEmailLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
         // Lien du groupe WhatsApp : passe au seul gabarit du courriel, jamais
@@ -61,6 +63,14 @@ final class MembershipNotifier
      */
     public function confirmToApplicant(MembershipApplication $application): void
     {
+        // Un destinataire ne recoit que trois confirmations par jour : saisir
+        // l'adresse d'un tiers dans le bulletin ne permet pas de l'inonder. Le
+        // bulletin est enregistre dans tous les cas ; seul le courriel est omis.
+        $key = mb_strtolower((string) $application->getEmail());
+        if (!$this->membershipConfirmationEmailLimiter->create($key)->consume()->isAccepted()) {
+            return;
+        }
+
         $recipients = [new Address((string) $application->getEmail(), trim($application->getFirstName().' '.$application->getLastName()))];
         if ($application->isMinor() && $application->getGuardianEmail()) {
             $recipients[] = new Address($application->getGuardianEmail());

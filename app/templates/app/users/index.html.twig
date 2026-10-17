@@ -34,7 +34,7 @@
 
     <section class="card mt-8" aria-labelledby="titre-liste">
         <h2 id="titre-liste" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
-            Comptes <span class="font-medium text-slate-500">{{ users|length }}</span>
+            Comptes <span class="font-medium text-slate-600">{{ users|length }}</span>
         </h2>
 
         <div class="overflow-x-auto">
@@ -51,7 +51,7 @@
                 <tbody class="divide-y divide-slate-100">
                     {% for user in users %}
                         {% set me = user.userIdentifier == currentIdentifier %}
-                        <tr class="{{ user.blocked ? 'bg-slate-50/60 text-slate-500' }}">
+                        <tr class="{{ user.blocked ? 'bg-slate-50/60 text-slate-600' }}">
                             <td class="px-5 py-3 align-top">
                                 <div class="font-semibold {{ user.blocked ? '' : 'text-slate-800' }}">{{ user.email }}</div>
                                 <div class="text-xs">
