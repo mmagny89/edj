@@ -505,6 +505,7 @@ redeployer. Le TTL bas de la veille rend le DNS reversible en quelques minutes.
 |---|---|---|
 | `docker compose` refuse de demarrer : « variable ... manquante » | Une variable obligatoire est vide dans `.env.prod.local` | `grep '=$' .env.prod.local` |
 | Le deploiement s'arrete a « Mise a jour du schema » | Migration en echec : l'**ancien code continue de servir** (c'est voulu) | `docker compose ... run --rm --no-deps php php bin/console doctrine:migrations:status` |
+| « network ... declared as external, but could not be found » (le deploiement s'arrete apres le build, ou des le debut avec un message sur PROXY_NETWORK) | `PROXY_NETWORK` ne porte pas le nom du reseau **reel** de Traefik : `proxy` n'est qu'une valeur d'exemple | `docker network ls` ; `docker inspect <conteneur traefik> --format '{{json .NetworkSettings.Networks}}'` ; corriger `PROXY_NETWORK` dans `.env.prod.local` |
 | 502 / 504 depuis le navigateur, conteneur `healthy` | Reseau Traefik ou label `traefik.docker.network` | `sh outils/diagnostic-traefik.sh` |
 | Boucle de redirection infinie | `SERVER_NAME` contient le domaine au lieu de `:80` | `grep SERVER_NAME .env.prod.local` |
 | Apres connexion, l'ecran de connexion reste affiche | Proxies de confiance absents : URL generees en `http://` | `SYMFONY_TRUSTED_PROXIES=private_ranges` ; `curl -sI https://<domaine>/admin \| grep -i location` doit dire `https` |

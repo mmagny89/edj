@@ -139,6 +139,11 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Deploiement : un `PROXY_NETWORK` qui ne designe pas le reseau reel de Traefik
+  ne faisait echouer le deploiement qu'apres la construction de l'image, sur
+  « network ... declared as external, but could not be found ». `deployer.sh`
+  controle desormais ce reseau des le debut, nomme celui qui manque et liste les
+  reseaux presents.
 - Schema : `doctrine:schema:validate` echouait apres les migrations. Les colonnes
   `id` de `user` et de `messenger_messages` etaient des SERIAL alors que Doctrine
   attend des colonnes d'identite, `messenger_messages` portait trois index au lieu
