@@ -28,4 +28,29 @@ enum MembershipType: string
             self::Consumer => "Gratuite à l'année, 1 € par événement",
         };
     }
+
+    /**
+     * « Pour qui ? » : la phrase qui permet de choisir sans connaitre les noms
+     * des formules. Affichee dans le bulletin en ligne.
+     */
+    public function audience(): string
+    {
+        return match ($this) {
+            self::Individual => 'Je viens seul(e), ou je suis le premier de ma famille à adhérer.',
+            self::Family => "Un membre de ma famille a déjà pris l'adhésion à 10 € : je rejoins son adhésion.",
+            self::Consumer => 'Je veux seulement payer à chaque événement, sans cotisation annuelle.',
+        };
+    }
+
+    /**
+     * Ce que paie la personne qui choisit cette formule, en une ligne.
+     */
+    public function yourPrice(): string
+    {
+        return match ($this) {
+            self::Individual => '10 € pour la saison',
+            self::Family => '5 € pour la saison',
+            self::Consumer => 'Adhésion gratuite, puis 1 € par événement',
+        };
+    }
 }

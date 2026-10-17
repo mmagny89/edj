@@ -17,12 +17,21 @@
     </div>
 {%- endblock checkbox_row -%}
 
+{#- Formule d'adhesion : trois cartes a choisir, chacune disant POUR QUI elle est
+    et CE QUE LA PERSONNE PAIE. Les noms « individuelle », « famille »,
+    « consommateur » ne parlent qu'a qui connait deja l'association : on choisit
+    sur sa situation, pas sur un mot. -#}
 {%- block choice_widget_expanded -%}
-    <div {{ block('widget_container_attributes') }}>
+    <div {{ block('widget_container_attributes') }} class="choice-cards">
         {%- for child in form -%}
-            <div class="choice-row">
+            {%- set type = enum('App\\Enum\\MembershipType').from(child.vars.value) -%}
+            <div class="choice-card">
                 {{- form_widget(child) -}}
-                <div class="choice-row__text">{{- form_label(child, null, {translation_domain: choice_translation_domain}) -}}</div>
+                <label for="{{ child.vars.id }}" class="choice-card__body">
+                    <span class="choice-card__audience">{{ type.audience }}</span>
+                    <span class="choice-card__title">{{ type.label }}</span>
+                    <span class="choice-card__price">{{ type.yourPrice }}</span>
+                </label>
             </div>
         {%- endfor -%}
     </div>

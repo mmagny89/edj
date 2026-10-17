@@ -17,7 +17,7 @@
             </p>
         </div>
 
-        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh'}}) }}
             {% if not form.vars.valid %}
                 <p class="form-alert" role="alert">
                     <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
@@ -47,8 +47,14 @@
 
             <fieldset>
                 <legend>Adhésion et cotisation</legend>
+                <p class="form-note">Choisissez la formule qui correspond à <strong>votre situation</strong> :</p>
                 {{ form_row(form.membershipType) }}
-                {{ form_row(form.principalMemberName) }}
+
+                {# Visible sans JavaScript ; avec, il n'apparait que pour la formule
+                   famille, qui est la seule a en avoir besoin. #}
+                <div class="family-panel" data-membership-type-target="family">
+                    {{ form_row(form.principalMemberName) }}
+                </div>
                 <p class="form-note">
                     Pour les enfants de <strong>moins de 14 ans</strong>, l'adhésion doit être rattachée
                     à un adulte. Pour les enfants de <strong>moins de 8 ans</strong>, elle est gratuite.

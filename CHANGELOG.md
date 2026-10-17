@@ -83,6 +83,11 @@ GitHub, par `.github/workflows/publication.yml`.
 - Polices et icones servies par le site (Akaya Kanadaka, Atkinson
   Hyperlegible, Font Awesome) : plus aucune requete vers Google ni un CDN, ce
   qui rend vraie la page « Donnees personnelles ».
+- Bulletin d'adhesion, choix de la formule : trois cartes qui disent POUR QUI
+  elles sont (« Je viens seul(e) », « Un membre de ma famille a deja pris
+  l'adhesion a 10 € », « Je veux seulement payer a chaque evenement ») et ce que
+  la personne paie (10 €, 5 €, gratuit puis 1 € par evenement). Le champ « membre
+  de votre famille qui a deja adhere » n'apparait que pour la formule famille.
 - Bulletin d'adhesion : cases a cocher et boutons radio redessines — la case
   precede son libelle sur la meme ligne au lieu de se perdre dessous, avec un
   etat coche lisible et un focus visible. Le bouton « Contraste » de l'en-tete
