@@ -8,6 +8,14 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Securite
+
+- Montee de Symfony 8.0 vers 8.1 : la branche 8.0 ne recoit pas de correctif
+  pour CVE-2026-109449 (expression-language), CVE-2026-108082
+  (http-foundation) et CVE-2026-109413 (yaml), tous trois corriges a partir de
+  8.1.6. `composer audit --locked` echouait donc la CI sans remede possible a
+  constraint inchangee.
+
 ## [1.1.0] - 2026-09-12
 
 ### Modifie
