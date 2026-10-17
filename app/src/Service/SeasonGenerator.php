@@ -10,7 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Cree en une fois les dates recurrentes d'une saison : les soirees du mardi
- * et les apres-midi du 3e samedi.
+ * et les apres-midi du 1er samedi.
  *
  * Chaque date creee reste un evenement ordinaire, modifiable ou supprimable
  * individuellement — une soiree annulee se retire, un horaire exceptionnel se
@@ -93,10 +93,10 @@ final readonly class SeasonGenerator
         $lastMonth = $to->modify('first day of this month');
 
         for (; $month <= $lastMonth; $month = $month->modify('+1 month')) {
-            $thirdSaturday = $month->modify('third saturday of this month');
+            $firstSaturday = $month->modify('first saturday of this month');
 
-            if ($thirdSaturday >= $from && $thirdSaturday <= $to) {
-                yield [EventType::Monthly, $thirdSaturday];
+            if ($firstSaturday >= $from && $firstSaturday <= $to) {
+                yield [EventType::Monthly, $firstSaturday];
             }
         }
     }

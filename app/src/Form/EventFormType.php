@@ -41,7 +41,7 @@ final class EventFormType extends AbstractType
                 'label' => "Type d'événement",
                 'class' => EventTypeEnum::class,
                 'choice_label' => fn (EventTypeEnum $type) => $type->formLabel(),
-                'help' => 'Les mardis et les 3e samedis sont déjà calculés automatiquement pour toute la saison : ne les saisissez ici que pour une exception ou une date ajoutée.',
+                'help' => 'Les mardis et les 1ers samedis sont déjà calculés automatiquement pour toute la saison : ne les saisissez ici que pour une exception ou une date ajoutée.',
             ])
             ->add('startsAt', DateType::class, [
                 'label' => 'Date',

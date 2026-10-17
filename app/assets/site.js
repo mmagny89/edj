@@ -2,7 +2,7 @@ import './bootstrap.js';
 import './styles/site.css';
 
 // Evenements saisis dans le back-office, deposes en JSON sur le conteneur du
-// carrousel par le gabarit. Les mardis et les 3e samedis restent calcules
+// carrousel par le gabarit. Les mardis et les 1ers samedis restent calcules
 // plus bas : ce sont des regles de recurrence, pas des donnees a ressaisir
 // cinquante fois par saison.
 const readManagedEvents = () => {
@@ -28,7 +28,7 @@ const readManagedEvents = () => {
 
 const eventTypeLabels = {
   weekly: 'Mardi soir',
-  monthly: '3e samedi',
+  monthly: '1er samedi',
   special: 'Manifestation',
 };
 
