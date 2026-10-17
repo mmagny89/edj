@@ -18,6 +18,10 @@ GitHub, par `.github/workflows/publication.yml`.
   lies a leur site, en remplacement de la mascotte utilisee comme vignette
   d'attente.
 - Tests du generateur de saison, qui n'en avait aucun.
+- Le generateur de saison n'ecrit aucune date un jour ferie, mardis comme
+  1ers samedis. Les feries viennent de l'API officielle du calendrier
+  (calendrier.api.gouv.fr), conservee trente jours ; si elle ne repond pas, un
+  calcul local prend le relais et la generation n'echoue pas.
 
 ### Modifie
 

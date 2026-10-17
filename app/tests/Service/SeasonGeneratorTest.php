@@ -10,6 +10,9 @@ use App\Service\FrenchHolidays;
 use App\Service\SeasonGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\HttpClient\MockHttpClient;
 
 /**
  * Le generateur ne touche la base que par deux collaborateurs, tous deux
@@ -121,7 +124,11 @@ final class SeasonGeneratorTest extends TestCase
         $events = $this->createStub(EventRepository::class);
         $events->method('existingKeys')->willReturn([]);
 
-        (new SeasonGenerator($entityManager, $events, new FrenchHolidays()))->generate($request);
+        (new SeasonGenerator($entityManager, $events, new FrenchHolidays(
+            new MockHttpClient(static fn () => throw new \RuntimeException('hors ligne')),
+            new ArrayAdapter(),
+            new NullLogger(),
+        )))->generate($request);
 
         return $persisted;
     }

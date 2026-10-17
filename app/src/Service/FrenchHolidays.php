@@ -2,17 +2,40 @@
 
 namespace App\Service;
 
+use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+
 /**
  * Jours feries de France metropolitaine.
  *
- * Calcules plutot que listes : les fetes fixes tombent a date constante, et
- * les trois fetes mobiles (lundi de Paques, Ascension, lundi de Pentecote)
- * se deduisent du dimanche de Paques. Le dimanche de Paques est calcule par
- * l'algorithme de Meeus/Jones/Butcher, valable pour tout le calendrier
- * gregorien, sans dependre de l'extension "calendar" que l'image ne porte pas.
+ * La source est l'API officielle du calendrier (calendrier.api.gouv.fr). Une
+ * annee interrogee est conservee trente jours : la generation d'une saison
+ * demande trois annees au plus, soit trois appels par mois.
+ *
+ * Si l'API ne repond pas — panne, delai, reponse illisible — le calcul local
+ * prend le relais : onze dates, dont trois deduites du dimanche de Paques par
+ * l'algorithme de Meeus/Jones/Butcher, sans dependre de l'extension "calendar"
+ * que l'image ne porte pas. Une generation ne doit jamais echouer parce qu'un
+ * service tiers est indisponible. Ce repli n'est conserve qu'une heure, pour
+ * que l'API soit reinterrogee des qu'elle revient.
  */
 final class FrenchHolidays
 {
+    private const ENDPOINT = 'https://calendrier.api.gouv.fr/jours-feries/metropole/%d.json';
+
+    private const API_TTL = 2592000; // 30 jours
+
+    private const FALLBACK_TTL = 3600;
+
+    public function __construct(
+        private readonly HttpClientInterface $httpClient,
+        private readonly CacheInterface $cache,
+        private readonly LoggerInterface $logger,
+    ) {
+    }
+
     public function isHoliday(\DateTimeImmutable $date): bool
     {
         return isset($this->forYear((int) $date->format('Y'))[$date->format('Y-m-d')]);
@@ -22,6 +45,59 @@ final class FrenchHolidays
      * @return array<string, string> date ISO => nom de la fete
      */
     public function forYear(int $year): array
+    {
+        return $this->cache->get(
+            'french_holidays_'.$year,
+            function (ItemInterface $item) use ($year): array {
+                try {
+                    $holidays = $this->fetch($year);
+                    $item->expiresAfter(self::API_TTL);
+
+                    return $holidays;
+                } catch (\Throwable $e) {
+                    $this->logger->warning('API des jours feries indisponible, calcul local utilise.', [
+                        'year' => $year,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $item->expiresAfter(self::FALLBACK_TTL);
+
+                    return $this->compute($year);
+                }
+            },
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function fetch(int $year): array
+    {
+        $data = $this->httpClient
+            ->request('GET', sprintf(self::ENDPOINT, $year), ['timeout' => 5])
+            ->toArray();
+
+        $holidays = [];
+        foreach ($data as $date => $name) {
+            if (!\is_string($date) || !\is_string($name) || 1 !== preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                throw new \UnexpectedValueException('Reponse inattendue de l\'API des jours feries.');
+            }
+
+            $holidays[$date] = $name;
+        }
+
+        // Une liste vide ou trop courte est une reponse fausse, pas un calendrier
+        // sans ferie : mieux vaut le calcul local que de generer un jour ferie.
+        if (\count($holidays) < 8) {
+            throw new \UnexpectedValueException('Liste de jours feries incomplete.');
+        }
+
+        return $holidays;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function compute(int $year): array
     {
         $easter = $this->easterSunday($year);
 
