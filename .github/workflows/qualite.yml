@@ -171,6 +171,23 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/php
 
+      # Les tests fonctionnels rendent de vraies pages : les balises Encore
+      # (encore_entry_link_tags) lisent public/build/entrypoints.json. Sans le
+      # build, chaque page repond 500 « Could not find the entrypoints file »,
+      # et vingt-cinq tests echouent sur « The current node list is empty »,
+      # loin de leur cause. Les dependances Composer passent avant celles de
+      # npm (voir la porte « Front »).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build du front
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
       # Le schema de test (suffixe _test de Doctrine) se construit par les
       # migrations, comme en production. Sans cette etape, tout test qui ecrit
       # echoue sur « relation ... does not exist ».
