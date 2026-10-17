@@ -47,6 +47,22 @@ if [ ! -f "$SECRETS" ]; then
 	exit 1
 fi
 
+# Le reseau de Traefik est externe : Compose ne le cree pas et ne le verifie
+# qu'au moment d'y attacher un service. Sans ce controle, l'erreur « network ...
+# declared as external, but could not be found » ne tombe qu'APRES la
+# construction de l'image — plusieurs minutes plus tard — et au premier service
+# qui le rejoint. Le nom vient de PROXY_NETWORK, qui doit etre celui du reseau
+# REEL de Traefik sur cet hote (docker network ls ; outils/diagnostic-traefik.sh),
+# et non la valeur d'exemple du modele de secrets.
+RESEAU_PROXY=$(lire_secret PROXY_NETWORK)
+if [ -n "$RESEAU_PROXY" ] && ! docker network inspect "$RESEAU_PROXY" >/dev/null 2>&1; then
+	journal "ECHEC : le reseau Docker « $RESEAU_PROXY » (PROXY_NETWORK dans $SECRETS) n'existe pas sur ce serveur."
+	journal "Reseaux presents :"
+	docker network ls --format '    {{.Name}}' | grep -v -E '^    (bridge|host|none)$' || true
+	journal "Reperer celui de Traefik : sh outils/diagnostic-traefik.sh — puis corriger PROXY_NETWORK."
+	exit 1
+fi
+
 # Se deployer depuis la mauvaise branche passerait inapercu : la verification
 # coute une ligne et evite de livrer la recette en production.
 # Changement de domaine : tant que ANCIEN_DOMAINE est renseigne dans les secrets,
