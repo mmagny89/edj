@@ -35,6 +35,10 @@ GitHub, par `.github/workflows/publication.yml`.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
   `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
+- En-tetes de securite sur tout le site, plus seulement l'administration :
+  politique de contenu stricte a nonce (aucun script ni style en ligne, aucune
+  ressource externe), HSTS, interdiction d'etre place dans un cadre,
+  Referrer-Policy et Permissions-Policy.
 - Inscription d'un adherent depuis l'administration (`/admin/adhesions/nouveau`),
   pour une personne qui a rempli une fiche papier : meme donnees que le
   bulletin en ligne, date de la fiche, attestation obligatoire que le papier
@@ -73,6 +77,10 @@ GitHub, par `.github/workflows/publication.yml`.
 - Polices et icones servies par le site (Akaya Kanadaka, Atkinson
   Hyperlegible, Font Awesome) : plus aucune requete vers Google ni un CDN, ce
   qui rend vraie la page « Donnees personnelles ».
+- Bulletin d'adhesion : cases a cocher et boutons radio redessines — la case
+  precede son libelle sur la meme ligne au lieu de se perdre dessous, avec un
+  etat coche lisible et un focus visible. Le bouton « Contraste » de l'en-tete
+  n'affiche plus que son icone, avec une infobulle au survol et au clavier.
 - Le site ne parle plus d'une ludotheque de l'association, qui n'en a pas :
   les jeux sont ceux de ses membres, et la section « L'association » le dit
   (le mode d'emploi en trois etapes, et le chiffre de 1 300 jeux mis en avant). Les descriptions par defaut des evenements sont

@@ -1468,13 +1468,64 @@ h1 {
 
 /* Cases a cocher : la case garde sa taille de cible tactile et le libelle
    reste sur la meme ligne, aussi long soit-il. */
+/* Cases a cocher et boutons radio : la case precede son libelle, sur une meme
+   ligne, avec une vraie zone de clic. Dessinees ici plutot que laissees au
+   navigateur, dont la case grise et fine se perdait sur le fond creme. */
+.choice-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 6px 0;
+}
+
+.choice-row__text {
+    min-width: 0;
+}
+
+.choice-row__text label {
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.45;
+    cursor: pointer;
+}
+
 .membership-form input[type="checkbox"],
 .membership-form input[type="radio"] {
+    appearance: none;
     flex: 0 0 auto;
-    width: 22px;
-    height: 22px;
-    margin: 2px 0 0;
-    accent-color: var(--red);
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    border: 3px solid var(--ink);
+    background: white;
+    cursor: pointer;
+}
+
+.membership-form input[type="checkbox"] {
+    border-radius: 7px;
+}
+
+.membership-form input[type="radio"] {
+    border-radius: 50%;
+}
+
+.membership-form input[type="checkbox"]:checked {
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 80% no-repeat;
+}
+
+.membership-form input[type="radio"]:checked {
+    background: radial-gradient(circle, var(--ink) 0 8px, white 9px);
+}
+
+.membership-form input[type="checkbox"]:focus-visible,
+.membership-form input[type="radio"]:focus-visible {
+    outline: 3px solid var(--red);
+    outline-offset: 3px;
+}
+
+.membership-form input[aria-invalid="true"][type="checkbox"],
+.membership-form input[aria-invalid="true"][type="radio"] {
+    border-color: var(--red-dark);
 }
 
 .membership-form .checkbox label,
@@ -1723,11 +1774,12 @@ html[data-contrast="high"] .how-steps p {
 }
 
 .contrast-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
     min-height: 44px;
-    padding: 8px 14px;
+    padding: 0;
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: var(--cream);
@@ -1739,4 +1791,31 @@ html[data-contrast="high"] .how-steps p {
 .contrast-toggle[aria-pressed="true"] {
     background: var(--ink);
     color: white;
+}
+
+
+/* Bouton « Contraste » : l'icone seule, avec une infobulle au survol et au focus
+   clavier. Le libelle reste dans le HTML (texte masque) pour les lecteurs
+   d'ecran. */
+.contrast-toggle::after {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 60;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--ink);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    content: attr(data-tooltip);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+}
+
+.contrast-toggle:hover::after,
+.contrast-toggle:focus-visible::after {
+    opacity: 1;
 }

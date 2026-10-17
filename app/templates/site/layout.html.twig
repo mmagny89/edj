@@ -13,6 +13,9 @@
     <meta name="robots" content="{% block robots %}{{ app.environment == 'prod' ? 'index, follow' : 'noindex, nofollow' }}{% endblock %}">
     <link rel="canonical" href="{{ base_url }}{{ app.request.pathInfo }}">
     <meta name="theme-color" content="#a8b7df">
+    {# Lu par Turbo pour la feuille de style de sa barre de progression, que la
+       politique de contenu n'autorise qu'avec ce nonce. #}
+    <meta name="csp-nonce" content="{{ csp_nonce() }}">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Envie de Jouer">
@@ -63,9 +66,10 @@
             {# Mode accessible : le rouge de la charte, trop clair sous du texte
                blanc, passe a un rouge plus fonce. Masque sans JavaScript, qui
                est ce qui le fait fonctionner. #}
-            <button type="button" class="contrast-toggle" hidden aria-pressed="false" data-contrast-toggle>
+            <button type="button" class="contrast-toggle" hidden aria-pressed="false" data-contrast-toggle
+                    data-tooltip="Contraste renforcé">
                 <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
-                Contraste<span class="sr-only"> renforcé</span>
+                <span class="sr-only">Contraste renforcé</span>
             </button>
         </nav>
     </header>
