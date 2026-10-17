@@ -1,0 +1,23 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Page introuvable - Envie de Jouer{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block description %}Cette page n'existe pas ou n'existe plus.{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section legal-page">
+        <div class="section__intro">
+            <p class="eyebrow">Erreur 404</p>
+            <h1>Page introuvable</h1>
+            <p>Cette page n'existe pas, ou plus. Le plus simple : repartir de l'accueil.</p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">
+                <i class="fa-solid fa-house" aria-hidden="true"></i>
+                Retour à l'accueil
+            </a>
+            <a href="{{ path('site_index') }}#calendrier" class="button button--quiet">Voir les prochaines dates</a>
+        </div>
+    </main>
+{% endblock %}

@@ -2,6 +2,10 @@
 
 {% block skip_target %}accueil{% endblock %}
 
+{% block structured_data %}
+    <script type="application/ld+json">{{ structuredData|raw }}</script>
+{% endblock %}
+
 {% block main %}
     <main id="accueil">
         <section class="hero">

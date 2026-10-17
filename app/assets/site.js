@@ -1,4 +1,15 @@
 import './bootstrap.js';
+// Polices et icones servies par le site : plus de Google Fonts ni de CDN. Un
+// visiteur ne transmet donc plus son adresse IP a un tiers pour lire cette
+// page (RGPD), le site s'affiche sans acces externe, et la page « Donnees
+// personnelles » dit vrai en annoncant aucun service tiers.
+import '@fontsource/akaya-kanadaka/400.css';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
+import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+import '@fortawesome/fontawesome-free/css/solid.min.css';
+import '@fortawesome/fontawesome-free/css/regular.min.css';
+import '@fortawesome/fontawesome-free/css/brands.min.css';
 import './styles/site.css';
 
 // Evenements saisis dans le back-office, deposes en JSON sur le conteneur du
