@@ -71,6 +71,16 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Mise en production : procedure complete dans `docs/MISE-EN-PRODUCTION.md`
+  (preparation du VPS, premier deploiement, deploiement continu, exploitation,
+  bascule d'un domaine provisoire vers le domaine definitif), et trois outils :
+  `sauvegarder.sh` (dump controle, rotation, droits fermes),
+  `tester-restauration.sh` (restauration dans une base jetable) et
+  `verifier-site.sh` (controle de recette depuis l'exterieur).
+- Domaine provisoire : `SITE_INDEXABLE` (0 par defaut) tient le site hors des
+  moteurs de recherche — `robots.txt` interdit tout, pages en `noindex` — jusqu'a
+  la mise en ligne sous le domaine definitif. `ANCIEN_DOMAINE` active une
+  redirection 301 de l'ancien domaine vers le nouveau.
 - Reglages d'accessibilite du site public : un bouton d'en-tete ouvre un panneau
   de quatre options, memorisees dans le navigateur — contraste renforce (le
   rouge de la charte, a 3,15:1 sous du texte blanc, passe a un rouge a plus de

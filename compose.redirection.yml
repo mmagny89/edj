@@ -1,0 +1,24 @@
+# Redirection permanente d'un ancien domaine vers le domaine principal.
+#
+# Facultatif : outils/deployer.sh n'ajoute ce fichier que si ANCIEN_DOMAINE est
+# renseigne dans le fichier de secrets. Il sert au jour ou le site change de
+# domaine (edj.mmagny.fr vers enviedejouer89.fr) : les adresses deja partagees
+# — courriels, reseaux sociaux, signets — continuent de mener au site, au lieu
+# d'une page d'erreur, et les moteurs de recherche apprennent le deplacement
+# (redirection 301, qui transmet la reputation de l'ancienne adresse).
+#
+# Traefik obtient un certificat pour l'ancien domaine : son DNS doit donc
+# pointer encore sur le serveur tant que la redirection est en place.
+services:
+  php:
+    labels:
+      traefik.http.routers.edj-prod-ancien.rule: Host(`${ANCIEN_DOMAINE:?ANCIEN_DOMAINE est requis pour la redirection — fournir via --env-file .env.prod.local}`)
+      traefik.http.routers.edj-prod-ancien.entrypoints: websecure
+      traefik.http.routers.edj-prod-ancien.tls.certresolver: letsencrypt
+      traefik.http.routers.edj-prod-ancien.service: edj-prod
+      traefik.http.routers.edj-prod-ancien.middlewares: edj-prod-vers-principal
+      # « $$ » : Compose y lit un « $ » litteral. Le chemin et la requete sont
+      # conserves, seul le domaine change.
+      traefik.http.middlewares.edj-prod-vers-principal.redirectregex.regex: ^https://[^/]+/(.*)
+      traefik.http.middlewares.edj-prod-vers-principal.redirectregex.replacement: https://${APP_DOMAIN:?APP_DOMAIN est requis}/$${1}
+      traefik.http.middlewares.edj-prod-vers-principal.redirectregex.permanent: "true"

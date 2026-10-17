@@ -36,6 +36,10 @@ journal() {
 	echo "[$(date '+%F %T')] $*"
 }
 
+lire_secret() {
+	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
+}
+
 journal "Deploiement $ENVIRONNEMENT depuis $BRANCHE, dans $PROJET"
 
 if [ ! -f "$SECRETS" ]; then
@@ -45,6 +49,15 @@ fi
 
 # Se deployer depuis la mauvaise branche passerait inapercu : la verification
 # coute une ligne et evite de livrer la recette en production.
+# Changement de domaine : tant que ANCIEN_DOMAINE est renseigne dans les secrets,
+# l'ancienne adresse redirige (301) vers le domaine principal. Retirer la ligne
+# pour supprimer la redirection au deploiement suivant.
+ANCIEN=$(lire_secret ANCIEN_DOMAINE)
+if [ -n "$ANCIEN" ]; then
+	COMPOSE="$COMPOSE -f compose.redirection.yml"
+	journal "Redirection de $ANCIEN vers le domaine principal"
+fi
+
 ACTUELLE=$(git rev-parse --abbrev-ref HEAD)
 if [ "$ACTUELLE" != "$BRANCHE" ]; then
 	journal "ECHEC : ce clone est sur '$ACTUELLE', or $ENVIRONNEMENT se deploie depuis '$BRANCHE'."
@@ -103,9 +116,6 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # Sans APP_DOMAIN dans cette liste, un projet qui nomme ainsi son domaine
 # (cas de edj) voyait la verification externe silencieusement ignoree — soit
 # exactement le controle pour lequel ce bloc existe.
-lire_secret() {
-	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
-}
 
 DOMAINE=$(lire_secret SERVER_HOST)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret APP_DOMAIN)
