@@ -20,24 +20,58 @@ security:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
+                # Apres connexion, on arrive sur le tableau de bord et non sur
+                # la derniere page visitee : un lien partage ne doit pas
+                # rediriger vers une URL choisie par un tiers.
+                use_referer: false
+                always_use_default_target_path: true
+                default_target_path: app_index
+            # Cinq essais par minute pour un meme couple adresse + IP, vingt
+            # par IP : de quoi laisser se tromper un humain, pas de quoi
+            # deviner un mot de passe. Les compteurs vivent dans le cache
+            # applicatif, comme ceux du bulletin d'adhesion.
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
             logout:
                 path: app_logout
-                # where to redirect after logout
-                # target: app_any_route
+                target: site_index
+                # Sans jeton, n'importe quelle page pouvait deconnecter un
+                # administrateur par un simple <img src="/logout">.
+                enable_csrf: true
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
+    #
+    # Les bulletins d'adhesion portent des donnees personnelles — dont celles de
+    # mineurs : seul le super-administrateur les voit. Un contributeur gere le
+    # calendrier et rien d'autre. Le motif est ancre (^/admin/adhesions) avant
+    # la regle generale, car seule la premiere regle qui correspond s'applique.
     access_control:
-        - { path: ^/admin, roles: ROLE_USER }
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin/adhesions, roles: ROLE_SUPER_ADMIN }
+        - { path: ^/admin, roles: ROLE_CONTRIBUTOR }
         - { path: ^/, roles: PUBLIC_ACCESS }
-            
+
     role_hierarchy:
         ROLE_SUPER_ADMIN: [ ROLE_CONTRIBUTOR, ROLE_USER ]
         ROLE_CONTRIBUTOR: [ ROLE_USER ]
 
 when@test:
     security:
+        # Fournisseur en memoire : les tests de controle d'acces connectent un
+        # role sans toucher a la base, qui dans le conteneur est celle de
+        # developpement. Un second fournisseur, car Symfony refuse de fusionner
+        # deux types sous le meme nom ; le pare-feu est repointe dessus.
+        providers:
+            test_memory_provider:
+                memory:
+                    users:
+                        contributeur@example.test: { roles: [ROLE_CONTRIBUTOR] }
+                        admin@example.test: { roles: [ROLE_SUPER_ADMIN] }
+        firewalls:
+            main:
+                provider: test_memory_provider
         password_hashers:
             # By default, password hashers are resource intensive and take time. This is
             # important to generate secure password hashes. In tests however, secure hashes
