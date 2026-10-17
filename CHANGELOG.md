@@ -26,6 +26,10 @@ GitHub, par `.github/workflows/publication.yml`.
   back-office, du carrousel et de la page d'accueil.
 - Le nombre de Nuits du Jeu annonce sur la page d'accueil passe de trois a
   quatre, en accord avec le reste de la page.
+- La section « Rejoindre l'association » se lit en trois bandeaux ordonnes
+  — ce que ca coute, ce que l'adhesion ouvre, comment adherer — au lieu de
+  trois panneaux cote a cote. Les tarifs s'enoncent par ce qu'on paie :
+  10 € par personne, + 5 € par personne supplementaire du meme foyer.
 
 ### Securite
 
