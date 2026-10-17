@@ -122,10 +122,14 @@ d'autre, et les chemins comme les secrets ne quittent jamais la machine
 2. `git fetch` puis `merge --ff-only` : un deploiement ne fusionne rien et ne
    resout aucun conflit. Si l'avance rapide est impossible, quelqu'un a
    modifie le clone du serveur, et c'est a un humain de regarder ;
-3. `up -d --build --wait` : l'image est construite **sur le serveur**, depuis
-   le code qui vient d'etre tire ;
-4. les migrations, explicitement — `RUN_MIGRATIONS` vaut 0 en production
-   (conventions, section 8) ;
+3. `build`, puis la base seule : l'image est construite **sur le serveur**,
+   depuis le code qui vient d'etre tire ;
+4. les migrations, explicitement et **avant** la bascule du code
+   (`RUN_MIGRATIONS` vaut 0 en production, conventions section 8) : l'ancien
+   code sert pendant que le schema avance, et le nouveau demarre sur un schema
+   a jour. Une migration doit donc rester compatible avec le code precedent ;
+   une suppression ou un renommage se livre en deux fois ;
+4bis. `up -d --wait`, qui bascule le code ;
 5. le menage des images orphelines, sans quoi le disque se remplit en silence ;
 6. la seule verification qui compte : la reponse du site **depuis
    l'exterieur**. Derriere Traefik, un conteneur peut se declarer `healthy`

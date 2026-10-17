@@ -64,6 +64,18 @@ GitHub, par `.github/workflows/publication.yml`.
   trois panneaux cote a cote. Les tarifs s'enoncent par ce qu'on paie :
   10 € par personne, + 5 € par personne supplementaire du meme foyer.
 
+### Corrige
+
+- Deploiement : les migrations passaient apres la bascule du code. Le code neuf
+  lisait des colonnes que l'ancien schema n'avait pas, et chaque depot de
+  bulletin ou page d'administration concernee repondait 500 entre le demarrage
+  et la migration. Elles jouent desormais avant la bascule, sur la base seule ;
+  une migration doit rester compatible avec le code precedent.
+- Deploiement : `MEMBERS_WHATSAPP_URL`, facultative, etait declaree comme un
+  secret obligatoire : son absence du fichier de secrets faisait echouer
+  `docker compose` avant meme les migrations. Elle est desormais vide par
+  defaut.
+
 ### Securite
 
 - Montee de Symfony 8.0 vers 8.1 : la branche 8.0 ne recoit pas de correctif
