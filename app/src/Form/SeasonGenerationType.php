@@ -29,7 +29,7 @@ final class SeasonGenerationType extends AbstractType
                 'required' => false,
             ])
             ->add('monthly', CheckboxType::class, [
-                'label' => 'Les après-midi du 3e samedi',
+                'label' => 'Les après-midi du 1er samedi',
                 'required' => false,
             ]);
     }

@@ -1,104 +1,120 @@
 {% extends 'app/layout.html.twig' %}
 
-{% block title %}Adhésions - Envie de jouer{% endblock %}
+{% import 'app/_icons.html.twig' as ui %}
 
-{% block body %}
-    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+{% block title %}Adhésions - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Adhésions</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Bulletins déposés depuis le site, du plus récent au plus ancien.
-            </p>
+            <h1 class="text-3xl font-bold text-ink">Adhésions</h1>
+            <p class="mt-1 text-slate-500">Bulletins déposés depuis le site, du plus récent au plus ancien.</p>
         </div>
+        <a href="{{ path('app_membership_philibert') }}" class="btn btn-secondary">
+            {{ ui.icon('download') }} Liste Philibert
+            <span class="badge bg-blue-100 text-blue-900">{{ philibertCount }}</span>
+            <span class="sr-only">adresse(s) autorisée(s), au format CSV</span>
+        </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 shadow-xs rounded-xl">
-        <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
-            <h2 class="font-semibold text-gray-800 dark:text-gray-100">
-                Bulletins <span class="text-gray-400 dark:text-gray-500 font-medium">{{ applications|length }}</span>
+    <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-8"
+          data-controller="select-all confirm"
+          data-confirm-message-value="Anonymiser les bulletins cochés ? Les noms et coordonnées seront effacés définitivement."
+          data-action="submit->confirm#ask">
+        <input type="hidden" name="_token" value="{{ csrf_token('anonymize_memberships') }}">
+
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <h2 class="text-lg font-bold text-ink">
+                Bulletins <span class="font-medium text-slate-400">{{ applications|length }}</span>
             </h2>
-        </header>
+            {% if applications is not empty %}
+                <button type="submit" class="btn btn-danger" data-select-all-target="action" disabled>
+                    {{ ui.icon('eye-slash') }} Anonymiser la sélection
+                    (<span data-select-all-target="count">0</span>)
+                </button>
+            {% endif %}
+        </div>
 
         {% if applications is empty %}
-            <p class="px-5 py-8 text-sm text-gray-500 dark:text-gray-400">
-                Aucun bulletin déposé pour le moment.
-            </p>
+            <p class="px-5 py-8 text-slate-500">Aucun bulletin déposé pour le moment.</p>
         {% else %}
             <div class="overflow-x-auto">
-                <table class="table-auto w-full dark:text-gray-300">
-                    <thead class="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/20">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
-                            <th class="p-2 first:pl-5 last:pr-5 whitespace-nowrap"><div class="font-semibold text-left">Déposé le</div></th>
-                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Adhérent</div></th>
-                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Contact</div></th>
-                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Formule</div></th>
-                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Rattachement</div></th>
-                            <th class="p-2 last:pr-5 whitespace-nowrap"><div class="font-semibold text-center">Autorisations</div></th>
+                            <th scope="col" class="w-12 px-5 py-3">
+                                <input type="checkbox" class="size-5 rounded border-slate-300 text-brand"
+                                       data-select-all-target="master" data-action="select-all#toggleAll">
+                                <span class="sr-only">Tout sélectionner</span>
+                            </th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Déposé le</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Adhérent</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Contact</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Formule</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Autorisations</th>
+                            <th scope="col" class="px-5 py-3 text-right font-semibold">Fiche</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
+                    <tbody class="divide-y divide-slate-100">
                         {% for application in applications %}
-                            <tr>
-                                <td class="p-2 first:pl-5 last:pr-5 whitespace-nowrap align-top">
-                                    <div class="text-gray-800 dark:text-gray-100">{{ application.submittedAt|date('d/m/Y') }}</div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">{{ application.submittedAt|date('H:i') }}</div>
-                                </td>
-
-                                <td class="p-2 align-top">
-                                    <div class="font-medium text-gray-800 dark:text-gray-100">
-                                        {{ application.firstName }} {{ application.lastName }}
-                                    </div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                                        Né(e) le {{ application.birthDate|date('d/m/Y') }}
-                                        {% if application.isMinor %}
-                                            <span class="inline-flex font-medium rounded-full text-center px-2 py-0.5 bg-amber-500/20 text-amber-700 ml-1">mineur</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-
-                                <td class="p-2 align-top">
-                                    <a class="text-violet-500 hover:underline" href="mailto:{{ application.email }}">{{ application.email }}</a>
-                                    {% if application.phone %}
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ application.phone }}</div>
+                            <tr class="{{ application.anonymized ? 'bg-slate-50/60 text-slate-400' }}">
+                                <td class="px-5 py-3 align-top">
+                                    {% if not application.anonymized %}
+                                        <input type="checkbox" name="ids[]" value="{{ application.id }}"
+                                               class="size-5 rounded border-slate-300 text-brand"
+                                               data-select-all-target="item" data-action="select-all#refresh">
+                                        <span class="sr-only">Sélectionner {{ application.firstName }} {{ application.lastName }}</span>
                                     {% endif %}
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">
-                                        {% if application.address %}{{ application.address }}, {% endif %}
-                                        {{ application.postalCode }} {{ application.city }}
-                                    </div>
                                 </td>
 
-                                <td class="p-2 align-top">
-                                    <div class="text-gray-800 dark:text-gray-100">{{ application.membershipType.label }}</div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">{{ application.membershipType.priceLabel }}</div>
+                                <td class="whitespace-nowrap px-3 py-3 align-top">
+                                    <div class="font-semibold {{ application.anonymized ? '' : 'text-slate-800' }}">{{ application.submittedAt|date('d/m/Y') }}</div>
+                                    <div class="text-xs">{{ application.submittedAt|date('H:i') }}</div>
                                 </td>
 
-                                <td class="p-2 align-top text-xs text-gray-500 dark:text-gray-400">
-                                    {% if application.principalMemberName %}
-                                        <div><span class="text-gray-400 dark:text-gray-500">Adhérent principal :</span><br>{{ application.principalMemberName }}</div>
-                                    {% endif %}
-                                    {% if application.isMinor %}
-                                        <div class="mt-1">
-                                            <span class="text-gray-400 dark:text-gray-500">Responsable légal :</span><br>
-                                            {{ application.guardianFirstName }} {{ application.guardianLastName }}<br>
-                                            <a class="text-violet-500 hover:underline" href="mailto:{{ application.guardianEmail }}">{{ application.guardianEmail }}</a>
+                                <td class="px-3 py-3 align-top">
+                                    {% if application.anonymized %}
+                                        <span class="badge bg-slate-200 text-slate-700">Anonymisé</span>
+                                        <div class="mt-1 text-xs">le {{ application.anonymizedAt|date('d/m/Y') }}</div>
+                                    {% else %}
+                                        <div class="font-semibold text-slate-800">{{ application.firstName }} {{ application.lastName }}</div>
+                                        <div class="text-xs text-slate-500">
+                                            Né(e) le {{ application.birthDate|date('d/m/Y') }}
+                                            {% if application.isMinor %}<span class="badge ml-1 bg-amber-100 text-amber-900">mineur</span>{% endif %}
                                         </div>
                                     {% endif %}
-                                    {% if not application.principalMemberName and not application.isMinor %}—{% endif %}
+                                </td>
+
+                                <td class="px-3 py-3 align-top">
+                                    {% if not application.anonymized %}
+                                        <a class="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.email }}">{{ application.email }}</a>
+                                        {% if application.phone %}<div class="text-xs text-slate-500">{{ application.phone }}</div>{% endif %}
+                                    {% else %}—{% endif %}
+                                </td>
+
+                                <td class="px-3 py-3 align-top">
+                                    <div class="{{ application.anonymized ? '' : 'text-slate-800' }}">{{ application.membershipType.label }}</div>
                                 </td>
 
                                 {# Les deux reponses qui engagent l'association : un refus de droit
                                    a l'image doit se voir sans avoir a lire la ligne. #}
-                                <td class="p-2 last:pr-5 align-top">
-                                    <div class="flex flex-col items-center gap-1">
+                                <td class="px-3 py-3 align-top">
+                                    <div class="flex flex-col items-start gap-1">
                                         {% if application.imageRightsRefused %}
-                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-red-500/20 text-red-700">Photos refusées</span>
+                                            <span class="badge bg-red-100 text-red-900">Photos refusées</span>
                                         {% else %}
-                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-green-500/20 text-green-700">Photos acceptées</span>
+                                            <span class="badge bg-green-100 text-green-900">Photos acceptées</span>
                                         {% endif %}
                                         {% if application.philibertConsent %}
-                                            <span class="inline-flex text-xs font-medium rounded-full px-2.5 py-0.5 bg-violet-500/20 text-violet-700">Philibert</span>
+                                            <span class="badge bg-blue-100 text-blue-900">Philibert</span>
                                         {% endif %}
                                     </div>
+                                </td>
+
+                                <td class="px-5 py-3 text-right align-top">
+                                    <a href="{{ path('app_membership_show', {id: application.id}) }}" class="btn btn-secondary">
+                                        {{ ui.icon('eye') }} Voir<span class="sr-only"> le bulletin {{ application.anonymized ? 'anonymisé' : application.firstName ~ ' ' ~ application.lastName }}</span>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -106,5 +122,5 @@
                 </table>
             </div>
         {% endif %}
-    </div>
+    </form>
 {% endblock %}

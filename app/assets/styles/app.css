@@ -1,33 +1,62 @@
 @import "tailwindcss";
 @source not "../../public";
 
-/* Animation pour les toasts */
-@keyframes slide-in-right {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
+/* Palette de l'administration : l'encre et le bleu du site public, pour qu'on
+   reconnaisse la maison, sur des gris neutres qui laissent la place aux
+   donnees. Declaree ici plutot que dans une configuration JavaScript : c'est
+   la facon de faire de Tailwind 4. */
+@theme {
+    --color-ink: #171922;
+    --color-brand: #255db0;
+    --color-brand-dark: #1b4a8f;
+    --color-accent: #e9c33a;
+    --color-danger: #c62f20;
+    --color-danger-dark: #a32417;
+    --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+    html {
+        color-scheme: light;
     }
-    to {
-        transform: translateX(0);
-        opacity: 1;
+
+    body {
+        @apply bg-slate-100 font-sans text-slate-700 antialiased;
+    }
+
+    /* Focus visible partout, au clavier comme a la souris : l'administration
+       se manie beaucoup au clavier (formulaires, tableaux). */
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-brand;
     }
 }
 
-@keyframes slide-out-right {
-    from {
-        transform: translateX(0);
-        opacity: 1;
+@layer components {
+    .btn {
+        @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors;
     }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
+
+    .btn-primary {
+        @apply border-brand bg-brand text-white hover:bg-brand-dark;
     }
-}
 
-.animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
-}
+    .btn-accent {
+        @apply border-accent bg-accent text-ink hover:bg-amber-300;
+    }
 
-.animate-slide-out-right {
-    animation: slide-out-right 0.3s ease-out;
+    .btn-secondary {
+        @apply border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
+    }
+
+    .btn-danger {
+        @apply border-danger bg-white text-danger hover:bg-danger hover:text-white;
+    }
+
+    .card {
+        @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    }
+
+    .badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
 }

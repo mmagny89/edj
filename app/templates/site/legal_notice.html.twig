@@ -1,0 +1,79 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Mentions légales - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main class="section legal-page">
+        <div class="section__intro">
+            <p class="eyebrow">Informations</p>
+            <h2>Mentions légales</h2>
+            <p>
+                Informations légales relatives à ce site, conformément à l'article 6 de la loi
+                du 21 juin 2004 pour la confiance dans l'économie numérique.
+            </p>
+        </div>
+
+        <article class="legal-block">
+            <h3>Éditeur du site</h3>
+            <p>
+                <strong>Envie de Jouer</strong>, association régie par la loi du 1<sup>er</sup> juillet 1901.<br>
+                Siège social : Maison des Associations, 89300 Joigny.<br>
+                Numéro RNA : <em>à compléter</em> — Numéro SIRET : <em>à compléter</em>.<br>
+                Courriel : <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Directeur de la publication</h3>
+            <p>
+                Le président ou la présidente de l'association en exercice : <em>à compléter</em>.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Hébergement</h3>
+            <p>
+                Le site est hébergé sur un serveur dédié exploité par <em>à compléter : raison
+                sociale, adresse postale et téléphone de l'hébergeur</em>.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Propriété intellectuelle</h3>
+            <p>
+                Les textes, la mascotte et la charte graphique de ce site sont la propriété de
+                l'association Envie de Jouer. Les logos des partenaires restent la propriété de
+                leurs titulaires respectifs et sont reproduits avec leur accord, à seule fin de
+                signaler le partenariat.
+            </p>
+            <p>
+                Le code source du site est publié sous licence AGPL-3.0 et consultable
+                librement.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Données personnelles et cookies</h3>
+            <p>
+                Ce site ne dépose aucun cookie de mesure d'audience ni de publicité. Le
+                traitement des données recueillies par le bulletin d'adhésion est décrit sur la
+                page <a href="{{ path('site_privacy') }}">Données personnelles</a>.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Signaler une erreur</h3>
+            <p>
+                Une information inexacte, un lien mort, un contenu à retirer ? Écrivez-nous à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
+            </p>
+        </article>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--quiet">
+                <i class="fa-solid fa-house" aria-hidden="true"></i>
+                Retour à l'accueil
+            </a>
+        </div>
+    </main>
+{% endblock %}

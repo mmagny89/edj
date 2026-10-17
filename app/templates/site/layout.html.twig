@@ -48,7 +48,8 @@
 
     <footer class="site-footer">
         <span>© {{ "now" | date('Y') }} Envie de Jouer - Joigny</span>
-        <a href="/mentions-legales">Mentions légales</a>
+        <a href="{{ path('site_legal_notice') }}">Mentions légales</a>
+        <a href="{{ path('site_privacy') }}">Données personnelles</a>
     </footer>
 {% endblock %}
 {% block javascripts %}

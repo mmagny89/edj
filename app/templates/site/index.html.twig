@@ -35,7 +35,7 @@
                 <div class="hero-pills" aria-label="Informations rapides">
                     <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Maison des Associations, Joigny</span>
                     <span><i class="fa-solid fa-dice" aria-hidden="true"></i> Tous les mardis soir</span>
-                    <span><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> 3e samedi du mois</span>
+                    <span><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> 1er samedi du mois</span>
                 </div>
             </div>
 
@@ -55,7 +55,7 @@
                 <h2>Les prochaines dates</h2>
                 <p>
                     Repère ton créneau, prépare la prochaine table et viens jouer : les soirées du mardi
-                    et les après-midi du 3e samedi rassemblent les adhérents autour de la ludothèque,
+                    et les après-midi du 1er samedi rassemblent les adhérents autour de la ludothèque,
                     tout au long de la saison.
                 </p>
             </div>
@@ -69,7 +69,7 @@
                 <div class="calendar-toolbar" aria-label="Filtrer les événements">
                     <button class="calendar-filter is-active" type="button" data-filter="all">Tous</button>
                     <button class="calendar-filter" type="button" data-filter="weekly">Mardis</button>
-                    <button class="calendar-filter" type="button" data-filter="monthly">3e samedis</button>
+                    <button class="calendar-filter" type="button" data-filter="monthly">1ers samedis</button>
                     <button class="calendar-filter" type="button" data-filter="special">Manifestations</button>
                 </div>
 
@@ -107,7 +107,7 @@
                         </article>
                         <article>
                             <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
-                            <h3>Les 3e samedis du mois</h3>
+                            <h3>Les 1ers samedis du mois</h3>
                             <p>Une après-midi ludique par mois, de 14h à 18h.</p>
                         </article>
                     </div>
@@ -118,8 +118,8 @@
                     <div class="info-board">
                         <article>
                             <i class="fa-solid fa-moon" aria-hidden="true"></i>
-                            <h3>Trois Nuits du Jeu</h3>
-                            <p>Trois nuits dans la saison, pour les longues parties et les grosses tables.</p>
+                            <h3>Quatre Nuits du Jeu</h3>
+                            <p>Quatre nuits dans la saison, pour les longues parties et les grosses tables.</p>
                         </article>
                         <article>
                             <i class="fa-solid fa-cake-candles" aria-hidden="true"></i>
@@ -199,66 +199,73 @@
                 <p class="eyebrow">Adhésion</p>
                 <h2>Rejoindre l'association</h2>
                 <p>
-                    L'adhésion ouvre l'ensemble de nos rendez-vous — soirées du mardi, après-midi du
-                    3e samedi, grands événements de la saison — et l'accès à la vie associative.
+                    Une cotisation par saison, du 1<sup>er</sup> octobre au 30 septembre suivant,
+                    qui ouvre tous nos rendez-vous et l'accès à la vie associative.
                 </p>
             </div>
 
-            <div class="form-actions membership__cta">
-                <a href="{{ path('membership_form') }}" class="button button--join">
-                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                    Remplir le bulletin en ligne
-                </a>
-            </div>
+            {# La section se lit de haut en bas : ce que ca coute, ce que ca
+               ouvre, puis comment adherer. Les trois panneaux cote a cote
+               d'avant se lisaient en parallele, et le bouton d'adhesion
+               flottait au-dessus sans rien conclure. #}
+            <div class="membership__flow">
+                <section class="membership-band membership-band--prices">
+                    <h3>Ce que ça coûte</h3>
 
-            <div class="membership__content">
-                <div class="membership-benefits">
-                    <div class="membership-season">
-                        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-                        <div>
-                            <h3>Saison associative</h3>
-                            <p>Du <strong>1er octobre</strong> au <strong>30 septembre</strong> suivant.</p>
+                    {# Deux groupes, deux echeances : la cotisation annuelle
+                       (10 € puis 5 € par personne en plus) tient dans un seul
+                       cadre, et le tarif a l'evenement se lit a part, sous son
+                       propre intitule — on ne les additionne pas. #}
+                    <div class="price-group price-group--year">
+                        <p class="price-group__label"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> À l'année</p>
+                        <p class="price-group__note">Valable toute la saison, quel que soit le nombre de venues.</p>
+
+                        <div class="price-group__lines">
+                            <p class="price-line price-line--lead">
+                                <span class="price-line__amount">10 €</span>
+                                <span class="price-line__for">par personne</span>
+                            </p>
+                            <p class="price-line">
+                                <span class="price-line__amount">+ 5 €</span>
+                                <span class="price-line__for">par personne supplémentaire du même foyer</span>
+                            </p>
                         </div>
                     </div>
 
-                    <h3>Ce que l'adhésion permet</h3>
-                    <ul>
+                    <div class="price-group price-group--event">
+                        <p class="price-group__label"><i class="fa-solid fa-ticket" aria-hidden="true"></i> À l'événement</p>
+                        <p class="price-group__note">Adhésion gratuite : on paie seulement ce à quoi on vient.</p>
+
+                        <p class="price-line">
+                            <span class="price-line__amount">1 €</span>
+                            <span class="price-line__for">par événement</span>
+                        </p>
+                    </div>
+
+                    <p class="membership-band__note">Le règlement se fait sur place, lors d'une de nos soirées.</p>
+                </section>
+
+                <section class="membership-band membership-band--join">
+                    <div class="membership-band__head">
+                        <h3>Adhérer</h3>
+                        <a href="{{ path('membership_form') }}" class="button button--join">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                            Remplir le bulletin en ligne
+                        </a>
+                    </div>
+
+                    <p class="membership-band__label">L'adhésion ouvre :</p>
+                    <ul class="membership-perks">
                         <li>Les soirées du mardi, de 18h30 à minuit.</li>
-                        <li>Les après-midi ludiques du 3e samedi du mois.</li>
+                        <li>Les après-midi ludiques du 1er samedi du mois.</li>
                         <li>Les quatre Nuits du Jeu, dont celle de l'anniversaire.</li>
                         <li>Le week-end du Jeu pour la Fête des Jeux.</li>
                         <li>Nos sorties : le festival Le Sens du Jeu et la fête des associations.</li>
                         <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
                     </ul>
-                </div>
 
-                <div class="membership-prices">
-                    <section class="price-group">
-                        <h3>À l'année</h3>
-                        <p class="price-group__note">Valable sur toute la saison, quel que soit le nombre de venues.</p>
-                        <article>
-                            <span>Individuelle</span>
-                            <strong>10 €</strong>
-                        </article>
-                        <article>
-                            <span>Famille</span>
-                            <strong>10 € <small>+ 5 € / pers. suppl.</small></strong>
-                        </article>
-                    </section>
 
-                    <section class="price-group price-group--event">
-                        <h3>À l'événement</h3>
-                        <p class="price-group__note">Sans engagement sur l'année, on paie ce à quoi on vient.</p>
-                        <article>
-                            <span>Consommateur</span>
-                            <strong>Gratuite <small>+ 1 € / événement</small></strong>
-                        </article>
-                    </section>
-                </div>
-
-                <div class="membership-files">
-                    <h3>Documents</h3>
-                    <p class="membership-files__note">À lire avant d'adhérer.</p>
+                    <p class="membership-band__note">À lire avant d'adhérer :</p>
 
                     <ul class="document-links">
                         <li>
@@ -286,7 +293,7 @@
                             </a>
                         </li>
                     </ul>
-                </div>
+                </section>
             </div>
         </section>
 
@@ -328,11 +335,11 @@
                             <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                             Adhérer en ligne
                         </a>
-                        <a href="https://www.facebook.com/EnviedeJouer89/" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_facebook }}" target="_blank" rel="noreferrer" class="button button--social">
                             <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
                             Facebook
                         </a>
-                        <a href="https://www.instagram.com/envie_de_jouer_89/" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_instagram }}" target="_blank" rel="noreferrer" class="button button--social">
                             <i class="fa-brands fa-instagram" aria-hidden="true"></i>
                             Instagram
                         </a>
@@ -342,26 +349,29 @@
                 <aside id="partenaires" class="partners-panel">
                     <p class="eyebrow">Partenaires</p>
                     <h2>Ils jouent avec nous</h2>
+                    {# Les logos des partenaires sont servis depuis
+                       public/img/partenaires : aucune ressource externe, le
+                       site devant rester affichable sans acces a un CDN. #}
                     <div class="partners-list" aria-label="Liste des partenaires">
                         <article>
-                            <img src="/img/edj-mascotte-transparent.png" alt="">
-                            <span>Ville de Joigny</span>
+                            <img src="/img/partenaires/ville-de-joigny.png" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://www.ville-joigny.fr/" target="_blank" rel="noreferrer">Ville de Joigny</a></span>
                         </article>
                         <article>
-                            <img src="/img/edj-mascotte-transparent.png" alt="">
-                            <span>Sens Ludique</span>
+                            <img src="/img/partenaires/sens-ludique.jpg" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://www.sensludique.com/" target="_blank" rel="noreferrer">Sens Ludique</a></span>
                         </article>
                         <article>
-                            <img src="/img/edj-mascotte-transparent.png" alt="">
-                            <span>LudiPassion</span>
+                            <img src="/img/partenaires/ludipassion.png" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://ludipassion.fr/" target="_blank" rel="noreferrer">LudiPassion</a></span>
                         </article>
                         <article>
-                            <img src="/img/edj-mascotte-transparent.png" alt="">
-                            <span>La Crique aux jeux</span>
+                            <img src="/img/partenaires/la-crique-aux-jeux.jpg" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noreferrer">La Crique aux jeux</a></span>
                         </article>
                         <article>
-                            <img src="/img/edj-mascotte-transparent.png" alt="">
-                            <span>Carte sur table</span>
+                            <img src="/img/partenaires/cartes-sur-table.jpg" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://www.facebook.com/cartessurtable89" target="_blank" rel="noreferrer">Cartes sur table</a></span>
                         </article>
                     </div>
                 </aside>

@@ -1,7 +1,48 @@
 {% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
 
-{% block title %}Tableau de bord - Envie de jouer{% endblock %}
+{% block title %}Tableau de bord - Envie de Jouer{% endblock %}
 
-{% block body %}
-    <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Tableau de bord</h1>
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Tableau de bord</h1>
+    <p class="mt-1 text-slate-500">Bonjour. Voici l'essentiel de ce qui se passe à l'association.</p>
+
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+        <section class="card p-6" aria-labelledby="titre-prochains">
+            <h2 id="titre-prochains" class="text-lg font-bold text-ink">Prochains rendez-vous</h2>
+
+            {% if upcoming is empty %}
+                <p class="mt-3 text-sm text-slate-500">Aucun évènement au calendrier.</p>
+            {% else %}
+                <ul class="mt-4 divide-y divide-slate-100">
+                    {% for event in upcoming %}
+                        <li class="flex items-baseline justify-between gap-4 py-2.5">
+                            <span class="font-semibold text-slate-800">{{ event.title }}</span>
+                            <time datetime="{{ event.startsAt|date('Y-m-d') }}" class="shrink-0 text-sm text-slate-500">
+                                {{ event.startsAt|date('d/m/Y') }}
+                            </time>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <div class="mt-5 flex flex-wrap gap-3">
+                <a href="{{ path('app_events') }}" class="btn btn-secondary">{{ ui.icon('calendar') }} Voir le calendrier</a>
+                <a href="{{ path('app_event_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter un évènement</a>
+            </div>
+        </section>
+
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <section class="card p-6" aria-labelledby="titre-adhesions">
+                <h2 id="titre-adhesions" class="text-lg font-bold text-ink">Adhésions</h2>
+                <p class="mt-4 text-5xl font-bold text-brand">{{ applicationCount }}</p>
+                <p class="mt-1 text-sm text-slate-500">
+                    {{ applicationCount == 1 ? 'bulletin déposé' : 'bulletins déposés' }} depuis le site.
+                </p>
+                <div class="mt-5">
+                    <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('users') }} Consulter les bulletins</a>
+                </div>
+            </section>
+        {% endif %}
+    </div>
 {% endblock %}

@@ -2,8 +2,13 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # La session ne demarre que si on la lit ou l'ecrit. Le cookie est reserve
+    # a HTTPS des que la requete l'est (derriere Traefik, grace aux proxies de
+    # confiance), invisible du JavaScript et jamais envoye depuis un autre site.
+    session:
+        cookie_secure: auto
+        cookie_httponly: true
+        cookie_samesite: lax
 
     #esi: true
     #fragments: true

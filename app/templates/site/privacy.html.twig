@@ -1,0 +1,141 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Données personnelles - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main class="section legal-page">
+        <div class="section__intro">
+            <p class="eyebrow">Informations</p>
+            <h2>Données personnelles</h2>
+            <p>
+                Comment l'association Envie de Jouer traite les données que vous lui confiez,
+                en application du Règlement général sur la protection des données (RGPD) et de
+                la loi « Informatique et Libertés ».
+            </p>
+        </div>
+
+        <article class="legal-block">
+            <h3>Qui est responsable du traitement</h3>
+            <p>
+                L'association <strong>Envie de Jouer</strong>, dont le siège est à la Maison des
+                Associations, 89300 Joigny. Pour toute question sur vos données :
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
+            </p>
+            <p>
+                L'association n'a pas désigné de délégué à la protection des données : sa taille
+                et la nature des traitements ne l'imposent pas.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Quelles données, et pourquoi</h3>
+            <p>
+                Le seul formulaire du site est le <a href="{{ path('site_index') }}#adhesion">bulletin
+                d'adhésion</a>. Il recueille :
+            </p>
+            <ul>
+                <li>votre identité : nom, prénom, date de naissance ;</li>
+                <li>vos coordonnées : adresse postale, code postal, ville, téléphone, adresse e-mail ;</li>
+                <li>la formule d'adhésion choisie et, pour une adhésion familiale, le nom de l'adhérent principal ;</li>
+                <li>pour un mineur : nom, prénom et adresse e-mail du responsable légal ;</li>
+                <li>vos choix : autorisation de transmission à la boutique Philibert, refus éventuel du droit à l'image, acceptation des statuts et du règlement intérieur ;</li>
+                <li>la ville et le nom portés en signature, ainsi que la date d'envoi.</li>
+            </ul>
+            <p>
+                Ces données servent à instruire votre demande d'adhésion, tenir le registre des
+                adhérents, vous informer de la vie de l'association et satisfaire aux obligations
+                légales d'une association loi 1901.
+            </p>
+            <p>
+                Dès le dépôt du bulletin, un courriel de confirmation est envoyé à l'adresse indiquée
+                — et à celle du responsable légal pour un mineur. Il rappelle la formule choisie et
+                renvoie vers les réseaux sociaux de l'association. Il n'est envoyé qu'une fois, et
+                ne vaut pas inscription à une lettre d'information.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Sur quelle base légale</h3>
+            <ul>
+                <li><strong>Exécution du contrat d'adhésion</strong> pour l'identité, les coordonnées et la formule choisie : sans elles, l'adhésion ne peut pas être enregistrée.</li>
+                <li><strong>Votre consentement</strong>, libre et révocable à tout moment, pour la transmission de votre adresse e-mail à la boutique Philibert et pour l'usage de photos prises lors des activités.</li>
+                <li><strong>Intérêt légitime</strong> de l'association pour la conservation des preuves d'acceptation des statuts et du règlement intérieur.</li>
+            </ul>
+        </article>
+
+        <article class="legal-block">
+            <h3>Qui y a accès</h3>
+            <p>
+                Les membres du Conseil d'Administration, pour les seuls besoins de la gestion
+                associative. Aucune donnée n'est vendue, louée ni transmise à des tiers, à une
+                exception : votre adresse e-mail est communiquée à la boutique Philibert
+                <em>si et seulement si</em> vous avez coché la case correspondante.
+            </p>
+            <p>
+                Les données sont hébergées sur un serveur situé dans l'Union européenne. Aucun
+                transfert hors de l'Union européenne n'est réalisé.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Combien de temps</h3>
+            <ul>
+                <li><strong>Adhérents à jour de cotisation</strong> : pendant toute la durée de l'adhésion.</li>
+                <li><strong>Après la dernière adhésion</strong> : trois ans, délai au terme duquel les données sont <em>anonymisées</em> : nom, coordonnées, signature et responsable légal sont effacés de façon irréversible. Seuls la formule choisie, les autorisations, la date de dépôt et l'année de naissance sont conservées, pour les statistiques de l'association.</li>
+                <li><strong>Demandes d'adhésion non abouties</strong> : un an.</li>
+            </ul>
+        </article>
+
+        <article class="legal-block">
+            <h3>Vos droits</h3>
+            <p>
+                Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation
+                et d'opposition, ainsi que d'un droit à la portabilité de vos données. Vous
+                pouvez retirer à tout moment un consentement que vous avez donné, sans que cela
+                remette en cause ce qui a été fait avant.
+            </p>
+            <p>
+                Le droit à l'effacement s'exerce par l'anonymisation de votre bulletin, que le
+                Conseil d'Administration réalise sur simple demande.
+            </p>
+            <p>
+                Pour les exercer, écrivez à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
+                L'association répond dans un délai d'un mois.
+            </p>
+            <p>
+                Si la réponse ne vous satisfait pas, vous pouvez saisir la Commission nationale
+                de l'informatique et des libertés :
+                <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noreferrer">cnil.fr/fr/plaintes</a>.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Cookies et mesure d'audience</h3>
+            <p>
+                Ce site ne dépose aucun cookie publicitaire ni de mesure d'audience, et n'utilise
+                aucun service de statistiques tiers. Seul un cookie de session strictement
+                nécessaire est posé lors de l'envoi d'un formulaire, pour en vérifier la
+                provenance ; il expire à la fermeture du navigateur et ne demande pas votre
+                consentement.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Sécurité</h3>
+            <p>
+                Les échanges avec le site sont chiffrés (HTTPS). L'accès à l'espace de gestion
+                est restreint aux membres du Conseil d'Administration et protégé par mot de
+                passe.
+            </p>
+        </article>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--quiet">
+                <i class="fa-solid fa-house" aria-hidden="true"></i>
+                Retour à l'accueil
+            </a>
+            <a href="{{ path('site_legal_notice') }}" class="button button--quiet">Mentions légales</a>
+        </div>
+    </main>
+{% endblock %}

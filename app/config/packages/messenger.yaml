@@ -27,3 +27,12 @@ framework:
 
             # Route your messages to the transports
             # 'App\Message\YourMessage': async
+
+# Les tests ne passent ni par la base ni par le worker : les messages restent en
+# memoire, ou assertQueuedEmailCount() les compte. Sans cela, chaque courriel
+# envoye par un test finirait dans la table messenger_messages de la base de test.
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'

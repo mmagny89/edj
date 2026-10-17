@@ -21,7 +21,7 @@ final class SiteController extends AbstractController
     /**
      * Les evenements sont remis au front dans la forme qu'attend le
      * carrousel de assets/site.js, qui les fusionne avec les mardis et les
-     * 3e samedis qu'il calcule lui-meme.
+     * 1ers samedis qu'il calcule lui-meme.
      *
      * Un evenement sur plusieurs jours est deplie en une entree par jour :
      * le carrousel range par date, et un week-end du jeu doit apparaitre le

@@ -45,6 +45,7 @@ env:
   APP_SECRET: ci-only-not-a-real-secret
   DATABASE_URL: postgresql://edj:edj@127.0.0.1:5432/edj?serverVersion=18&charset=utf8
   MAILER_DSN: null://null
+  MEMBERS_WHATSAPP_URL: ''
   SYMFONY_TRUSTED_PROXIES: ''
 
 jobs:

@@ -2,6 +2,10 @@ twig:
     cache: false # Désactive le cache des templates
     debug: true
     auto_reload: true # Recharge automatiquement les templates
+    globals:
+        social_facebook: '%app.social.facebook%'
+        social_instagram: '%app.social.instagram%'
+        social_facebook_group: '%app.social.facebook_group%'
 when@dev:
     twig:
         cache: false

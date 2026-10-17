@@ -705,129 +705,214 @@ h1 {
     background: var(--cream);
 }
 
-.membership__content {
+/* Les trois bandeaux se lisent de haut en bas : cout, contenu, adhesion.
+   Chacun occupe toute la largeur, pour qu'aucun ne se lise en parallele
+   d'un autre. */
+.membership__flow {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.25fr) minmax(230px, 0.85fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    align-items: stretch;
+    align-items: start;
 }
 
-.membership-benefits,
-.membership-prices,
-.membership-files {
+
+.membership-band {
+    padding: clamp(20px, 3vw, 30px);
     border: 3px solid var(--ink);
     border-radius: 8px;
+    background: var(--paper);
     box-shadow: 7px 7px 0 rgba(23, 25, 34, 0.18);
 }
 
-.membership-benefits,
-.membership-files {
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    background: var(--paper);
+.membership-band h3 {
+    margin: 0 0 18px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+    line-height: 1;
 }
 
-/* Bandeau interne au bloc "ce que l'adhesion permet", plus une carte de la
-   grille : il tient sur une ligne et laisse une colonne de plus aux
-   cotisations. */
-.membership-season {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding: 14px 16px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--red);
-    color: white;
-}
-
-.membership-season i {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 46px;
-    height: 46px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--yellow);
-    color: var(--ink);
-    font-size: 1.2rem;
-}
-
-.membership-benefits h3,
-.membership-files h3 {
-    margin: 0;
-    font-size: 1.35rem;
-}
-
-.membership-season h3 {
-    margin: 0;
-    font-size: 1.15rem;
-}
-
-.membership-season p {
-    margin: 2px 0 0;
-    font-weight: 700;
-}
-
-.membership-benefits ul {
-    margin: 12px 0 0;
-    font-weight: 700;
-}
-
-.membership-benefits ul {
-    display: grid;
-    gap: 10px;
-    padding-left: 22px;
-    color: var(--muted);
-}
-
-.membership-prices {
-    display: grid;
-    gap: 12px;
+.membership-band--prices {
     background: var(--yellow-soft);
-    padding: 16px;
 }
 
-.membership-prices article {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 82px;
-    padding: 16px;
+.membership-band__note {
+    margin: 18px 0 0;
+    color: #2b3040;
+    font-size: 0.95rem;
+    font-weight: 700;
+    max-width: 68ch;
+}
+
+/* Un groupe = une echeance. L'annuel est cadre en bleu, l'evenement en
+   pointilles rouges : la bordure dit deja que ce n'est pas la meme chose. */
+.price-group {
+    display: grid;
+    gap: 6px;
+    padding: 16px 18px;
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: white;
 }
 
-.membership-prices span {
+.price-group + .price-group {
+    margin-top: 14px;
+}
+
+.price-group--event {
+    border-style: dashed;
+    background: var(--cream);
+}
+
+.price-group__label {
+    margin: 0;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+    line-height: 1;
+}
+
+.price-group--year .price-group__label {
+    color: var(--blue);
+}
+
+.price-group--event .price-group__label {
+    color: var(--red-dark);
+}
+
+.price-group__note {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.price-group__lines {
+    display: grid;
+    gap: 6px;
+}
+
+.price-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0;
+}
+
+.price-line__amount {
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(2.2rem, 4vw, 2.8rem);
+    line-height: 1;
+}
+
+.price-line--lead .price-line__amount {
+    font-size: clamp(3.2rem, 6vw, 4.4rem);
+}
+
+.price-group--year .price-line__amount {
+    color: var(--blue);
+}
+
+.price-group--event .price-line__amount {
+    color: var(--red-dark);
+}
+
+.price-line__for {
+    font-weight: 700;
+}
+
+.membership-perks {
+    /* Le preflight de Tailwind retire les puces de toute liste : elles se
+       redeclarent la ou on les veut. */
+    list-style: disc;
+    margin: 0 0 22px;
+    padding-left: 22px;
+    color: #2b3040;
+    font-weight: 700;
+}
+
+.membership-perks li {
+    margin-bottom: 12px;
+    break-inside: avoid;
+    text-wrap: pretty;
+}
+
+.membership-perks li::marker {
+    color: var(--red);
+}
+
+/* Titre et bouton sur une ligne, le bouton passant dessous quand la place
+   manque ; le h3 perd sa marge basse, portee par le conteneur. */
+.membership-band__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin-bottom: 18px;
+}
+
+.membership-band__head h3 {
+    margin: 0;
+}
+
+.membership-band__label {
+    margin: 0 0 10px;
     font-weight: 900;
 }
 
-.membership-prices strong {
-    color: var(--blue);
-    font-family: "Akaya Kanadaka", cursive;
-    font-size: clamp(2.4rem, 5vw, 4rem);
-    line-height: 0.86;
-    text-align: right;
+.membership-band--join .button {
+    width: auto;
 }
 
-.membership-prices small {
-    display: block;
-    color: var(--ink);
-    font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
-    font-size: 0.82rem;
-    line-height: 1.1;
+/* Trois documents, trois colonnes : la moitie de largeur du bandeau ne laisse
+   pas de place a l'icone a gauche du libelle, elle passe donc au-dessus, et le
+   chevron de telechargement rejoint le coin. */
+.membership-band--join .document-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 10px;
 }
 
-.membership-files__note {
-    margin: 8px 0 0;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--muted);
+.membership-band--join .document-links a {
+    grid-template-columns: 1fr auto;
+    align-content: start;
+    row-gap: 8px;
+    height: 100%;
+}
+
+.membership-band--join .document-links a > i:first-child {
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.membership-band--join .document-links__label {
+    grid-column: 1 / -1;
+    /* Deux lignes reservees : « Reglement interieur » passe a la ligne, et le
+       format « PDF » doit rester aligne d'une carte a l'autre. */
+    min-height: 2.4em;
+    overflow-wrap: anywhere;
+}
+
+.membership-band--join .document-links__meta {
+    grid-column: 1;
+}
+
+.membership-band--join .document-links__action {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: start;
+}
+
+@media (max-width: 560px) {
+    .membership-band--join .document-links {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 920px) {
+    .membership__flow {
+        grid-template-columns: 1fr;
+    }
+
 }
 
 .document-links {
@@ -940,6 +1025,12 @@ h1 {
     font-weight: 900;
 }
 
+/* Le lien d'un partenaire reste lisible sur la carte blanche : le soulignement
+   le distingue du nom des partenaires qui n'ont pas de site. */
+.partners-list a {
+    color: inherit;
+}
+
 .contact-section {
     background: var(--board);
     background-image:
@@ -1000,13 +1091,8 @@ h1 {
 }
 
 @media (max-width: 1180px) {
-    .stats-grid,
-    .membership__content {
+    .stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .membership-files {
-        grid-column: auto;
     }
 }
 
@@ -1072,13 +1158,8 @@ h1 {
 
 @media (max-width: 680px) {
     .stats-grid,
-    .membership__content,
     .partners-list {
         grid-template-columns: 1fr;
-    }
-
-    .membership-files {
-        grid-column: auto;
     }
 
     .button {
@@ -1108,30 +1189,6 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
-}
-
-/* Cotisations — deux groupes distincts : annuelle et a l'evenement. */
-.price-group {
-    display: grid;
-    gap: 10px;
-    align-content: start;
-}
-
-.price-group h3 {
-    margin: 0;
-    font-size: 1.15rem;
-}
-
-.price-group__note {
-    margin: -4px 0 2px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--muted);
-}
-
-.price-group--event {
-    padding-top: 14px;
-    border-top: 3px dashed var(--ink);
 }
 
 @media (max-width: 920px) {
@@ -1302,4 +1359,78 @@ h1 {
     gap: 6px;
     margin-top: 4px;
     opacity: 0.75;
+}
+
+/* ---------------------------------------------------------------------------
+   Pages legales
+   ------------------------------------------------------------------------ */
+.legal-page {
+    display: grid;
+    gap: clamp(16px, 2.5vw, 22px);
+}
+
+.legal-block {
+    max-width: 78ch;
+    padding: clamp(18px, 2.5vw, 28px) clamp(18px, 3vw, 32px);
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.18);
+}
+
+/* Les titres de section reprennent la police d'affichage du site : sans
+   cela, un h3 sort a la taille par defaut du navigateur et se confond avec
+   le paragraphe qui le suit. */
+.legal-block h3 {
+    margin: 0 0 14px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    line-height: 1.05;
+}
+
+.legal-block p,
+.legal-block ul {
+    margin: 0 0 14px;
+    color: #2b3040;
+    line-height: 1.65;
+}
+
+.legal-block > :last-child {
+    margin-bottom: 0;
+}
+
+.legal-block ul {
+    list-style: disc;
+    padding-left: 1.3em;
+}
+
+.legal-block li::marker {
+    color: var(--red);
+}
+
+.legal-block li + li {
+    margin-top: 8px;
+}
+
+/* Le site pose "a { color: inherit; text-decoration: none }" : sans cette
+   regle, un lien au fil du texte est indiscernable du texte autour, ce qui
+   sur une page legale rend injoignables les adresses qu'elle existe pour
+   donner. */
+.legal-block a {
+    color: var(--blue);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.legal-block a:hover,
+.legal-block a:focus-visible {
+    color: var(--red-dark);
+}
+
+.form-privacy {
+    max-width: 70ch;
+    font-size: 0.9rem;
+    line-height: 1.6;
 }

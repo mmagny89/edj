@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#1e293b;line-height:1.55;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;">
+    <tr>
+        <td style="padding:28px 28px 8px;">
+            <h1 style="margin:0;font-size:22px;color:#171922;">Bienvenue à Envie de Jouer !</h1>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:8px 28px;font-size:15px;">
+            <p>Bonjour {{ application.firstName }},</p>
+            <p>
+                Votre bulletin d'adhésion est bien arrivé. Le Conseil d'Administration le traite et
+                vous répond à cette adresse.
+            </p>
+
+            <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Votre adhésion</h2>
+            <p style="margin:0;">
+                <strong>{{ application.membershipType.label }}</strong><br>
+                {{ application.membershipType.priceLabel }}
+            </p>
+            <p style="margin:12px 0 0;">
+                Le règlement se fait sur place, lors d'une de nos soirées. La saison associative
+                court du 1<sup>er</sup> octobre au 30 septembre suivant.
+            </p>
+
+            <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Nous retrouver</h2>
+            <p style="margin:0;">
+                Les soirées du mardi (de 18h30 à minuit) et les après-midi du 1<sup>er</sup> samedi
+                du mois, à la Maison des Associations de Joigny. Les prochaines dates :
+                <a href="{{ url('site_index') }}#calendrier" style="color:#255db0;">le calendrier</a>.
+            </p>
+
+            <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Suivre l'association</h2>
+            <p style="margin:0 0 8px;">Les annonces des manifestations passent par nos pages publiques :</p>
+            <p style="margin:0;">
+                <a href="{{ social_facebook }}" style="color:#255db0;font-weight:bold;">Facebook</a>
+                &nbsp;·&nbsp;
+                <a href="{{ social_instagram }}" style="color:#255db0;font-weight:bold;">Instagram</a>
+            </p>
+
+            <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Les groupes des adhérents</h2>
+            <p style="margin:0 0 8px;">Pour échanger entre adhérents et organiser des parties :</p>
+            <p style="margin:0;">
+                <a href="{{ social_facebook_group }}" style="color:#255db0;font-weight:bold;">Groupe Facebook</a>
+                {% if membersWhatsappUrl %}
+                    &nbsp;·&nbsp;
+                    <a href="{{ membersWhatsappUrl }}" style="color:#255db0;font-weight:bold;">Groupe WhatsApp</a>
+                {% endif %}
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#64748b;">
+                Ces groupes sont réservés aux adhérents : sur Facebook, votre demande est validée
+                par un administrateur du groupe.
+                {% if membersWhatsappUrl %}Merci de ne pas partager le lien WhatsApp.{% endif %}
+            </p>
+
+            <p style="margin:24px 0 0;">À très bientôt autour des tables !<br>L'équipe d'Envie de Jouer</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:20px 28px 28px;font-size:12px;color:#64748b;">
+            Vous recevez ce message parce qu'un bulletin d'adhésion a été déposé avec cette adresse.
+            Vos droits sur vos données (accès, rectification, effacement) sont décrits sur la page
+            <a href="{{ url('site_privacy') }}" style="color:#64748b;">Données personnelles</a>.
+            Pour toute question, répondez simplement à ce message.
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -130,6 +130,15 @@ class MembershipApplication
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $submittedAt;
 
+    /**
+     * Date de l'anonymisation, nulle tant que le bulletin porte des donnees
+     * personnelles. Une ligne anonymisee est conservee — la formule, les
+     * autorisations et la date servent encore aux statistiques de
+     * l'association — mais elle ne designe plus personne.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $anonymizedAt = null;
+
     public function __construct()
     {
         $this->submittedAt = new \DateTimeImmutable();
@@ -409,5 +418,53 @@ class MembershipApplication
     public function getSubmittedAt(): \DateTimeImmutable
     {
         return $this->submittedAt;
+    }
+
+    public function getAnonymizedAt(): ?\DateTimeImmutable
+    {
+        return $this->anonymizedAt;
+    }
+
+    public function isAnonymized(): bool
+    {
+        return null !== $this->anonymizedAt;
+    }
+
+    /**
+     * Efface tout ce qui designe une personne, de facon irreversible : nom,
+     * coordonnees, signature, responsable legal, adherent principal.
+     *
+     * Ce qui reste : la formule, les deux autorisations, la date de depot et
+     * l'annee de naissance — ramenee au 1er janvier, de quoi distinguer un
+     * mineur d'un adulte dans les statistiques sans retrouver une date exacte.
+     * L'adresse e-mail est remplacee par une adresse unique du domaine
+     * reserve « .invalid », qui ne peut recevoir aucun courrier.
+     *
+     * Idempotente : anonymiser deux fois ne change rien, et conserve la date
+     * de la premiere anonymisation.
+     */
+    public function anonymize(?\DateTimeImmutable $now = null): static
+    {
+        if ($this->isAnonymized()) {
+            return $this;
+        }
+
+        $this->lastName = 'ANONYMISÉ';
+        $this->firstName = '';
+        $this->birthDate = $this->birthDate?->setDate((int) $this->birthDate->format('Y'), 1, 1);
+        $this->address = null;
+        $this->postalCode = '00000';
+        $this->city = '—';
+        $this->phone = null;
+        $this->email = sprintf('anonyme-%d@anonyme.invalid', $this->id ?? 0);
+        $this->principalMemberName = null;
+        $this->guardianLastName = null;
+        $this->guardianFirstName = null;
+        $this->guardianEmail = null;
+        $this->signaturePlace = '—';
+        $this->signatureName = '—';
+        $this->anonymizedAt = $now ?? new \DateTimeImmutable();
+
+        return $this;
     }
 }

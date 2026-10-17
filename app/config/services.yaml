@@ -3,6 +3,20 @@ parameters:
     # bulletin d'adhesion, et expediteur technique de ces messages.
     app.contact_email: 'enviedejouer89300@gmail.com'
 
+    # Reseaux sociaux publics : une seule source pour le site et les e-mails.
+    app.social.facebook: 'https://www.facebook.com/EnviedeJouer89/'
+    app.social.instagram: 'https://www.instagram.com/envie_de_jouer_89/'
+
+    # Groupe Facebook des adherents : sa page est publique, l'acces y est
+    # soumis a l'approbation d'un administrateur du groupe. Le parametre de suivi
+    # « ?ref=share » du lien partage est retire.
+    app.social.facebook_group: 'https://www.facebook.com/groups/enviedejouer89/'
+
+    # Groupe WhatsApp des adherents. Vient de l'environnement (compose.yml) et
+    # non du depot : un lien d'invitation WhatsApp donne acces a quiconque le
+    # possede, sans approbation.
+    app.social.members_whatsapp: '%env(MEMBERS_WHATSAPP_URL)%'
+
 services:
     _defaults:
         autowire: true

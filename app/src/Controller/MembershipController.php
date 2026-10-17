@@ -25,6 +25,10 @@ final class MembershipController extends AbstractController
         private readonly RateLimiterFactoryInterface $membershipApplicationLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
+        // Lien du groupe prive : passe au seul gabarit de l'e-mail, jamais
+        // expose en variable globale Twig, donc jamais rendu sur une page.
+        #[Autowire('%app.social.members_whatsapp%')]
+        private readonly string $membersWhatsappUrl,
     ) {
     }
 
@@ -48,6 +52,7 @@ final class MembershipController extends AbstractController
             $this->entityManager->flush();
 
             $this->notify($application);
+            $this->confirmToApplicant($application);
 
             // Redirection apres enregistrement : un rafraichissement de page
             // ne doit pas redeposer le bulletin.
@@ -86,6 +91,41 @@ final class MembershipController extends AbstractController
             ->html($this->renderView('emails/membership_application.html.twig', [
                 'application' => $application,
             ]));
+
+        try {
+            $this->mailer->send($email);
+        } catch (TransportExceptionInterface) {
+            // Silencieux a dessein : voir le bloc de documentation ci-dessus.
+        }
+    }
+
+    /**
+     * Accuse de reception envoye a l'adherent — et au responsable legal pour
+     * un mineur : c'est lui qui a engage l'enfant, il doit en avoir trace.
+     *
+     * Meme regle que notify() : un echec d'envoi ne fait jamais echouer le
+     * depot. Le courriel part de l'adresse de l'association, et « repondre »
+     * lui revient : l'adherent ecrit a une personne, pas a une boite muette.
+     */
+    private function confirmToApplicant(MembershipApplication $application): void
+    {
+        $recipients = [new Address((string) $application->getEmail(), trim($application->getFirstName().' '.$application->getLastName()))];
+        if ($application->isMinor() && $application->getGuardianEmail()) {
+            $recipients[] = new Address($application->getGuardianEmail());
+        }
+
+        $context = [
+            'application' => $application,
+            'membersWhatsappUrl' => '' !== $this->membersWhatsappUrl ? $this->membersWhatsappUrl : null,
+        ];
+
+        $email = (new Email())
+            ->from(new Address($this->contactEmail, 'Envie de Jouer'))
+            ->to(...$recipients)
+            ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
+            ->subject('Bienvenue à Envie de Jouer : votre bulletin est bien reçu')
+            ->text($this->renderView('emails/membership_confirmation.txt.twig', $context))
+            ->html($this->renderView('emails/membership_confirmation.html.twig', $context));
 
         try {
             $this->mailer->send($email);

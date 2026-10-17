@@ -14,6 +14,10 @@
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />
         <server name="APP_ENV" value="test" force="true" />
+        <!-- L'image de dev porte ENV APP_ENV=dev, que KernelTestCase lit dans
+             $_ENV avant le $_SERVER force ci-dessus : sans cette ligne, tout
+             test noyau demarre en dev dans le conteneur (conventions, 7d). -->
+        <env name="APP_ENV" value="test" force="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
     </php>
 
