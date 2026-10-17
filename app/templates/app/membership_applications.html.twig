@@ -10,11 +10,14 @@
             <h1 class="text-3xl font-bold text-ink">Adhésions</h1>
             <p class="mt-1 text-slate-500">Bulletins déposés depuis le site, du plus récent au plus ancien.</p>
         </div>
+        <div class="flex flex-wrap gap-3">
+        <a href="{{ path('app_membership_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Inscrire un adhérent</a>
         <a href="{{ path('app_membership_philibert') }}" class="btn btn-secondary">
             {{ ui.icon('download') }} Liste Philibert
             <span class="badge bg-blue-100 text-blue-900">{{ philibertCount }}</span>
             <span class="sr-only">adresse(s) autorisée(s), au format CSV</span>
         </a>
+        </div>
     </div>
 
     <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-8"
@@ -69,7 +72,11 @@
 
                                 <td class="whitespace-nowrap px-3 py-3 align-top">
                                     <div class="font-semibold {{ application.anonymized ? '' : 'text-slate-800' }}">{{ application.submittedAt|date('d/m/Y') }}</div>
-                                    <div class="text-xs">{{ application.submittedAt|date('H:i') }}</div>
+                                    {% if application.paper %}
+                                        <span class="badge mt-1 bg-amber-100 text-amber-900">Fiche papier</span>
+                                    {% else %}
+                                        <div class="text-xs">{{ application.submittedAt|date('H:i') }}</div>
+                                    {% endif %}
                                 </td>
 
                                 <td class="px-3 py-3 align-top">

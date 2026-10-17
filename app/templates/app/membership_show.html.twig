@@ -24,7 +24,11 @@
                 {% if application.anonymized %}Bulletin anonymisé{% else %}{{ application.firstName }} {{ application.lastName }}{% endif %}
             </h1>
             <p class="mt-1 text-slate-500">
-                Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}
+                {% if application.paper %}
+                    <span class="badge mr-1 bg-amber-100 text-amber-900">Fiche papier</span> Remise le {{ application.submittedAt|date('d/m/Y') }}
+                {% else %}
+                    Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}
+                {% endif %}
                 {% if application.isMinor and not application.anonymized %}<span class="badge ml-1 bg-amber-100 text-amber-900">mineur</span>{% endif %}
             </p>
         </div>
@@ -119,8 +123,12 @@
 
             {% if not application.anonymized %}
                 <p class="mt-5 border-t border-slate-100 pt-4 text-sm text-slate-600">
-                    Fait à {{ application.signaturePlace }}, le {{ application.submittedAt|date('d/m/Y') }}.
-                    Signé : <strong class="text-slate-900">{{ application.signatureName }}</strong>
+                    {% if application.paper %}
+                        Fiche papier signée, remise le {{ application.submittedAt|date('d/m/Y') }} : le papier original fait foi.
+                    {% else %}
+                        Fait à {{ application.signaturePlace }}, le {{ application.submittedAt|date('d/m/Y') }}.
+                        Signé : <strong class="text-slate-900">{{ application.signatureName }}</strong>
+                    {% endif %}
                 </p>
             {% endif %}
         </section>

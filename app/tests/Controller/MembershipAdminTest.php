@@ -192,4 +192,100 @@ final class MembershipAdminTest extends WebTestCase
             self::assertResponseStatusCodeSame(403, $path);
         }
     }
+
+    /**
+     * @param array<string, string|array<string>> $overrides
+     */
+    private function submitPaperForm(array $overrides = [], bool $attest = true, bool $sendMail = true): void
+    {
+        $crawler = $this->client->request('GET', '/admin/adhesions/nouveau');
+        $form = $crawler->selectButton("Inscrire l'adhérent")->form();
+
+        $values = array_merge([
+            'paper_membership[submittedAt]' => '2026-10-10',
+            'paper_membership[lastName]' => 'Leroy',
+            'paper_membership[firstName]' => 'Alice',
+            'paper_membership[birthDate]' => '1985-03-12',
+            'paper_membership[postalCode]' => '89300',
+            'paper_membership[city]' => 'Joigny',
+            'paper_membership[email]' => 'alice@papier.example.test',
+        ], $overrides);
+        foreach ($values as $name => $value) {
+            $form[$name] = $value;
+        }
+        $form['paper_membership[membershipType]']->select('individuelle');
+        if ($attest) {
+            $form['paper_membership[paperConfirmed]']->tick();
+        }
+        if (!$sendMail) {
+            $form['paper_membership[sendConfirmation]']->untick();
+        }
+
+        $this->client->submit($form);
+    }
+
+    public function testAnAdministratorCanRegisterAPaperForm(): void
+    {
+        $this->submitPaperForm();
+
+        self::assertResponseRedirects();
+        $stored = $this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => 'alice@papier.example.test']);
+        self::assertNotNull($stored);
+        self::assertTrue($stored->isPaper());
+        self::assertSame('2026-10-10', $stored->getSubmittedAt()->format('Y-m-d'), 'La date est celle de la fiche papier.');
+        self::assertTrue($stored->isStatutesAccepted(), 'L\'acceptation figure sur le papier.');
+        self::assertTrue($stored->isRulesAccepted());
+    }
+
+    public function testThePaperFormIsRefusedWithoutTheAttestation(): void
+    {
+        $this->submitPaperForm(attest: false);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertNull($this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => 'alice@papier.example.test']));
+    }
+
+    public function testThePaperFormKeepsTheSameRulesAsTheOnlineOne(): void
+    {
+        $this->submitPaperForm(['paper_membership[postalCode]' => '12']);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testAMinorOnPaperNeedsAGuardian(): void
+    {
+        $this->submitPaperForm(['paper_membership[birthDate]' => (new \DateTimeImmutable('-9 years'))->format('Y-m-d')]);
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testConfirmationEmailIsSentUnlessUnticked(): void
+    {
+        $this->submitPaperForm();
+        $queued = static::getContainer()->get('messenger.transport.async')->getSent();
+        self::assertCount(1, $queued, 'Un courriel de confirmation part.');
+
+        $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
+        static::getContainer()->get('messenger.transport.async')->reset();
+        $this->submitPaperForm(sendMail: false);
+        self::assertCount(0, static::getContainer()->get('messenger.transport.async')->getSent());
+    }
+
+    public function testPaperBulletinIsBadgedInTheList(): void
+    {
+        $this->submitPaperForm();
+
+        $this->client->request('GET', '/admin/adhesions');
+
+        self::assertSelectorTextContains('tbody', 'Fiche papier');
+    }
+
+    public function testAContributorCannotRegisterAMember(): void
+    {
+        $this->logIn('contributeur@example.test');
+
+        $this->client->request('GET', '/admin/adhesions/nouveau');
+
+        self::assertResponseStatusCodeSame(403);
+    }
 }

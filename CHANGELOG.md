@@ -35,6 +35,11 @@ GitHub, par `.github/workflows/publication.yml`.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
   `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
+- Inscription d'un adherent depuis l'administration (`/admin/adhesions/nouveau`),
+  pour une personne qui a rempli une fiche papier : meme donnees que le
+  bulletin en ligne, date de la fiche, attestation obligatoire que le papier
+  signe existe, et choix d'envoyer ou non le courriel de confirmation. Le
+  bulletin est marque « fiche papier » et garde l'administrateur qui l'a saisi.
 - Gestion des administrateurs (`/admin/utilisateurs`, super-administrateur) :
   creer un compte avec un mot de passe provisoire affiche une seule fois,
   bloquer et debloquer, changer le role, reinitialiser un mot de passe. Un

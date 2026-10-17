@@ -3,6 +3,9 @@
 namespace App\Controller\app;
 
 use App\Entity\MembershipApplication;
+use App\Entity\User;
+use App\Form\PaperMembershipType;
+use App\Service\MembershipNotifier;
 use App\Repository\MembershipApplicationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +31,7 @@ final class MembershipApplicationController extends AbstractController
     public function __construct(
         private readonly MembershipApplicationRepository $applications,
         private readonly EntityManagerInterface $entityManager,
+        private readonly MembershipNotifier $notifier,
     ) {
     }
 
@@ -47,6 +51,54 @@ final class MembershipApplicationController extends AbstractController
      * L'autorisation porte sur l'adresse e-mail seule : le fichier ne contient
      * donc rien d'autre — ni nom, ni telephone.
      */
+    /**
+     * Inscrit une personne qui a rempli une fiche papier. Le bulletin est
+     * marque « fiche papier » et garde l'administrateur qui l'a saisi : on sait
+     * ainsi d'ou vient chaque adhesion, et qui a engage l'association.
+     *
+     * L'acceptation des statuts et du reglement figure sur le papier : elle est
+     * posee avant la validation, que l'attestation de l'administrateur couvre.
+     */
+    #[Route('/nouveau', name: 'app_membership_new', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        $application = (new MembershipApplication())
+            ->enterFromPaper($this->getUser() instanceof User ? $this->getUser()->getId() : null)
+            ->setSubmittedAt(new \DateTimeImmutable('today'))
+            ->setStatutesAccepted(true)
+            ->setRulesAccepted(true)
+            ->setSignaturePlace('Fiche papier')
+            ->setSignatureName('Fiche papier signée');
+
+        $form = $this->createForm(PaperMembershipType::class, $application);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // La signature de substitution porte le nom de l'adherent, pour
+            // que la fiche imprimee ne dise pas « fiche papier signee » seul.
+            $application->setSignatureName(trim($application->getFirstName().' '.$application->getLastName()));
+
+            $this->entityManager->persist($application);
+            $this->entityManager->flush();
+
+            $sent = (bool) $form->get('sendConfirmation')->getData();
+            if ($sent) {
+                $this->notifier->confirmToApplicant($application);
+            }
+
+            $this->addFlash('success', sprintf(
+                '%s %s est inscrit(e)%s.',
+                $application->getFirstName(),
+                $application->getLastName(),
+                $sent ? ', et le courriel de confirmation est parti' : ' (sans courriel de confirmation)',
+            ));
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        return $this->render('app/membership_new.html.twig', ['form' => $form]);
+    }
+
     #[Route('/philibert.csv', name: 'app_membership_philibert', methods: ['GET'])]
     public function philibert(): Response
     {
