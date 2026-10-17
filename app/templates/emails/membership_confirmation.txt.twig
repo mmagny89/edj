@@ -1,0 +1,30 @@
+Bienvenue à Envie de Jouer !
+
+Bonjour {{ application.firstName }},
+
+Votre bulletin d'adhésion est bien arrivé. Le Conseil d'Administration le traite et vous répond à cette adresse.
+
+VOTRE ADHÉSION
+{{ application.membershipType.label }} — {{ application.membershipType.priceLabel }}
+Le règlement se fait sur place, lors d'une de nos soirées. La saison associative court du 1er octobre au 30 septembre suivant.
+
+NOUS RETROUVER
+Les soirées du mardi (de 18h30 à minuit) et les après-midi du 1er samedi du mois, à la Maison des Associations de Joigny.
+Calendrier : {{ url('site_index') }}#calendrier
+
+SUIVRE L'ASSOCIATION
+Facebook : {{ social_facebook }}
+Instagram : {{ social_instagram }}
+{% if membersGroupUrl %}
+
+LE GROUPE DES ADHÉRENTS
+Pour échanger entre adhérents et organiser des parties : {{ membersGroupUrl }}
+Ce lien est réservé aux adhérents : merci de ne pas le partager.
+{% endif %}
+
+À très bientôt autour des tables !
+L'équipe d'Envie de Jouer
+
+--
+Vous recevez ce message parce qu'un bulletin d'adhésion a été déposé avec cette adresse. Vos droits sur vos données sont décrits ici : {{ url('site_privacy') }}
+Pour toute question, répondez simplement à ce message.

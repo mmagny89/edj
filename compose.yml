@@ -27,6 +27,10 @@ services:
       # Traefik des overrides, via APP_DOMAIN.
       SERVER_NAME: ${SERVER_NAME}
       MAILER_DSN: ${MAILER_DSN}
+      # Lien du groupe prive des adherents (reseau social). Vide autorise : sans
+      # lui, l'e-mail de confirmation omet simplement ce bloc. Jamais committe :
+      # c'est une invitation, qui donne l'acces a quiconque la detient.
+      MEMBERS_GROUP_URL: ${MEMBERS_GROUP_URL?MEMBERS_GROUP_URL doit etre declaree (vide si le groupe prive n'existe pas)}
       SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     volumes:
       - edj-caddy-data:/data

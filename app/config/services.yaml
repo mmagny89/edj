@@ -3,6 +3,14 @@ parameters:
     # bulletin d'adhesion, et expediteur technique de ces messages.
     app.contact_email: 'enviedejouer89300@gmail.com'
 
+    # Reseaux sociaux publics : une seule source pour le site et les e-mails.
+    app.social.facebook: 'https://www.facebook.com/EnviedeJouer89/'
+    app.social.instagram: 'https://www.instagram.com/envie_de_jouer_89/'
+
+    # Groupe prive des adherents. Vient de l'environnement (compose.yml) et non
+    # du depot : un lien d'invitation donne acces a quiconque le possede.
+    app.social.members_group: '%env(MEMBERS_GROUP_URL)%'
+
 services:
     _defaults:
         autowire: true
