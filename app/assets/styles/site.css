@@ -849,8 +849,48 @@ h1 {
     width: auto;
 }
 
+/* Trois documents, trois colonnes : la moitie de largeur du bandeau ne laisse
+   pas de place a l'icone a gauche du libelle, elle passe donc au-dessus, et le
+   chevron de telechargement rejoint le coin. */
 .membership-band--join .document-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-top: 10px;
+}
+
+.membership-band--join .document-links a {
+    grid-template-columns: 1fr auto;
+    align-content: start;
+    row-gap: 8px;
+    height: 100%;
+}
+
+.membership-band--join .document-links a > i:first-child {
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.membership-band--join .document-links__label {
+    grid-column: 1 / -1;
+    /* Deux lignes reservees : « Reglement interieur » passe a la ligne, et le
+       format « PDF » doit rester aligne d'une carte a l'autre. */
+    min-height: 2.4em;
+    overflow-wrap: anywhere;
+}
+
+.membership-band--join .document-links__meta {
+    grid-column: 1;
+}
+
+.membership-band--join .document-links__action {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: start;
+}
+
+@media (max-width: 560px) {
+    .membership-band--join .document-links {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 920px) {
