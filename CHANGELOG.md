@@ -46,6 +46,10 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Mode « contraste renforce » du site public : un bouton de l'en-tete (et la
+  preference systeme « contraste eleve ») remplace le rouge de la charte, a
+  3,15:1 sous du texte blanc, par un rouge a plus de 5:1. La charte reste
+  intacte par defaut. Un lien d'evitement est ajoute.
 - Le site ne parle plus d'une ludotheque de l'association, qui n'en a pas :
   les jeux sont ceux de ses membres, et la section « L'association » le dit
   (le mode d'emploi en trois etapes, et le chiffre de 1 300 jeux mis en avant). Les descriptions par defaut des evenements sont

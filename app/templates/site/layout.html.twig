@@ -17,6 +17,7 @@
 </head>
 <body>
 {% block body %}
+    <a href="#{% block skip_target %}contenu{% endblock %}" class="skip-link">Aller au contenu</a>
     <header class="site-header">
         <a class="brand" href="{{ path('site_index') }}#accueil" aria-label="Retour à l'accueil">
             <img src="/img/edj-mascotte-transparent.png" alt="" class="brand__mascot">
@@ -41,6 +42,13 @@
             <a href="{{ path('site_index') }}#adhesion">Adhésion</a>
             <a href="{{ path('site_index') }}#partenaires">Partenaires</a>
             <a href="{{ path('site_index') }}#contact">Contact</a>
+            {# Mode accessible : le rouge de la charte, trop clair sous du texte
+               blanc, passe a un rouge plus fonce. Masque sans JavaScript, qui
+               est ce qui le fait fonctionner. #}
+            <button type="button" class="contrast-toggle" hidden aria-pressed="false" data-contrast-toggle>
+                <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+                Contraste<span class="sr-only"> renforcé</span>
+            </button>
         </nav>
     </header>
 

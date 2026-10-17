@@ -11,8 +11,10 @@
     --board-line: rgba(255, 255, 255, 0.32);
     --red: #fb5a48;
     --red-dark: #d94435;
-    /* Rouge porteur de texte blanc : --red (#fb5a48) ne fait que 3,15:1 contre
-       le blanc, sous les 4,5:1 de WCAG AA. Celui-ci en fait plus de 5. */
+    /* Rouge de remplacement en mode « contraste renforce » : --red (#fb5a48),
+       celui de la charte, ne fait que 3,15:1 contre le blanc, sous les 4,5:1
+       de WCAG AA. Celui-ci en fait plus de 5. La charte reste intacte par
+       defaut ; ce rouge ne sert que si le visiteur le demande. */
     --red-aa: #c4372a;
     --yellow: #e9c33a;
     --yellow-soft: #f4dc78;
@@ -270,7 +272,7 @@ h1 {
 }
 
 .button--primary {
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
 }
 
@@ -499,7 +501,7 @@ h1 {
 
 .carousel-controls button:hover,
 .carousel-controls button:focus-visible {
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
     outline: none;
 }
@@ -533,7 +535,7 @@ h1 {
 
 .event-slide__date {
     padding: 16px;
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
 }
 
@@ -1206,7 +1208,7 @@ h1 {
 }
 
 .rdv-card--yearly .rdv-card__rhythm {
-    background: var(--red-aa);
+    background: var(--red);
     color: white !important;
 }
 
@@ -1683,4 +1685,58 @@ h1 {
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Contraste renforce
+   Active par le bouton « Contraste » de l'en-tete (memorise dans le
+   navigateur) ou par la preference systeme « contraste eleve ». La charte
+   graphique n'est pas modifiee par defaut : seuls les elements qui portent du
+   texte blanc sur le rouge de la charte (3,15:1, sous les 4,5:1 de WCAG AA)
+   passent au rouge plus fonce.
+   ------------------------------------------------------------------------ */
+html[data-contrast="high"] .button--primary,
+html[data-contrast="high"] .event-slide__date,
+html[data-contrast="high"] .rdv-card--yearly .rdv-card__rhythm,
+html[data-contrast="high"] .carousel-controls button:hover,
+html[data-contrast="high"] .carousel-controls button:focus-visible {
+    background: var(--red-aa);
+}
+
+html[data-contrast="high"] {
+    --muted: #3b4252;
+}
+
+html[data-contrast="high"] .section__intro p:not(.eyebrow),
+html[data-contrast="high"] .rdv-card p,
+html[data-contrast="high"] .how-steps p {
+    color: var(--ink);
+}
+
+@media (prefers-contrast: more) {
+    html:not([data-contrast="normal"]) .button--primary,
+    html:not([data-contrast="normal"]) .event-slide__date,
+    html:not([data-contrast="normal"]) .rdv-card--yearly .rdv-card__rhythm {
+        background: var(--red-aa);
+    }
+}
+
+.contrast-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.contrast-toggle[aria-pressed="true"] {
+    background: var(--ink);
+    color: white;
 }

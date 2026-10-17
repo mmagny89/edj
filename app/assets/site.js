@@ -250,3 +250,53 @@ document.addEventListener('turbo:load', () => {
   refreshCarousel();
   animateCounters();
 });
+
+
+// Contraste renforce : preference memorisee dans le navigateur, appliquee sur
+// <html>. Le bouton est cache dans le HTML et revele ici. L'etat est relu a
+// chaque navigation Turbo, qui remplace le corps de la page.
+const CONTRAST_KEY = 'edj-contrast';
+
+const readContrast = () => {
+  try {
+    return window.localStorage.getItem(CONTRAST_KEY);
+  } catch (error) {
+    return null;
+  }
+};
+
+const applyContrast = (value) => {
+  if (value === 'high' || value === 'normal') {
+    document.documentElement.dataset.contrast = value;
+  } else {
+    delete document.documentElement.dataset.contrast;
+  }
+};
+
+applyContrast(readContrast());
+
+document.addEventListener('turbo:load', () => {
+  applyContrast(readContrast());
+
+  const toggle = document.querySelector('[data-contrast-toggle]');
+  if (!toggle) {
+    return;
+  }
+
+  toggle.hidden = false;
+  const isHigh = () => document.documentElement.dataset.contrast === 'high'
+    || (document.documentElement.dataset.contrast === undefined
+      && window.matchMedia('(prefers-contrast: more)').matches);
+  toggle.setAttribute('aria-pressed', String(isHigh()));
+
+  toggle.addEventListener('click', () => {
+    const next = isHigh() ? 'normal' : 'high';
+    applyContrast(next);
+    toggle.setAttribute('aria-pressed', String(next === 'high'));
+    try {
+      window.localStorage.setItem(CONTRAST_KEY, next);
+    } catch (error) {
+      // Navigation privee : le choix vaut pour la page, sans etre memorise.
+    }
+  });
+});
