@@ -712,14 +712,9 @@ h1 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    align-items: stretch;
+    align-items: start;
 }
 
-/* Les avantages passent sous les deux premiers bandeaux, sur toute la largeur :
-   c'est la lecture "combien, comment, puis pourquoi". */
-.membership-band--perks {
-    grid-column: 1 / -1;
-}
 
 .membership-band {
     padding: clamp(20px, 3vw, 30px);
@@ -829,9 +824,7 @@ h1 {
     /* Le preflight de Tailwind retire les puces de toute liste : elles se
        redeclarent la ou on les veut. */
     list-style: disc;
-    columns: 2;
-    column-gap: 36px;
-    margin: 0;
+    margin: 0 0 22px;
     padding-left: 22px;
     color: #2b3040;
     font-weight: 700;
@@ -847,6 +840,11 @@ h1 {
     color: var(--red);
 }
 
+.membership-band__label {
+    margin: 0 0 10px;
+    font-weight: 900;
+}
+
 .membership-band--join .button {
     width: auto;
 }
@@ -860,9 +858,6 @@ h1 {
         grid-template-columns: 1fr;
     }
 
-    .membership-perks {
-        columns: 1;
-    }
 }
 
 .document-links {
