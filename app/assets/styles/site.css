@@ -940,6 +940,12 @@ h1 {
     font-weight: 900;
 }
 
+/* Le lien d'un partenaire reste lisible sur la carte blanche : le soulignement
+   le distingue du nom des partenaires qui n'ont pas de site. */
+.partners-list a {
+    color: inherit;
+}
+
 .contact-section {
     background: var(--board);
     background-image:
