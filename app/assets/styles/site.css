@@ -1297,18 +1297,6 @@ h1 {
     box-shadow: 8px 8px 0 rgba(23, 25, 34, 0.18);
 }
 
-.games-highlight__icon {
-    display: grid;
-    place-items: center;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 14px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: white;
-    font-size: 1.25rem;
-}
-
 .games-highlight strong {
     display: block;
     font-family: "Akaya Kanadaka", cursive;
@@ -1323,7 +1311,7 @@ h1 {
     line-height: 1.15;
 }
 
-.games-highlight p:not(.stat-prefix) {
+.games-highlight p:not(.stat-prefix):not(.games-highlight__source) {
     margin: 12px 0 0;
     padding-top: 12px;
     border-top: 3px solid var(--ink);
@@ -1343,20 +1331,48 @@ h1 {
     color: #303544;
 }
 
-.stat-prefix--spacer {
-    visibility: hidden;
+.stat-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
-.stats-grid i {
+/* Icone a gauche, precision (« Environ », « Plus de ») a sa droite : elles se
+   lisent d'un trait, avant le chiffre. */
+.stat-head i {
     display: grid;
+    flex: 0 0 auto;
     place-items: center;
     width: 42px;
     height: 42px;
-    margin-bottom: 10px;
+    border: 3px solid var(--ink);
     border-radius: 8px;
     background: var(--yellow);
     color: var(--ink);
     font-size: 1.1rem;
+}
+
+.games-highlight .stat-head i {
+    background: white;
+}
+
+.stat-head .stat-prefix {
+    margin: 0;
+}
+
+.games-highlight__source {
+    margin: 12px 0 0;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.9rem;
+}
+
+.games-highlight__source a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
 }
 
 @media (max-width: 1100px) {
