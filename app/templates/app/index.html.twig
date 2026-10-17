@@ -1,4 +1,5 @@
 {% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
 
 {% block title %}Tableau de bord - Envie de Jouer{% endblock %}
 
@@ -26,8 +27,8 @@
             {% endif %}
 
             <div class="mt-5 flex flex-wrap gap-3">
-                <a href="{{ path('app_events') }}" class="btn btn-secondary">Voir le calendrier</a>
-                <a href="{{ path('app_event_new') }}" class="btn btn-primary">Ajouter un évènement</a>
+                <a href="{{ path('app_events') }}" class="btn btn-secondary">{{ ui.icon('calendar') }} Voir le calendrier</a>
+                <a href="{{ path('app_event_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter un évènement</a>
             </div>
         </section>
 
@@ -39,7 +40,7 @@
                     {{ applicationCount == 1 ? 'bulletin déposé' : 'bulletins déposés' }} depuis le site.
                 </p>
                 <div class="mt-5">
-                    <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">Consulter les bulletins</a>
+                    <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('users') }} Consulter les bulletins</a>
                 </div>
             </section>
         {% endif %}

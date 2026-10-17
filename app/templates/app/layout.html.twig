@@ -1,5 +1,7 @@
 {% extends 'app/shell.html.twig' %}
 
+{% import 'app/_icons.html.twig' as ui %}
+
 {% block body %}
     {% set route = app.request.attributes.get('_route') %}
 
@@ -7,76 +9,94 @@
         Aller au contenu
     </a>
 
-    <header class="bg-ink text-white" data-controller="nav">
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
-            <a href="{{ path('app_index') }}" class="flex items-center gap-3 font-semibold">
-                <img src="/img/edj-mascotte-transparent.png" alt="" class="size-9" width="36" height="36">
-                <span>Envie de Jouer <span class="font-normal text-slate-400">· administration</span></span>
-            </a>
-
-            {# Cache dans le HTML, revele par le controleur : sans JavaScript, le
-               menu reste deplie. #}
-            <button type="button" hidden
-                    class="btn border-white/30 text-white hover:bg-white/10 md:hidden"
-                    data-nav-target="button" data-action="nav#toggle"
-                    aria-expanded="false" aria-controls="menu-principal">
-                <span aria-hidden="true">☰</span> Menu
-            </button>
-
-            <nav id="menu-principal" aria-label="Administration"
-                 class="flex w-full flex-col gap-1 md:w-auto md:flex-row md:items-center md:gap-2"
-                 data-nav-target="panel">
-                {% set items = [
-                    {route: 'app_index', label: 'Tableau de bord', active: route == 'app_index'},
-                    {route: 'app_events', label: 'Évènements', active: route starts with 'app_event'},
-                ] %}
-                {% if is_granted('ROLE_SUPER_ADMIN') %}
-                    {% set items = items|merge([{route: 'app_membership_applications', label: 'Adhésions', active: route == 'app_membership_applications'}]) %}
-                {% endif %}
-
-                {% for item in items %}
-                    <a href="{{ path(item.route) }}"
-                       class="rounded-lg px-3 py-2.5 text-sm font-semibold {{ item.active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"
-                       {{ item.active ? 'aria-current="page"' }}>
-                        {{ item.label }}
-                    </a>
-                {% endfor %}
-
-                <a href="{{ path('site_index') }}" target="_blank" rel="noopener"
-                   class="rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white">
-                    Voir le site <span class="sr-only">(nouvel onglet)</span><span aria-hidden="true">↗</span>
+    <div class="lg:flex lg:min-h-screen">
+        {# Barre laterale : fixe sur grand ecran, repliee derriere un bouton en
+           dessous de 1024 px. Le bouton est cache dans le HTML et revele par le
+           controleur : sans JavaScript, le menu reste deplie. #}
+        <aside class="bg-ink text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-y-auto"
+               data-controller="nav">
+            <div class="flex items-center justify-between gap-3 px-4 py-3 lg:px-5 lg:py-6">
+                <a href="{{ path('app_index') }}" class="flex items-center gap-3 font-bold leading-tight">
+                    <img src="/img/edj-mascotte-transparent.png" alt="" class="size-10" width="40" height="40">
+                    <span>Envie de Jouer<span class="block text-sm font-normal text-slate-400">Administration</span></span>
                 </a>
 
-                <form method="post" action="{{ path('app_logout') }}" class="md:ml-2 md:border-l md:border-white/20 md:pl-4">
+                <button type="button" hidden
+                        class="btn border-white/30 text-white hover:bg-white/10 lg:hidden"
+                        data-nav-target="button" data-action="nav#toggle"
+                        aria-expanded="false" aria-controls="menu-principal">
+                    {{ ui.icon('bars') }} Menu
+                </button>
+            </div>
+
+            <div id="menu-principal" data-nav-target="panel" class="px-3 pb-4 lg:flex lg:flex-1 lg:flex-col lg:px-4 lg:pb-6">
+                <a href="{{ path('site_index') }}" target="_blank" rel="noopener"
+                   class="btn btn-accent w-full">
+                    {{ ui.icon('globe') }}
+                    Voir le site public
+                    <span class="sr-only">(nouvel onglet)</span>{{ ui.icon('external', 'size-4') }}
+                </a>
+
+                <nav aria-label="Administration" class="mt-6">
+                    {% set items = [
+                        {route: 'app_index', label: 'Tableau de bord', active: route == 'app_index',
+                         icon: 'home'},
+                        {route: 'app_events', label: 'Évènements', active: route starts with 'app_event',
+                         icon: 'calendar'},
+                    ] %}
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}
+                        {% set items = items|merge([{route: 'app_membership_applications', label: 'Adhésions', active: route == 'app_membership_applications',
+                            icon: 'users'}]) %}
+                    {% endif %}
+
+                    <ul class="space-y-1">
+                        {% for item in items %}
+                            <li>
+                                <a href="{{ path(item.route) }}"
+                                   class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold {{ item.active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"
+                                   {{ item.active ? 'aria-current="page"' }}>
+                                    {{ ui.icon(item.icon) }}
+                                    {{ item.label }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+
+                {# En bas de la barre : qui est connecte, et la deconnexion. #}
+                <form method="post" action="{{ path('app_logout') }}" class="mt-6 border-t border-white/15 pt-4 lg:mt-auto">
+                    <p class="truncate px-3 pb-2 text-xs text-slate-400">{{ app.user.userIdentifier }}</p>
                     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
-                    <button type="submit" class="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white md:w-auto">
+                    <button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white">
+                        {{ ui.icon('logout') }}
                         Se déconnecter
-                        <span class="sr-only">({{ app.user.userIdentifier }})</span>
                     </button>
                 </form>
-            </nav>
-        </div>
-    </header>
+            </div>
+        </aside>
 
-    <main id="contenu" class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {# Sans ce bloc, un addFlash d'un controleur ne s'affichait nulle part :
-           l'action reussissait en silence. #}
-        {% for label, messages in app.flashes(['success', 'error']) %}
-            {% for message in messages %}
-                <div class="mb-6 flex items-start justify-between gap-4 rounded-lg border px-4 py-3 text-sm font-semibold {{ label == 'success'
-                        ? 'border-green-300 bg-green-50 text-green-900'
-                        : 'border-red-300 bg-red-50 text-red-900' }}"
-                     role="{{ label == 'error' ? 'alert' : 'status' }}"
-                     data-controller="flash"
-                     data-flash-delay-value="{{ label == 'success' ? 6000 : 0 }}">
-                    <p>{{ message }}</p>
-                    <button type="button" class="-m-1 shrink-0 rounded p-1 hover:bg-black/5" data-action="flash#dismiss">
-                        <span class="sr-only">Fermer ce message</span><span aria-hidden="true">✕</span>
-                    </button>
-                </div>
+        <div class="min-w-0 flex-1">
+            <main id="contenu" class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
+            {# Sans ce bloc, un addFlash d'un controleur ne s'affichait nulle part :
+               l'action reussissait en silence. #}
+            {% for label, messages in app.flashes(['success', 'error']) %}
+                {% for message in messages %}
+                    <div class="mb-6 flex items-start justify-between gap-4 rounded-lg border px-4 py-3 text-sm font-semibold {{ label == 'success'
+                            ? 'border-green-300 bg-green-50 text-green-900'
+                            : 'border-red-300 bg-red-50 text-red-900' }}"
+                         role="{{ label == 'error' ? 'alert' : 'status' }}"
+                         data-controller="flash"
+                         data-flash-delay-value="{{ label == 'success' ? 6000 : 0 }}">
+                        <p>{{ message }}</p>
+                        <button type="button" class="-m-1 shrink-0 rounded p-1 hover:bg-black/5" data-action="flash#dismiss">
+                            <span class="sr-only">Fermer ce message</span>{{ ui.icon('x', 'size-4') }}
+                        </button>
+                    </div>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
 
-        {% block content %}{% endblock %}
-    </main>
+            {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
 {% endblock %}

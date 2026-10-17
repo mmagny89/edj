@@ -1,4 +1,5 @@
 {% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
 
 {% block title %}Évènements - Envie de Jouer{% endblock %}
 
@@ -9,8 +10,8 @@
             <p class="mt-1 text-slate-500">Ce que vous saisissez ici apparaît dans le calendrier de la page d'accueil.</p>
         </div>
         <div class="flex flex-wrap gap-3">
-            <a href="{{ path('app_event_generate') }}" class="btn btn-secondary">Générer la saison</a>
-            <a href="{{ path('app_event_new') }}" class="btn btn-primary">Ajouter un évènement</a>
+            <a href="{{ path('app_event_generate') }}" class="btn btn-secondary">{{ ui.icon('sparkles') }} Générer la saison</a>
+            <a href="{{ path('app_event_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter un évènement</a>
         </div>
     </div>
 
@@ -70,7 +71,7 @@
                                 <td class="px-5 py-3 align-top">
                                     <div class="flex items-center justify-end gap-2">
                                         <a href="{{ path('app_event_edit', {id: event.id}) }}" class="btn btn-secondary">
-                                            Modifier<span class="sr-only"> {{ event.title }}</span>
+                                            {{ ui.icon('pencil') }} Modifier<span class="sr-only"> {{ event.title }}</span>
                                         </a>
                                         <form method="post" action="{{ path('app_event_delete', {id: event.id}) }}"
                                               data-controller="confirm"
@@ -78,7 +79,7 @@
                                               data-action="submit->confirm#ask">
                                             <input type="hidden" name="_token" value="{{ csrf_token('delete_event_' ~ event.id) }}">
                                             <button type="submit" class="btn btn-danger">
-                                                Supprimer<span class="sr-only"> {{ event.title }}</span>
+                                                {{ ui.icon('trash') }} Supprimer<span class="sr-only"> {{ event.title }}</span>
                                             </button>
                                         </form>
                                     </div>

@@ -40,6 +40,10 @@
         @apply border-brand bg-brand text-white hover:bg-brand-dark;
     }
 
+    .btn-accent {
+        @apply border-accent bg-accent text-ink hover:bg-amber-300;
+    }
+
     .btn-secondary {
         @apply border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
     }
