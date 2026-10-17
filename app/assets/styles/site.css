@@ -1913,3 +1913,23 @@ html[data-contrast="high"] .how-steps p {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+
+/* Champs obligatoires : un asterisque apres l'etiquette. Symfony pose la classe
+   « required » sur l'etiquette de tout champ requis ; le controleur
+   membership-type la pose aussi, a la volee, sur les champs conditionnels. */
+.membership-form label.required::after,
+.form-required-note span {
+    color: var(--red-dark);
+    font-weight: 900;
+}
+
+.membership-form label.required::after {
+    margin-left: 4px;
+    content: "*";
+}
+
+.form-required-note {
+    margin: 0 0 18px;
+    font-weight: 700;
+}

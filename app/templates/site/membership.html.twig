@@ -17,7 +17,9 @@
             </p>
         </div>
 
-        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh'}}) }}
+        {# Mention des champs obligatoires, avant le premier champ. #}
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh input->membership-type#refresh'}}) }}
             {% if not form.vars.valid %}
                 <p class="form-alert" role="alert">
                     <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
@@ -64,7 +66,7 @@
             <fieldset>
                 <legend>Responsable légal</legend>
                 <p class="form-note">
-                    À remplir si l'adhérent a moins de 18 ans : c'est le responsable légal qui signe.
+                    <strong>Obligatoire si l'adhérent a moins de 18 ans</strong> : c'est le responsable légal qui signe.
                 </p>
                 <div class="form-grid">
                     {{ form_row(form.guardianLastName) }}

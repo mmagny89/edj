@@ -83,6 +83,11 @@ GitHub, par `.github/workflows/publication.yml`.
 - Polices et icones servies par le site (Akaya Kanadaka, Atkinson
   Hyperlegible, Font Awesome) : plus aucune requete vers Google ni un CDN, ce
   qui rend vraie la page « Donnees personnelles ».
+- Bulletin d'adhesion : les champs obligatoires portent un asterisque — nom,
+  prenom, date de naissance, code postal, ville, e-mail, formule, declarations
+  et signature —, et ceux qui ne le sont que selon le cas le deviennent a
+  l'ecran : le membre de la famille pour la formule famille, les trois champs
+  du responsable legal pour un adherent de moins de 18 ans.
 - Bulletin d'adhesion, choix de la formule : trois cartes qui disent POUR QUI
   elles sont (« Je viens seul(e) », « Un membre de ma famille a deja pris
   l'adhesion a 10 € », « Je veux seulement payer a chaque evenement ») et ce que
