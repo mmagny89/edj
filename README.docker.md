@@ -1,7 +1,7 @@
 # edj — socle Docker et deploiement
 
-Symfony 8 sur FrankenPHP (Caddy integre, mode worker), PostgreSQL 18,
-observabilite via Ember. Front compile par **Webpack Encore** (`app/assets/`
+Symfony 8 sur FrankenPHP (Caddy integre, mode worker), PostgreSQL 18.
+Front compile par **Webpack Encore** (`app/assets/`
 vers `app/public/build/`).
 
 Structure et nommage conformes a `.claude/rules/stack-conventions.md`. Les
@@ -18,9 +18,9 @@ publie aucun port : il sert en clair sur son `:80` interne.
 | `.env` | Variables Docker Compose : versions, ports, UID/GID, `POSTGRES_*`. Committe, sans secret |
 | `.env.staging.local.dist` / `.env.prod.local.dist` | Modeles de secrets, committes, valeurs sensibles vides |
 | `.env.staging.local` / `.env.prod.local` | Secrets reels — **jamais** committes |
-| `compose.yml` | Socle : services `php`, `worker`, `database`, `ember`. Aucun port, aucun bind mount |
+| `compose.yml` | Socle : services `php`, `worker`, `database`. Aucun port, aucun bind mount |
 | `compose.dev.yml` | Dev : ports publies, bind mount `./app`, Xdebug, Mailpit |
-| `compose.staging.yml` / `compose.prod.yml` | Traefik, stage d'image fige, Ember sous profil `observability` |
+| `compose.staging.yml` / `compose.prod.yml` | Traefik, stage d'image fige |
 | `docker/php/**` | Dockerfile multi-stage, Caddyfile nominal et de secours, entrypoint, healthcheck, scripts |
 | `.github/workflows/qualite.yml` | Portes qualite sur chaque PR et push, puis deploiement sur `main` |
 | `.github/workflows/publication.yml` | Release GitHub sur etiquette `v*`, corps repris de `CHANGELOG.md` |
@@ -64,7 +64,6 @@ bind mount : la production n'est pas concernee.
 |---|---|
 | https://localhost | Le site (Caddy fait son propre TLS, certificat auto-signe) |
 | http://127.0.0.1:8025 | Mailpit — tout le courrier sortant du dev y atterrit, rien ne part reellement |
-| http://localhost:9191 | Ember (observabilite) |
 
 Xdebug est installe dans l'image de dev mais desactive. L'activer sans
 rebuild : passer `XDEBUG_MODE=debug` dans le `.env`, puis
@@ -95,7 +94,6 @@ sont commentees dans `app/.env`, et ne doivent jamais y etre redefinies.
 | `HTTP3_PORT` | 443/udp | dev |
 | `POSTGRES_PORT` | 5432 | dev uniquement, sur `127.0.0.1` |
 | `MAILPIT_UI_PORT` | 8025 | dev uniquement, sur `127.0.0.1` |
-| `EMBER_PORT` | 9191 | dev et, sur `127.0.0.1`, staging/prod |
 | (metriques Caddy) | 2020 | **jamais publie** — joint par le reseau Docker, sur `edj-<env>-php:2020` |
 
 En staging et production, aucun port n'est publie : Traefik joint le
@@ -220,15 +218,6 @@ cd /srv/edj-prod
 docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local ps
 docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local logs -f php
 ```
-
-Observabilite (Ember porte le profil `observability`, il ne demarre jamais
-tout seul en production) :
-
-```sh
-docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local --profile observability up -d ember
-```
-
-Son port n'est publie que sur `127.0.0.1` : y acceder par un tunnel SSH.
 
 ## Ecarts assumes au manifeste
 

@@ -54,7 +54,3 @@ services:
       - edj
     ports:
       - "127.0.0.1:${MAILPIT_UI_PORT}:8025"
-
-  ember:
-    ports:
-      - "${EMBER_PORT}:9191"

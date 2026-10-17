@@ -98,21 +98,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Sans profil ici (conventions, section 9) : les overrides staging/prod
-  # lui en ajoutent un, jamais l'inverse.
-  ember:
-    container_name: edj-${ENV}-ember
-    image: ghcr.io/alexandre-daubois/ember:${EMBER_VERSION}
-    restart: unless-stopped
-    environment:
-      EMBER_ADDR: unix//run/caddy/admin.sock
-    volumes:
-      - edj-caddy-admin:/run/caddy
-    networks:
-      - edj
-    depends_on:
-      - php
-
 networks:
   edj:
     name: edj-${ENV}
