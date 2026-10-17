@@ -15,6 +15,9 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  * remplissent chacun le leur et designent le meme adherent principal.
  */
 #[ORM\Entity(repositoryClass: MembershipApplicationRepository::class)]
+// L'index existe depuis la migration initiale (la liste se trie sur la date de
+// depot) ; le declarer ici evite que Doctrine veuille le supprimer.
+#[ORM\Index(name: 'idx_membership_application_submitted_at', columns: ['submitted_at'])]
 class MembershipApplication
 {
     #[ORM\Id]

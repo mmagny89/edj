@@ -139,6 +139,17 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Schema : `doctrine:schema:validate` echouait apres les migrations. Les colonnes
+  `id` de `user` et de `messenger_messages` etaient des SERIAL alors que Doctrine
+  attend des colonnes d'identite, `messenger_messages` portait trois index au lieu
+  du seul que Messenger attend, et l'index de date des bulletins n'etait pas
+  declare dans l'entite. Une migration realigne le tout et repositionne les
+  sequences sur `max(id) + 1` (sans cela, la premiere insertion reprenait l'id
+  d'une ligne existante) ; essayee sur une base avec des comptes, montee puis
+  descendue puis remontee.
+- Integration continue : les tests fonctionnels rendent de vraies pages et ont
+  besoin du build Webpack (`entrypoints.json`) ; la porte des tests le construit
+  desormais, au lieu d'echouer en cascade sur vingt-cinq tests.
 - Deploiement : les migrations passaient apres la bascule du code. Le code neuf
   lisait des colonnes que l'ancien schema n'avait pas, et chaque depot de
   bulletin ou page d'administration concernee repondait 500 entre le demarrage
