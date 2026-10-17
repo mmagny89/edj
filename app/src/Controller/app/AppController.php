@@ -23,19 +23,4 @@ final class AppController extends AbstractController
             'applicationCount' => $this->isGranted('ROLE_SUPER_ADMIN') ? $applications->count([]) : null,
         ]);
     }
-
-    /**
-     * Donnees personnelles, dont celles de mineurs : reservees au
-     * super-administrateur. La regle d'access_control le dit deja ; l'attribut
-     * la redit ici, pour qu'un changement de motif dans security.yaml ne
-     * suffise pas a ouvrir la page.
-     */
-    #[Route('/adhesions', name: 'app_membership_applications', methods: ['GET'])]
-    #[IsGranted('ROLE_SUPER_ADMIN')]
-    public function membershipApplications(MembershipApplicationRepository $repository): Response
-    {
-        return $this->render('app/membership_applications.html.twig', [
-            'applications' => $repository->findLatest(),
-        ]);
-    }
 }

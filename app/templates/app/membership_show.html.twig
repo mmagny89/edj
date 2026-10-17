@@ -1,0 +1,128 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}Bulletin d'adhésion - Envie de Jouer{% endblock %}
+
+{% macro row(label, value) %}
+    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-semibold text-slate-500">{{ label }}</dt>
+        <dd class="text-slate-900 sm:col-span-2">{{ value ?: '—' }}</dd>
+    </div>
+{% endmacro %}
+
+{% block content %}
+    {% import _self as f %}
+
+    <a href="{{ path('app_membership_applications') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+        {{ ui.icon('arrow-left', 'size-4') }} Retour aux adhésions
+    </a>
+
+    <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-ink">
+                {% if application.anonymized %}Bulletin anonymisé{% else %}{{ application.firstName }} {{ application.lastName }}{% endif %}
+            </h1>
+            <p class="mt-1 text-slate-500">
+                Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}
+                {% if application.isMinor and not application.anonymized %}<span class="badge ml-1 bg-amber-100 text-amber-900">mineur</span>{% endif %}
+            </p>
+        </div>
+
+        {% if not application.anonymized %}
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ path('app_membership_sheet', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
+                    {{ ui.icon('printer') }} Imprimer la fiche<span class="sr-only"> (nouvel onglet)</span>
+                </a>
+                <form method="post" action="{{ path('app_membership_anonymize', {id: application.id}) }}"
+                      data-controller="confirm"
+                      data-confirm-message-value="Anonymiser ce bulletin ? Le nom, les coordonnées et la signature seront effacés définitivement."
+                      data-action="submit->confirm#ask">
+                    <input type="hidden" name="_token" value="{{ csrf_token('anonymize_membership_' ~ application.id) }}">
+                    <button type="submit" class="btn btn-danger">{{ ui.icon('eye-slash') }} Anonymiser</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if application.anonymized %}
+        <div class="mt-6 rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-700" role="status">
+            Ce bulletin a été anonymisé le {{ application.anonymizedAt|date('d/m/Y') }}. Il ne désigne plus personne :
+            seuls la formule, les autorisations, la date de dépôt et l'année de naissance sont conservées.
+        </div>
+    {% endif %}
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        {% if not application.anonymized %}
+            <section class="card p-6" aria-labelledby="t-adherent">
+                <h2 id="t-adherent" class="text-lg font-bold text-ink">Adhérent</h2>
+                <dl class="mt-2 divide-y divide-slate-100">
+                    {{ f.row('Nom', application.lastName) }}
+                    {{ f.row('Prénom', application.firstName) }}
+                    {{ f.row('Date de naissance', application.birthDate|date('d/m/Y')) }}
+                    {{ f.row('Adresse', application.address) }}
+                    {{ f.row('Code postal et ville', application.postalCode ~ ' ' ~ application.city) }}
+                    {{ f.row('Téléphone', application.phone) }}
+                    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-semibold text-slate-500">E-mail</dt>
+                        <dd class="sm:col-span-2"><a class="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.email }}">{{ application.email }}</a></dd>
+                    </div>
+                </dl>
+            </section>
+        {% endif %}
+
+        <section class="card p-6" aria-labelledby="t-adhesion">
+            <h2 id="t-adhesion" class="text-lg font-bold text-ink">Adhésion</h2>
+            <dl class="mt-2 divide-y divide-slate-100">
+                {{ f.row('Formule', application.membershipType.label) }}
+                {{ f.row('Tarif', application.membershipType.priceLabel) }}
+                {% if not application.anonymized %}
+                    {{ f.row('Adhérent principal', application.principalMemberName) }}
+                {% endif %}
+            </dl>
+
+            {% if application.isMinor and not application.anonymized %}
+                <h3 class="mt-5 text-base font-bold text-ink">Responsable légal</h3>
+                <dl class="mt-2 divide-y divide-slate-100">
+                    {{ f.row('Nom', application.guardianLastName) }}
+                    {{ f.row('Prénom', application.guardianFirstName) }}
+                    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-semibold text-slate-500">E-mail</dt>
+                        <dd class="sm:col-span-2"><a class="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.guardianEmail }}">{{ application.guardianEmail }}</a></dd>
+                    </div>
+                </dl>
+            {% endif %}
+        </section>
+
+        <section class="card p-6 lg:col-span-2" aria-labelledby="t-declarations">
+            <h2 id="t-declarations" class="text-lg font-bold text-ink">Déclarations</h2>
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+                <li class="flex items-center gap-3">
+                    {% if application.imageRightsRefused %}
+                        <span class="badge bg-red-100 text-red-900">Photos refusées</span>
+                    {% else %}
+                        <span class="badge bg-green-100 text-green-900">Photos acceptées</span>
+                    {% endif %}
+                    <span class="text-sm">Droit à l'image</span>
+                </li>
+                <li class="flex items-center gap-3">
+                    {% if application.philibertConsent %}
+                        <span class="badge bg-blue-100 text-blue-900">Autorisée</span>
+                    {% else %}
+                        <span class="badge bg-slate-200 text-slate-700">Refusée</span>
+                    {% endif %}
+                    <span class="text-sm">Communication de l'e-mail à Philibert</span>
+                </li>
+                <li class="flex items-center gap-3"><span class="badge bg-green-100 text-green-900">Acceptés</span><span class="text-sm">Statuts</span></li>
+                <li class="flex items-center gap-3"><span class="badge bg-green-100 text-green-900">Accepté</span><span class="text-sm">Règlement intérieur</span></li>
+            </ul>
+
+            {% if not application.anonymized %}
+                <p class="mt-5 border-t border-slate-100 pt-4 text-sm text-slate-600">
+                    Fait à {{ application.signaturePlace }}, le {{ application.submittedAt|date('d/m/Y') }}.
+                    Signé : <strong class="text-slate-900">{{ application.signatureName }}</strong>
+                </p>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}
