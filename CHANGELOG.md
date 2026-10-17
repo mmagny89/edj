@@ -8,6 +8,12 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Securite
+
+- Dependances de construction du front mises a jour (Webpack Encore 6,
+  webpack-cli 6) : `npm audit` passe de 11 alertes a 0. Aucune n'atteignait le
+  site en ligne, ces outils ne servent qu'a la compilation.
+
 ## [1.2.0] - 2026-10-17
 
 ### Corrige
