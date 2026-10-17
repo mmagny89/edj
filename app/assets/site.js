@@ -1,4 +1,15 @@
 import './bootstrap.js';
+// Polices et icones servies par le site : plus de Google Fonts ni de CDN. Un
+// visiteur ne transmet donc plus son adresse IP a un tiers pour lire cette
+// page (RGPD), le site s'affiche sans acces externe, et la page « Donnees
+// personnelles » dit vrai en annoncant aucun service tiers.
+import '@fontsource/akaya-kanadaka/400.css';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
+import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+import '@fortawesome/fontawesome-free/css/solid.min.css';
+import '@fortawesome/fontawesome-free/css/regular.min.css';
+import '@fortawesome/fontawesome-free/css/brands.min.css';
 import './styles/site.css';
 
 // Evenements saisis dans le back-office, deposes en JSON sur le conteneur du
@@ -37,6 +48,17 @@ const eventTypeIcons = {
   monthly: 'fa-calendar-day',
   special: 'fa-star',
 };
+
+// Les titres, descriptions et lieux viennent du back-office : ils s'inserent
+// dans du HTML, donc ils s'echappent. Sans cela, un titre contenant « <img
+// onerror=... > » s'executerait chez chaque visiteur du site public.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}[char]));
 
 const formatDate = (date, options = {}) => new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
@@ -86,6 +108,16 @@ const renderCarousel = (events, filter, today) => {
 
   const upcomingEvents = getUpcomingEvents(events, filter, today);
 
+  // Le nombre d'evenements affiches s'annonce dans une zone de statut : la
+  // piste elle-meme n'est pas « live », qui relirait des dizaines de cartes a
+  // chaque changement de filtre.
+  const status = document.querySelector('[data-event-status]');
+  if (status) {
+    status.textContent = upcomingEvents.length
+      ? `${upcomingEvents.length} évènement${upcomingEvents.length > 1 ? 's' : ''} à venir.`
+      : 'Aucun évènement à venir pour cette sélection.';
+  }
+
   if (!upcomingEvents.length) {
     eventTrack.innerHTML = '<p class="agenda-empty">Aucun événement à venir pour cette sélection.</p>';
     return;
@@ -100,11 +132,11 @@ const renderCarousel = (events, filter, today) => {
         </time>
       </div>
       <div class="event-slide__content">
-        <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${eventTypeLabels[event.type]}</p>
-        <h3>${event.title}</h3>
-        <strong>${formatDate(event.date)} · ${event.time}</strong>
-        ${event.description ? `<small>${event.description}</small>` : ''}
-        ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${event.location}</small>` : ''}
+        <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${escapeHtml(eventTypeLabels[event.type])}</p>
+        <div class="event-slide__title">${escapeHtml(event.title)}</div>
+        <strong>${escapeHtml(formatDate(event.date))} · ${escapeHtml(event.time)}</strong>
+        ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ''}
+        ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(event.location)}</small>` : ''}
       </div>
     </article>
   `).join('');
@@ -132,7 +164,16 @@ const updateNextEvent = (events, today) => {
 const animateCounters = () => {
   const counters = document.querySelectorAll('.counter');
 
+  // Le HTML porte deja la valeur finale (visible sans JavaScript, et lue par
+  // les moteurs de recherche) : l'animation n'est qu'un plus, et seulement
+  // pour qui ne demande pas moins de mouvement.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    || document.documentElement.dataset.motion === 'reduce') {
+    return;
+  }
+
   counters.forEach((counter) => {
+    counter.innerText = '0';
     const updateCount = () => {
       const target = Number(counter.getAttribute('data-count'));
       const current = Number(counter.innerText.replace(/[^0-9]/g, '')) || 0;
@@ -142,7 +183,8 @@ const animateCounters = () => {
         counter.innerText = Math.min(current + increment, target);
         window.setTimeout(updateCount, 18);
       } else {
-        counter.innerText = target.toLocaleString('fr-FR');
+        // Une annee ne prend pas de separateur de milliers : « 2 023 » est faux.
+        counter.innerText = counter.hasAttribute('data-plain') ? String(target) : target.toLocaleString('fr-FR');
       }
     };
 
@@ -187,7 +229,10 @@ document.addEventListener('turbo:load', () => {
   filters.forEach((filter) => {
     filter.addEventListener('click', () => {
       activeFilter = filter.dataset.filter;
-      filters.forEach((item) => item.classList.toggle('is-active', item === filter));
+      filters.forEach((item) => {
+        item.classList.toggle('is-active', item === filter);
+        item.setAttribute('aria-pressed', String(item === filter));
+      });
       refreshCarousel();
     });
   });
@@ -216,4 +261,117 @@ document.addEventListener('turbo:load', () => {
   updateNextEvent(events, today);
   refreshCarousel();
   animateCounters();
+});
+
+
+// Reglages d'accessibilite : quatre options, memorisees ensemble dans le
+// navigateur et appliquees sur <html> (data-contrast, data-text, data-links,
+// data-motion), que le CSS lit. L'etat est relu a chaque navigation Turbo, qui
+// remplace le corps de la page.
+const A11Y_KEY = 'edj-a11y';
+const A11Y_ATTRIBUTES = {
+  contrast: ['data-contrast', 'high'],
+  text: ['data-text', 'large'],
+  links: ['data-links', 'underline'],
+  motion: ['data-motion', 'reduce'],
+};
+
+const readA11y = () => {
+  try {
+    return JSON.parse(window.localStorage.getItem(A11Y_KEY) || '{}');
+  } catch (error) {
+    return {};
+  }
+};
+
+const writeA11y = (state) => {
+  try {
+    window.localStorage.setItem(A11Y_KEY, JSON.stringify(state));
+  } catch (error) {
+    // Navigation privee : le choix vaut pour la page, sans etre memorise.
+  }
+};
+
+// « Contraste eleve » demande au systeme : actif tant que le visiteur n'a pas
+// choisi lui-meme.
+const systemWantsContrast = () => window.matchMedia('(prefers-contrast: more)').matches;
+
+const applyA11y = (state) => {
+  Object.entries(A11Y_ATTRIBUTES).forEach(([option, [attribute, value]]) => {
+    const active = option === 'contrast' && state.contrast === undefined
+      ? systemWantsContrast()
+      : Boolean(state[option]);
+    if (active) {
+      document.documentElement.setAttribute(attribute, value);
+    } else if (option === 'contrast' && state.contrast === false) {
+      // Refus explicite : « normal » l'emporte sur la preference systeme que le
+      // CSS lirait sinon, l'attribut absent la laissant s'appliquer.
+      document.documentElement.setAttribute(attribute, 'normal');
+    } else {
+      document.documentElement.removeAttribute(attribute);
+    }
+  });
+};
+
+applyA11y(readA11y());
+
+document.addEventListener('turbo:load', () => {
+  const state = readA11y();
+  applyA11y(state);
+
+  const menu = document.querySelector('[data-a11y-menu]');
+  if (!menu) {
+    return;
+  }
+
+  menu.hidden = false;
+  const button = menu.querySelector('[data-a11y-button]');
+  const panel = menu.querySelector('.a11y-panel');
+  const boxes = [...menu.querySelectorAll('[data-a11y-option]')];
+
+  const sync = () => {
+    const current = readA11y();
+    boxes.forEach((box) => {
+      const option = box.dataset.a11yOption;
+      box.checked = option === 'contrast' && current.contrast === undefined
+        ? systemWantsContrast()
+        : Boolean(current[option]);
+    });
+  };
+  sync();
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+  };
+
+  button.addEventListener('click', () => setOpen(panel.hidden));
+
+  boxes.forEach((box) => {
+    box.addEventListener('change', () => {
+      const next = readA11y();
+      next[box.dataset.a11yOption] = box.checked;
+      writeA11y(next);
+      applyA11y(next);
+    });
+  });
+
+  menu.querySelector('[data-a11y-reset]').addEventListener('click', () => {
+    writeA11y({});
+    applyA11y({});
+    sync();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !panel.hidden) {
+      setOpen(false);
+      button.focus();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!panel.hidden && !menu.contains(event.target)) {
+      setOpen(false);
+    }
+  });
 });

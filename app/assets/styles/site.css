@@ -11,6 +11,11 @@
     --board-line: rgba(255, 255, 255, 0.32);
     --red: #fb5a48;
     --red-dark: #d94435;
+    /* Rouge de remplacement en mode « contraste renforce » : --red (#fb5a48),
+       celui de la charte, ne fait que 3,15:1 contre le blanc, sous les 4,5:1
+       de WCAG AA. Celui-ci en fait plus de 5. La charte reste intacte par
+       defaut ; ce rouge ne sert que si le visiteur le demande. */
+    --red-aa: #c4372a;
     --yellow: #e9c33a;
     --yellow-soft: #f4dc78;
     --blue: #255db0;
@@ -360,6 +365,7 @@ h1 {
     margin-bottom: 34px;
 }
 
+.section__intro h1,
 .section__intro h2,
 .mascot-section h2 {
     margin: 0;
@@ -567,7 +573,7 @@ h1 {
 }
 
 .event-slide__content p,
-.event-slide__content h3,
+.event-slide__title,
 .event-slide__content strong,
 .event-slide__content small {
     display: block;
@@ -581,7 +587,8 @@ h1 {
     text-transform: uppercase;
 }
 
-.event-slide__content h3 {
+.event-slide__title {
+    font-weight: 900;
     margin-top: 8px;
     font-size: 1.55rem;
     line-height: 1.08;
@@ -614,44 +621,6 @@ h1 {
     align-items: start;
 }
 
-.info-board {
-    display: grid;
-    gap: 14px;
-}
-
-.info-board article {
-    display: grid;
-    grid-template-columns: 54px minmax(0, 1fr);
-    column-gap: 16px;
-    padding: 20px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: var(--paper);
-    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
-}
-
-.info-board i {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    border-radius: 8px;
-    background: var(--yellow);
-    font-size: 1.35rem;
-}
-
-.info-board h3 {
-    margin: 0 0 4px;
-    font-size: 1.25rem;
-}
-
-.info-board p {
-    grid-column: 2;
-    margin: 0;
-    color: var(--muted);
-    font-weight: 700;
-}
-
 .association-section {
     position: relative;
     overflow: hidden;
@@ -673,7 +642,7 @@ h1 {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
 }
 
@@ -1082,13 +1051,9 @@ h1 {
     text-decoration-thickness: 2px;
 }
 
-.counter {
-    opacity: 0;
-}
-
-.counter.animate {
-    opacity: 1;
-}
+/* Les compteurs portent leur valeur finale dans le HTML : plus de masquage en
+   attendant le JavaScript, qui laissait la page sans chiffres s'il ne chargeait
+   pas ou si l'animation etait coupee. */
 
 @media (max-width: 1180px) {
     .stats-grid {
@@ -1175,15 +1140,106 @@ h1 {
     }
 }
 
-/* Rendez-vous de la saison — reutilise .info-board, deja defini plus haut. */
-.rendezvous-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(20px, 3vw, 32px);
-    align-items: start;
+/* Rendez-vous de la saison : une carte par rendez-vous, avec son rythme en
+   etiquette — c'est la premiere chose qu'on cherche (« quand est-ce qu'on se
+   retrouve ? »), avant le titre. */
+.rdv-zone-title {
+    margin: 34px 0 14px;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
 }
 
-.rendezvous-grid__title {
+.rdv-zone-title:first-of-type {
+    margin-top: 0;
+}
+
+.rdv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(14px, 2vw, 22px);
+    align-items: stretch;
+}
+
+.rdv-grid--outside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rdv-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.16);
+}
+
+.rdv-card h4 {
+    margin: 4px 0 0;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.7rem;
+    line-height: 1.05;
+}
+
+.rdv-card p {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.rdv-card__rhythm {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: var(--yellow);
+    color: var(--ink) !important;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rdv-card--monthly .rdv-card__rhythm {
+    background: var(--blue);
+    color: white !important;
+}
+
+.rdv-card--yearly .rdv-card__rhythm {
+    background: var(--red);
+    color: white !important;
+}
+
+.rdv-card--outside .rdv-card__rhythm {
+    background: var(--soft-green);
+}
+
+.rdv-card__when {
+    color: var(--ink) !important;
+    font-size: 1.05rem;
+}
+
+/* Section « L'association » : l'histoire et le mode d'emploi a gauche, le
+   chiffre qui compte — les jeux des membres — a droite, en grand. */
+.association-layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    gap: clamp(24px, 4vw, 56px);
+    /* Le bloc des jeux garde sa hauteur : etire a celle du mode d'emploi, il
+       devenait une grande dalle jaune presque vide. */
+    align-items: start;
+    margin-bottom: 34px;
+}
+
+.association-layout .section__intro {
+    margin-bottom: 26px;
+}
+
+.association-subtitle {
     margin: 0 0 14px;
     font-size: 1.05rem;
     text-transform: uppercase;
@@ -1191,14 +1247,152 @@ h1 {
     color: var(--muted);
 }
 
-@media (max-width: 920px) {
-    .rendezvous-grid {
+.how-steps {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.how-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 5px 5px 0 rgba(23, 25, 34, 0.14);
+}
+
+.how-steps__number {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: var(--yellow);
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.how-steps strong {
+    display: block;
+    font-size: 1.15rem;
+}
+
+.how-steps p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.games-highlight {
+    align-self: center;
+    padding: clamp(20px, 2.5vw, 28px);
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--yellow);
+    box-shadow: 8px 8px 0 rgba(23, 25, 34, 0.18);
+}
+
+.games-highlight strong {
+    display: block;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: clamp(3.4rem, 6vw, 5rem);
+    line-height: 0.9;
+}
+
+.games-highlight h3 {
+    margin: 8px 0 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.games-highlight p:not(.stat-prefix):not(.games-highlight__source) {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 3px solid var(--ink);
+    font-weight: 700;
+}
+
+/* « Environ », « Plus de » : la precision se lit avant le chiffre. */
+.stat-prefix {
+    margin: 0 0 2px;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.stats-grid .stat-prefix {
+    color: #303544;
+}
+
+.stat-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+/* Icone a gauche, precision (« Environ », « Plus de ») a sa droite : elles se
+   lisent d'un trait, avant le chiffre. */
+.stat-head i {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 1.1rem;
+}
+
+.games-highlight .stat-head i {
+    background: white;
+}
+
+.stat-head .stat-prefix {
+    margin: 0;
+}
+
+.games-highlight__source {
+    margin: 12px 0 0;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.9rem;
+}
+
+.games-highlight__source a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+    .rdv-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
+@media (max-width: 920px) {
+    .association-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 680px) {
-    .rendezvous-grid {
+    .rdv-grid,
+    .rdv-grid--outside {
         grid-template-columns: 1fr;
     }
 }
@@ -1274,13 +1468,64 @@ h1 {
 
 /* Cases a cocher : la case garde sa taille de cible tactile et le libelle
    reste sur la meme ligne, aussi long soit-il. */
+/* Cases a cocher et boutons radio : la case precede son libelle, sur une meme
+   ligne, avec une vraie zone de clic. Dessinees ici plutot que laissees au
+   navigateur, dont la case grise et fine se perdait sur le fond creme. */
+.choice-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 6px 0;
+}
+
+.choice-row__text {
+    min-width: 0;
+}
+
+.choice-row__text label {
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.45;
+    cursor: pointer;
+}
+
 .membership-form input[type="checkbox"],
 .membership-form input[type="radio"] {
+    appearance: none;
     flex: 0 0 auto;
-    width: 22px;
-    height: 22px;
-    margin: 2px 0 0;
-    accent-color: var(--red);
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    border: 3px solid var(--ink);
+    background: white;
+    cursor: pointer;
+}
+
+.membership-form input[type="checkbox"] {
+    border-radius: 7px;
+}
+
+.membership-form input[type="radio"] {
+    border-radius: 50%;
+}
+
+.membership-form input[type="checkbox"]:checked {
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 80% no-repeat;
+}
+
+.membership-form input[type="radio"]:checked {
+    background: radial-gradient(circle, var(--ink) 0 8px, white 9px);
+}
+
+.membership-form input[type="checkbox"]:focus-visible,
+.membership-form input[type="radio"]:focus-visible {
+    outline: 3px solid var(--red);
+    outline-offset: 3px;
+}
+
+.membership-form input[aria-invalid="true"][type="checkbox"],
+.membership-form input[aria-invalid="true"][type="radio"] {
+    border-color: var(--red-dark);
 }
 
 .membership-form .checkbox label,
@@ -1433,4 +1678,367 @@ h1 {
     max-width: 70ch;
     font-size: 0.9rem;
     line-height: 1.6;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Accessibilite
+   ------------------------------------------------------------------------ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Lien d'evitement : invisible tant qu'il n'a pas le focus, puis le premier
+   element atteint au clavier. */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 12px;
+    z-index: 100;
+    padding: 12px 18px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--yellow);
+    font-weight: 900;
+}
+
+.skip-link:focus {
+    top: 12px;
+}
+
+/* La piste du carrousel defile : elle doit pouvoir etre atteinte et defilee
+   au clavier, avec un focus qui se voie. */
+.event-track:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 4px;
+}
+
+/* Un utilisateur qui a demande moins d'animation n'en recoit pas : defilement
+   doux, fondus et glissements sont coupes. */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Contraste renforce
+   Active par le bouton « Contraste » de l'en-tete (memorise dans le
+   navigateur) ou par la preference systeme « contraste eleve ». La charte
+   graphique n'est pas modifiee par defaut : seuls les elements qui portent du
+   texte blanc sur le rouge de la charte (3,15:1, sous les 4,5:1 de WCAG AA)
+   passent au rouge plus fonce.
+   ------------------------------------------------------------------------ */
+html[data-contrast="high"] .button--primary,
+html[data-contrast="high"] .event-slide__date,
+html[data-contrast="high"] .rdv-card--yearly .rdv-card__rhythm,
+html[data-contrast="high"] .carousel-controls button:hover,
+html[data-contrast="high"] .carousel-controls button:focus-visible {
+    background: var(--red-aa);
+}
+
+html[data-contrast="high"] {
+    --muted: #3b4252;
+}
+
+html[data-contrast="high"] .section__intro p:not(.eyebrow),
+html[data-contrast="high"] .rdv-card p,
+html[data-contrast="high"] .how-steps p {
+    color: var(--ink);
+}
+
+@media (prefers-contrast: more) {
+    html:not([data-contrast="normal"]) .button--primary,
+    html:not([data-contrast="normal"]) .event-slide__date,
+    html:not([data-contrast="normal"]) .rdv-card--yearly .rdv-card__rhythm {
+        background: var(--red-aa);
+    }
+}
+
+.contrast-toggle {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.contrast-toggle[aria-expanded="true"] {
+    background: var(--ink);
+    color: white;
+}
+
+
+/* Bouton « Contraste » : l'icone seule, avec une infobulle au survol et au focus
+   clavier. Le libelle reste dans le HTML (texte masque) pour les lecteurs
+   d'ecran. */
+.contrast-toggle::after {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 60;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--ink);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    content: attr(data-tooltip);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+}
+
+.contrast-toggle:hover::after,
+.contrast-toggle:focus-visible::after {
+    opacity: 1;
+}
+
+
+/* Formule d'adhesion : trois cartes, la carte choisie se voit d'un coup d'oeil. */
+.choice-cards {
+    display: grid;
+    gap: 12px;
+}
+
+.choice-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: white;
+    transition: background 0.12s, box-shadow 0.12s;
+}
+
+.choice-card:has(input:checked) {
+    background: var(--yellow-soft);
+    box-shadow: 5px 5px 0 rgba(23, 25, 34, 0.2);
+}
+
+.choice-card:has(input:focus-visible) {
+    outline: 3px solid var(--red);
+    outline-offset: 3px;
+}
+
+.choice-card input {
+    margin-top: 2px;
+}
+
+/* Toute la carte se clique : l'etiquette s'etend sous la carte entiere. */
+.choice-card__body {
+    /* .membership-form label impose display: block, d'ou la grille forcee ici. */
+    display: grid !important;
+    gap: 4px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.choice-card__body > span {
+    display: block;
+}
+
+.choice-card__body::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+}
+
+.choice-card__audience {
+    font-size: 1.15rem;
+    font-weight: 900;
+    line-height: 1.3;
+}
+
+.choice-card__title {
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.choice-card__price {
+    width: fit-content;
+    justify-self: start;
+    margin-top: 6px;
+    padding: 4px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    background: var(--cream);
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.family-panel {
+    margin-top: 18px;
+    padding: 16px 18px;
+    border: 3px dashed var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+}
+
+.family-panel[hidden] {
+    display: none;
+}
+
+@media (min-width: 900px) {
+    .choice-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+
+/* Champs obligatoires : un asterisque apres l'etiquette. Symfony pose la classe
+   « required » sur l'etiquette de tout champ requis ; le controleur
+   membership-type la pose aussi, a la volee, sur les champs conditionnels. */
+.membership-form label.required::after,
+.form-required-note span {
+    color: var(--red-dark);
+    font-weight: 900;
+}
+
+.membership-form label.required::after {
+    margin-left: 4px;
+    content: "*";
+}
+
+.form-required-note {
+    margin: 0 0 18px;
+    font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Reglages d'accessibilite : panneau et options
+   ------------------------------------------------------------------------ */
+.a11y-menu {
+    position: relative;
+}
+
+.a11y-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 70;
+    width: min(340px, calc(100vw - 32px));
+    padding: 16px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.2);
+}
+
+.a11y-panel[hidden] {
+    display: none;
+}
+
+.a11y-panel__title {
+    margin: 0 0 8px;
+    font-family: "Akaya Kanadaka", cursive;
+    font-size: 1.4rem;
+}
+
+.a11y-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 2px solid rgba(23, 25, 34, 0.12);
+    cursor: pointer;
+}
+
+.a11y-option span {
+    display: grid;
+    gap: 1px;
+}
+
+.a11y-option small {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.a11y-option input {
+    appearance: none;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    margin-top: 1px;
+    border: 3px solid var(--ink);
+    border-radius: 7px;
+    background: white;
+    cursor: pointer;
+}
+
+.a11y-option input:checked {
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 80% no-repeat;
+}
+
+.a11y-option input:focus-visible {
+    outline: 3px solid var(--red);
+    outline-offset: 3px;
+}
+
+.a11y-reset {
+    margin-top: 6px;
+    padding: 8px 14px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: var(--cream);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* Texte plus grand : tout ce qui est en rem suit. */
+html[data-text="large"] {
+    font-size: 120%;
+}
+
+/* Liens soulignes : l'information ne repose plus sur la couleur seule. */
+html[data-links="underline"] a:not(.button):not(.brand):not(.skip-link) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* Sans animation : meme effet que la preference systeme, a la demande. */
+html[data-motion="reduce"] {
+    scroll-behavior: auto;
+}
+
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
 }

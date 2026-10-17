@@ -7,7 +7,7 @@
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-ink">Évènements</h1>
-            <p class="mt-1 text-slate-500">Ce que vous saisissez ici apparaît dans le calendrier de la page d'accueil.</p>
+            <p class="mt-1 text-slate-600">Ce que vous saisissez ici apparaît dans le calendrier de la page d'accueil.</p>
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ path('app_event_generate') }}" class="btn btn-secondary">{{ ui.icon('sparkles') }} Générer la saison</a>
@@ -17,11 +17,11 @@
 
     <section class="card mt-8" aria-labelledby="titre-liste">
         <h2 id="titre-liste" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
-            Au calendrier <span class="font-medium text-slate-400">{{ events|length }}</span>
+            Au calendrier <span class="font-medium text-slate-500">{{ events|length }}</span>
         </h2>
 
         {% if events is empty %}
-            <p class="px-5 py-8 text-slate-500">
+            <p class="px-5 py-8 text-slate-600">
                 Aucun évènement saisi — le calendrier de la page d'accueil est donc vide.
                 « Générer la saison » crée d'un coup toutes les soirées du mardi et tous les
                 après-midi du 1er samedi de la période choisie.
@@ -29,7 +29,7 @@
         {% else %}
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
                         <tr>
                             <th scope="col" class="px-5 py-3 font-semibold">Date</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Évènement</th>
@@ -41,7 +41,7 @@
                     <tbody class="divide-y divide-slate-100">
                         {% for event in events %}
                             {% set past = event.lastDay < today %}
-                            <tr class="{{ past ? 'bg-slate-50/60 text-slate-400' }}">
+                            <tr class="{{ past ? 'bg-slate-50/60 text-slate-500' }}">
                                 <td class="whitespace-nowrap px-5 py-3 align-top">
                                     <div class="font-semibold {{ past ? '' : 'text-slate-800' }}">{{ event.startsAt|date('d/m/Y') }}</div>
                                     {% if event.endsAt %}
@@ -92,5 +92,5 @@
         {% endif %}
     </section>
 
-    <p class="mt-4 text-sm text-slate-500">Les évènements terminés sont supprimés automatiquement chaque nuit.</p>
+    <p class="mt-4 text-sm text-slate-600">Les évènements terminés sont supprimés automatiquement chaque nuit.</p>
 {% endblock %}

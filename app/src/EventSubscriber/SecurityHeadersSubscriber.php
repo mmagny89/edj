@@ -8,13 +8,15 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 /**
- * En-tetes de securite de l'espace d'administration et de la connexion.
+ * En-tetes de securite de toutes les reponses, et en plus, sur l'espace
+ * d'administration et la connexion, ceux qui interdisent le cache et
+ * l'indexation.
  *
- * Posees ici et non dans le Caddyfile : une politique de contenu a nonce
+ * Poses ici et non dans le Caddyfile : une politique de contenu a nonce
  * demande une valeur differente a chaque requete, que Caddy ne sait pas
  * fabriquer.
  */
-final class AdminSecurityHeadersSubscriber
+final class SecurityHeadersSubscriber
 {
     public function __construct(
         private readonly CspNonce $nonce,
@@ -26,28 +28,41 @@ final class AdminSecurityHeadersSubscriber
     #[AsEventListener]
     public function onResponse(ResponseEvent $event): void
     {
-        if (!$event->isMainRequest() || !$this->isPrivatePath($event->getRequest()->getPathInfo())) {
+        if (!$event->isMainRequest()) {
             return;
         }
 
+        $request = $event->getRequest();
         $headers = $event->getResponse()->headers;
 
-        // Une page d'administration ne se conserve ni dans le cache du
-        // navigateur ni dans un cache intermediaire : apres deconnexion, le
-        // bouton « retour » ne doit pas la reafficher.
-        $headers->set('Cache-Control', 'no-store, private');
-        $headers->set('Pragma', 'no-cache');
-        $headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
-        $headers->set('X-Frame-Options', 'DENY');
         $headers->set('X-Content-Type-Options', 'nosniff');
-        $headers->set('Referrer-Policy', 'same-origin');
+        $headers->set('X-Frame-Options', 'DENY');
+        $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $headers->set('Cross-Origin-Opener-Policy', 'same-origin');
-        $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+        $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+
+        if ($this->isPrivatePath($request->getPathInfo())) {
+            // Une page d'administration ne se conserve ni dans le cache du
+            // navigateur ni dans un cache intermediaire : apres deconnexion, le
+            // bouton « retour » ne doit pas la reafficher.
+            $headers->set('Cache-Control', 'no-store, private');
+            $headers->set('Pragma', 'no-cache');
+            $headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+            $headers->set('Referrer-Policy', 'same-origin');
+        }
 
         // En developpement, la barre du profileur injecte ses propres scripts
-        // et styles en ligne : une CSP stricte la rendrait muette.
+        // et styles en ligne : une CSP stricte, comme HSTS sur un domaine local,
+        // la rendrait muette ou genante.
         if ($this->debug) {
             return;
+        }
+
+        // HSTS : le navigateur ne reessaie plus jamais en HTTP. Sans
+        // includeSubDomains ni preload — qui engageraient tout le domaine,
+        // possiblement partage avec d'autres sites.
+        if ($request->isSecure()) {
+            $headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
 
         $headers->set('Content-Security-Policy', implode('; ', [

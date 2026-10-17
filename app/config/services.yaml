@@ -3,9 +3,18 @@ parameters:
     # bulletin d'adhesion, et expediteur technique de ces messages.
     app.contact_email: 'enviedejouer89300@gmail.com'
 
+    # Adresse d'expedition des courriels du site, distincte de l'adresse de
+    # contact : l'association recoit et repond sur sa boite habituelle, mais le
+    # courriel part d'un domaine authentifie chez le fournisseur d'envoi.
+    app.mailer_from: '%env(MAILER_FROM)%'
+
     # Reseaux sociaux publics : une seule source pour le site et les e-mails.
     app.social.facebook: 'https://www.facebook.com/EnviedeJouer89/'
     app.social.instagram: 'https://www.instagram.com/envie_de_jouer_89/'
+
+    # Le site est-il indexable ? Vient de l'environnement (compose.yml) : 0 sous un
+    # domaine provisoire ou en recette, 1 le jour de la mise en ligne definitive.
+    app.seo.indexable: '%env(bool:SITE_INDEXABLE)%'
 
     # Groupe Facebook des adherents : sa page est publique, l'acces y est
     # soumis a l'approbation d'un administrateur du groupe. Le parametre de suivi

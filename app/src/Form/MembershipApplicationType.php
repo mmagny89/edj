@@ -66,9 +66,9 @@ final class MembershipApplicationType extends AbstractType
                 'choice_attr' => fn (MembershipType $type) => ['data-price' => $type->priceLabel()],
             ])
             ->add('principalMemberName', TextType::class, [
-                'label' => "Prénom et nom de l'adhérent principal",
+                'label' => 'Prénom et nom du membre de votre famille qui a déjà adhéré',
                 'required' => false,
-                'help' => "À remplir uniquement pour une adhésion famille.",
+                'help' => "À remplir uniquement si vous choisissez l'adhésion famille : la personne qui a déjà pris l'adhésion à 10 €.",
             ])
             ->add('philibertConsent', CheckboxType::class, [
                 'label' => "J'autorise la communication de mon adresse e-mail à la boutique Philibert dans le cadre de son programme de fidélité (10 % de réduction sur la boutique en ligne).",

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\MembershipSource;
 use App\Enum\MembershipType;
 use App\Repository\MembershipApplicationRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -128,7 +129,22 @@ class MembershipApplication
     private ?string $signatureName = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Assert\LessThanOrEqual('tomorrow', message: 'La date ne peut pas être dans le futur.')]
     private \DateTimeImmutable $submittedAt;
+
+    /**
+     * Bulletin rempli par l'adherent sur le site, ou saisi par un
+     * administrateur d'apres une fiche papier.
+     */
+    #[ORM\Column(length: 10, enumType: MembershipSource::class, options: ['default' => 'en_ligne'])]
+    private MembershipSource $source = MembershipSource::Online;
+
+    /**
+     * Identifiant de l'administrateur qui a saisi une fiche papier, pour savoir
+     * qui a engage l'association. Nul pour un bulletin en ligne.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $enteredById = null;
 
     /**
      * Date de l'anonymisation, nulle tant que le bulletin porte des donnees
@@ -464,6 +480,40 @@ class MembershipApplication
         $this->signaturePlace = '—';
         $this->signatureName = '—';
         $this->anonymizedAt = $now ?? new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function getSource(): MembershipSource
+    {
+        return $this->source;
+    }
+
+    public function isPaper(): bool
+    {
+        return MembershipSource::Paper === $this->source;
+    }
+
+    public function getEnteredById(): ?int
+    {
+        return $this->enteredById;
+    }
+
+    /**
+     * Marque le bulletin comme saisi d'apres une fiche papier remise a
+     * l'association, par l'administrateur donne.
+     */
+    public function enterFromPaper(?int $adminId): static
+    {
+        $this->source = MembershipSource::Paper;
+        $this->enteredById = $adminId;
+
+        return $this;
+    }
+
+    public function setSubmittedAt(\DateTimeImmutable $submittedAt): static
+    {
+        $this->submittedAt = $submittedAt;
 
         return $this;
     }

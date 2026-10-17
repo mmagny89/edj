@@ -4,19 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Envie de Jouer - Association de jeux de société à Joigny{% endblock %}</title>
+    {% set base_url = app.request.schemeAndHttpHost %}
+    {% set page_description %}{% block description %}Envie de Jouer, association de jeux de société à Joigny (Yonne) : soirées jeux le mardi, après-midi le 1er samedi, Nuits du Jeu. Adhésion dès 10 € par an.{% endblock %}{% endset %}
+    {% set page_title %}{{ block('title') }}{% endset %}
+    <meta name="description" content="{{ page_description|striptags|trim }}">
+    {# Seul le domaine definitif est visible des moteurs de recherche : SITE_INDEXABLE
+       vaut 0 en developpement, en recette et sous un domaine provisoire. #}
+    <meta name="robots" content="{% block robots %}{{ site_indexable ? 'index, follow' : 'noindex, nofollow' }}{% endblock %}">
+    <link rel="canonical" href="{{ base_url }}{{ app.request.pathInfo }}">
+    <meta name="theme-color" content="#a8b7df">
+    {# Lu par Turbo pour la feuille de style de sa barre de progression, que la
+       politique de contenu n'autorise qu'avec ce nonce. #}
+    <meta name="csp-nonce" content="{{ csp_nonce() }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Envie de Jouer">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:title" content="{{ page_title|striptags|trim }}">
+    <meta property="og:description" content="{{ page_description|striptags|trim }}">
+    <meta property="og:url" content="{{ base_url }}{{ app.request.pathInfo }}">
+    <meta property="og:image" content="{{ base_url }}/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Envie de Jouer, association de jeux de société à Joigny">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="icon" href="/img/edj-mascotte-transparent.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Akaya+Kanadaka&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <link rel="apple-touch-icon" href="/img/edj-mascotte-transparent.png">
+    {% block structured_data %}{% endblock %}
     {% block stylesheets %}
         {{ encore_entry_link_tags('site') }}
     {% endblock %}
 </head>
 <body>
 {% block body %}
+    <a href="#{% block skip_target %}contenu{% endblock %}" class="skip-link">Aller au contenu</a>
     <header class="site-header">
         <a class="brand" href="{{ path('site_index') }}#accueil" aria-label="Retour à l'accueil">
             <img src="/img/edj-mascotte-transparent.png" alt="" class="brand__mascot">
@@ -41,6 +63,39 @@
             <a href="{{ path('site_index') }}#adhesion">Adhésion</a>
             <a href="{{ path('site_index') }}#partenaires">Partenaires</a>
             <a href="{{ path('site_index') }}#contact">Contact</a>
+            {# Reglages d'accessibilite : un bouton qui ouvre un panneau de quatre
+               options, memorisees dans le navigateur. Cache sans JavaScript, qui
+               est ce qui les fait fonctionner. #}
+            <div class="a11y-menu" data-a11y-menu hidden>
+                <button type="button" class="contrast-toggle" aria-expanded="false" aria-controls="a11y-panel"
+                        data-tooltip="Accessibilité" data-a11y-button>
+                    <i class="fa-solid fa-universal-access" aria-hidden="true"></i>
+                    <span class="sr-only">Réglages d'accessibilité</span>
+                </button>
+
+                <div id="a11y-panel" class="a11y-panel" role="group" aria-labelledby="a11y-title" hidden>
+                    <p id="a11y-title" class="a11y-panel__title">Réglages d'accessibilité</p>
+
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="contrast">
+                        <span><strong>Contraste renforcé</strong><small>Rouges plus foncés, textes plus noirs</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="text">
+                        <span><strong>Texte plus grand</strong><small>Agrandit tous les textes de 20 %</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="links">
+                        <span><strong>Liens soulignés</strong><small>Les liens se distinguent sans la couleur</small></span>
+                    </label>
+                    <label class="a11y-option">
+                        <input type="checkbox" data-a11y-option="motion">
+                        <span><strong>Sans animation</strong><small>Plus de défilement doux ni de compteurs animés</small></span>
+                    </label>
+
+                    <button type="button" class="a11y-reset" data-a11y-reset>Réinitialiser</button>
+                </div>
+            </div>
         </nav>
     </header>
 
@@ -50,6 +105,7 @@
         <span>© {{ "now" | date('Y') }} Envie de Jouer - Joigny</span>
         <a href="{{ path('site_legal_notice') }}">Mentions légales</a>
         <a href="{{ path('site_privacy') }}">Données personnelles</a>
+        <span>Site créé par <a href="https://mmagny.fr/" target="_blank" rel="noopener noreferrer">Mylène Magny<span class="sr-only"> (nouvel onglet)</span></a></span>
     </footer>
 {% endblock %}
 {% block javascripts %}

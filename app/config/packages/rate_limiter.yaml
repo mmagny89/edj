@@ -14,3 +14,23 @@ framework:
             policy: 'sliding_window'
             limit: 40
             interval: '1 hour'
+        # Courriel de confirmation : une adresse ne recoit que trois messages par
+        # jour. Le plafond par IP ci-dessus borne un expediteur ; celui-ci borne
+        # un destinataire, que l'on pourrait sinon inonder depuis des IP
+        # differentes en saisissant son adresse dans le bulletin.
+        membership_confirmation_email:
+            policy: 'sliding_window'
+            limit: 3
+            interval: '1 day'
+
+# Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
+# (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
+# le plafond horaire est atteint apres quelques suites, et les pages du bulletin
+# repondent 429 au lieu d'echouer pour une vraie raison.
+when@test:
+    framework:
+        rate_limiter:
+            membership_application:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'

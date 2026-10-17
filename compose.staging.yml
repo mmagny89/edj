@@ -12,6 +12,7 @@ services:
     image: edj-php:staging
     environment:
       APP_SECRET: ${APP_SECRET:?APP_SECRET est requis en staging (secret applicatif Symfony) — fournir via --env-file .env.staging.local}
+      MAILER_FROM: ${MAILER_FROM:?MAILER_FROM est requis en staging (adresse d'expedition) — fournir via --env-file .env.staging.local}
     # Serveur partage : pas de port public direct, Traefik route par
     # domaine sur le reseau partage "proxy" (a creer une fois sur
     # l'hote : docker network create proxy).

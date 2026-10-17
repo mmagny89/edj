@@ -1,0 +1,142 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}Administrateurs - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-ink">Administrateurs</h1>
+            <p class="mt-1 text-slate-600">Qui peut se connecter à cette administration, et avec quels droits.</p>
+        </div>
+        <a href="{{ path('app_user_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter un administrateur</a>
+    </div>
+
+    {% if credentials %}
+        {# Affiche une seule fois : le message est un flash, consomme a l'affichage. #}
+        <section class="mt-6 rounded-xl border-2 border-amber-400 bg-amber-50 p-5" role="alert" aria-labelledby="titre-identifiants">
+            <h2 id="titre-identifiants" class="text-lg font-bold text-amber-950">
+                {{ credentials.created ? 'Compte créé' : 'Mot de passe réinitialisé' }} : à transmettre maintenant
+            </h2>
+            <p class="mt-1 text-sm text-amber-900">
+                Ce mot de passe provisoire <strong>ne sera plus affiché</strong>. Notez-le ou transmettez-le maintenant ;
+                la personne devra le changer dès sa connexion.
+            </p>
+            <dl class="mt-4 grid gap-2 sm:grid-cols-[8rem_1fr]">
+                <dt class="font-semibold text-amber-950">Adresse</dt>
+                <dd>{{ credentials.email }}</dd>
+                <dt class="font-semibold text-amber-950">Mot de passe</dt>
+                <dd><code class="rounded bg-white px-2 py-1 text-lg font-bold tracking-wide text-ink select-all">{{ credentials.password }}</code></dd>
+            </dl>
+        </section>
+    {% endif %}
+
+    <section class="card mt-8" aria-labelledby="titre-liste">
+        <h2 id="titre-liste" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
+            Comptes <span class="font-medium text-slate-600">{{ users|length }}</span>
+        </h2>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+                    <tr>
+                        <th scope="col" class="px-5 py-3 font-semibold">Compte</th>
+                        <th scope="col" class="px-3 py-3 font-semibold">Rôle</th>
+                        <th scope="col" class="px-3 py-3 font-semibold">État</th>
+                        <th scope="col" class="px-3 py-3 font-semibold">Dernière connexion</th>
+                        <th scope="col" class="px-5 py-3 text-right font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for user in users %}
+                        {% set me = user.userIdentifier == currentIdentifier %}
+                        <tr class="{{ user.blocked ? 'bg-slate-50/60 text-slate-600' }}">
+                            <td class="px-5 py-3 align-top">
+                                <div class="font-semibold {{ user.blocked ? '' : 'text-slate-800' }}">{{ user.email }}</div>
+                                <div class="text-xs">
+                                    Créé le {{ user.createdAt|date('d/m/Y') }}
+                                    {% if me %}<span class="badge ml-1 bg-blue-100 text-blue-900">vous</span>{% endif %}
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 align-top">
+                                {% if user.superAdmin %}
+                                    <span class="badge bg-violet-100 text-violet-900">Super-administrateur</span>
+                                {% else %}
+                                    <span class="badge bg-slate-200 text-slate-800">Contributeur</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-3 align-top">
+                                {% if user.blocked %}
+                                    <span class="badge bg-red-100 text-red-900">Bloqué le {{ user.blockedAt|date('d/m/Y') }}</span>
+                                {% elseif user.mustChangePassword %}
+                                    <span class="badge bg-amber-100 text-amber-900">Mot de passe provisoire</span>
+                                {% else %}
+                                    <span class="badge bg-green-100 text-green-900">Actif</span>
+                                {% endif %}
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-3 align-top">
+                                {{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}
+                            </td>
+                            <td class="px-5 py-3 align-top">
+                                {% if me %}
+                                    <div class="flex justify-end">
+                                        <a href="{{ path('app_account') }}" class="btn btn-secondary">{{ ui.icon('pencil') }} Mon mot de passe</a>
+                                    </div>
+                                {% else %}
+                                    <div class="flex flex-wrap items-center justify-end gap-2">
+                                        <form method="post" action="{{ path('app_user_role', {id: user.id}) }}"
+                                              data-controller="confirm"
+                                              data-confirm-message-value="Changer le rôle de {{ user.email }} ? Sa session ouverte sera coupée."
+                                              data-action="submit->confirm#ask">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('user_role_' ~ user.id) }}">
+                                            <input type="hidden" name="role" value="{{ user.superAdmin ? 'ROLE_CONTRIBUTOR' : 'ROLE_SUPER_ADMIN' }}">
+                                            <button type="submit" class="btn btn-secondary">
+                                                {{ ui.icon('users') }} {{ user.superAdmin ? 'Rendre contributeur' : 'Rendre super-admin' }}<span class="sr-only"> {{ user.email }}</span>
+                                            </button>
+                                        </form>
+
+                                        <form method="post" action="{{ path('app_user_reset_password', {id: user.id}) }}"
+                                              data-controller="confirm"
+                                              data-confirm-message-value="Réinitialiser le mot de passe de {{ user.email }} ? Un mot de passe provisoire sera généré et son mot de passe actuel cessera de fonctionner."
+                                              data-action="submit->confirm#ask">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('user_reset_' ~ user.id) }}">
+                                            <button type="submit" class="btn btn-secondary">
+                                                {{ ui.icon('login') }} Réinitialiser<span class="sr-only"> le mot de passe de {{ user.email }}</span>
+                                            </button>
+                                        </form>
+
+                                        {% if user.blocked %}
+                                            <form method="post" action="{{ path('app_user_unblock', {id: user.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('user_unblock_' ~ user.id) }}">
+                                                <button type="submit" class="btn btn-secondary">
+                                                    {{ ui.icon('check') }} Débloquer<span class="sr-only"> {{ user.email }}</span>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="{{ path('app_user_block', {id: user.id}) }}"
+                                                  data-controller="confirm"
+                                                  data-confirm-message-value="Bloquer {{ user.email }} ? Il ne pourra plus se connecter, et sa session ouverte sera coupée."
+                                                  data-confirm-confirm-label-value="Bloquer"
+                                                  data-action="submit->confirm#ask">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('user_block_' ~ user.id) }}">
+                                                <button type="submit" class="btn btn-danger">
+                                                    {{ ui.icon('eye-slash') }} Bloquer<span class="sr-only"> {{ user.email }}</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <p class="mt-4 text-sm text-slate-600">
+        Un compte bloqué ne peut plus se connecter et sa session ouverte est coupée à la requête suivante.
+        Vous ne pouvez pas modifier votre propre compte, et le dernier super-administrateur actif est protégé.
+    </p>
+{% endblock %}

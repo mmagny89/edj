@@ -105,6 +105,9 @@ l'hote (conventions, section 4).
 
 ## Deploiement
 
+> **Mise en production pas a pas** — de la machine vierge au site en ligne, puis
+> du domaine provisoire au domaine definitif : [`docs/MISE-EN-PRODUCTION.md`](docs/MISE-EN-PRODUCTION.md).
+
 Tout push sur `main` declenche le job `deploiement` de
 `.github/workflows/qualite.yml`, apres les portes qualite et le build de
 verification de l'image.
@@ -122,10 +125,14 @@ d'autre, et les chemins comme les secrets ne quittent jamais la machine
 2. `git fetch` puis `merge --ff-only` : un deploiement ne fusionne rien et ne
    resout aucun conflit. Si l'avance rapide est impossible, quelqu'un a
    modifie le clone du serveur, et c'est a un humain de regarder ;
-3. `up -d --build --wait` : l'image est construite **sur le serveur**, depuis
-   le code qui vient d'etre tire ;
-4. les migrations, explicitement — `RUN_MIGRATIONS` vaut 0 en production
-   (conventions, section 8) ;
+3. `build`, puis la base seule : l'image est construite **sur le serveur**,
+   depuis le code qui vient d'etre tire ;
+4. les migrations, explicitement et **avant** la bascule du code
+   (`RUN_MIGRATIONS` vaut 0 en production, conventions section 8) : l'ancien
+   code sert pendant que le schema avance, et le nouveau demarre sur un schema
+   a jour. Une migration doit donc rester compatible avec le code precedent ;
+   une suppression ou un renommage se livre en deux fois ;
+4bis. `up -d --wait`, qui bascule le code ;
 5. le menage des images orphelines, sans quoi le disque se remplit en silence ;
 6. la seule verification qui compte : la reponse du site **depuis
    l'exterieur**. Derriere Traefik, un conteneur peut se declarer `healthy`
@@ -221,6 +228,8 @@ docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local log
 
 ## Ecarts assumes au manifeste
 
+- `compose.redirection.yml` n'est pas au manifeste (section 1) : override **facultatif** que `deployer.sh` n'ajoute que si `ANCIEN_DOMAINE` figure dans les secrets, pour rediriger en 301 un ancien domaine vers le principal le temps d'un changement de domaine.
+
 | Ecart | Pourquoi |
 |---|---|
 | Le Dockerfile ajoute un stage `node_upstream` et compile le front avec `npm ci && npm run build` dans `prod_builder` | Ce projet utilise Webpack Encore, la ou le gabarit `.claude/resources/symfony-docker` suppose AssetMapper + Tailwind CLI |
@@ -239,6 +248,9 @@ jamais le poste de developpement).
 | `sh outils/deployer.sh prod` | Le deploiement lui-meme (`git pull`, build, migrations, verification externe). Appele par la forced command SSH, ou a la main sur le serveur |
 | `sh outils/installer-deploiement.sh serveur\|projet prod` | Poser les acces du deploiement continu : cles, `authorized_keys`, empreinte, secrets a coller dans GitHub |
 | `sh outils/diagnostic-traefik.sh` | Relever sur l'hote le nom du reseau, l'entrypoint et le certresolver du Traefik en place — ils se constatent, ils ne se devinent pas |
+| `sh outils/sauvegarder.sh prod` | Sauvegarde de la base (dump compresse, controle, rotation sur 14), dossier et fichiers fermes au monde. A lancer chaque nuit par cron |
+| `sh outils/tester-restauration.sh prod` | Restaure la derniere sauvegarde dans une base **jetable**, compte les lignes, la supprime : prouve que la sauvegarde sert, sans toucher a la base en service |
+| `sh outils/verifier-site.sh <domaine> [--indexable]` | Controle de recette **depuis l'exterieur** : HTTPS, en-tetes, indexation, pages privees, certificat. Sort en erreur si un controle echoue |
 | `sh outils/extraire-changelog.sh 1.0.0` | Verifier en local la section que la release publiera |
 
 ## Publier une version

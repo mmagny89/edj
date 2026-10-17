@@ -1,5 +1,11 @@
 {% extends 'site/layout.html.twig' %}
 
+{% block skip_target %}accueil{% endblock %}
+
+{% block structured_data %}
+    <script type="application/ld+json">{{ structuredData|raw }}</script>
+{% endblock %}
+
 {% block main %}
     <main id="accueil">
         <section class="hero">
@@ -13,7 +19,7 @@
                     </span>
                 </h1>
                 <p class="hero__lead">
-                    Des tables toute l'année, une ludothèque généreuse et des rendez-vous réguliers,
+                    Des tables toute l'année, les jeux de nos membres et des rendez-vous réguliers,
                     pour celles et ceux qui aiment découvrir, expliquer, rire, perdre dignement et recommencer.
                 </p>
 
@@ -55,7 +61,7 @@
                 <h2>Les prochaines dates</h2>
                 <p>
                     Repère ton créneau, prépare la prochaine table et viens jouer : les soirées du mardi
-                    et les après-midi du 1er samedi rassemblent les adhérents autour de la ludothèque,
+                    et les après-midi du 1er samedi rassemblent les adhérents autour des jeux que chacun apporte,
                     tout au long de la saison.
                 </p>
             </div>
@@ -66,14 +72,14 @@
                saisie ne peut donc s'echapper de l'attribut. #}
             <div class="event-carousel" data-event-carousel
                  data-events="{{ events|json_encode }}">
-                <div class="calendar-toolbar" aria-label="Filtrer les événements">
-                    <button class="calendar-filter is-active" type="button" data-filter="all">Tous</button>
-                    <button class="calendar-filter" type="button" data-filter="weekly">Mardis</button>
-                    <button class="calendar-filter" type="button" data-filter="monthly">1ers samedis</button>
-                    <button class="calendar-filter" type="button" data-filter="special">Manifestations</button>
+                <div class="calendar-toolbar" role="group" aria-label="Filtrer les événements">
+                    <button class="calendar-filter is-active" type="button" data-filter="all" aria-pressed="true">Tous</button>
+                    <button class="calendar-filter" type="button" data-filter="weekly" aria-pressed="false">Mardis</button>
+                    <button class="calendar-filter" type="button" data-filter="monthly" aria-pressed="false">1ers samedis</button>
+                    <button class="calendar-filter" type="button" data-filter="special" aria-pressed="false">Manifestations</button>
                 </div>
 
-                <div class="carousel-controls" aria-label="Navigation du carrousel">
+                <div class="carousel-controls" role="group" aria-label="Faire défiler les évènements">
                     <button type="button" data-carousel-prev aria-label="Événements précédents">
                         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
                     </button>
@@ -82,7 +88,10 @@
                     </button>
                 </div>
 
-                <div class="event-track" data-event-track aria-live="polite"></div>
+                <p class="sr-only" role="status" data-event-status></p>
+                {# Zone qui defile : focusable pour se parcourir aux fleches du clavier,
+                   et nommee pour qu'on sache ce qu'on y a atteint. #}
+                <div class="event-track" data-event-track tabindex="0" role="region" aria-label="Prochains évènements"></div>
             </div>
         </section>
 
@@ -91,64 +100,55 @@
                 <p class="eyebrow">La saison</p>
                 <h2>Nos rendez-vous</h2>
                 <p>
-                    Deux rendez-vous réguliers qui rythment l'année, des temps forts qui la ponctuent,
-                    et deux sorties où l'on retrouve d'autres joueurs.
+                    Un rythme simple : on se retrouve chaque semaine et chaque mois, quelques grands
+                    temps forts ponctuent l'année, et on sort parfois de nos murs.
                 </p>
             </div>
 
-            <div class="rendezvous-grid">
-                <div>
-                    <h3 class="rendezvous-grid__title">Toute l'année</h3>
-                    <div class="info-board">
-                        <article>
-                            <i class="fa-solid fa-dice" aria-hidden="true"></i>
-                            <h3>Les mardis soir</h3>
-                            <p>Chaque semaine, de 18h30 à minuit, à la Maison des Associations.</p>
-                        </article>
-                        <article>
-                            <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
-                            <h3>Les 1ers samedis du mois</h3>
-                            <p>Une après-midi ludique par mois, de 14h à 18h.</p>
-                        </article>
-                    </div>
-                </div>
+            <h3 class="rdv-zone-title">Chez nous, à la Maison des Associations</h3>
+            <div class="rdv-grid">
+                <article class="rdv-card rdv-card--weekly">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-repeat" aria-hidden="true"></i> Chaque semaine</p>
+                    <h4>Les soirées du mardi</h4>
+                    <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 18h30 – minuit</p>
+                    <p>Tables ouvertes : on joue aux jeux que les membres ont apportés, on explique les règles, on essaie des nouveautés.</p>
+                </article>
 
-                <div>
-                    <h3 class="rendezvous-grid__title">Les temps forts</h3>
-                    <div class="info-board">
-                        <article>
-                            <i class="fa-solid fa-moon" aria-hidden="true"></i>
-                            <h3>Quatre Nuits du Jeu</h3>
-                            <p>Quatre nuits dans la saison, pour les longues parties et les grosses tables.</p>
-                        </article>
-                        <article>
-                            <i class="fa-solid fa-cake-candles" aria-hidden="true"></i>
-                            <h3>La Nuit anniversaire</h3>
-                            <p>Une quatrième nuit, celle qui fête l'anniversaire de l'association.</p>
-                        </article>
-                        <article>
-                            <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>
-                            <h3>Le week-end du Jeu</h3>
-                            <p>Deux jours de jeu pour la Fête des Jeux.</p>
-                        </article>
-                    </div>
-                </div>
+                <article class="rdv-card rdv-card--monthly">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Chaque mois</p>
+                    <h4>Les après-midi du 1<sup>er</sup> samedi</h4>
+                    <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 14h – 18h</p>
+                    <p>Une après-midi pour jouer sans se presser, entre amis ou en famille.</p>
+                </article>
 
-                <div>
-                    <h3 class="rendezvous-grid__title">On sort de nos murs</h3>
-                    <div class="info-board">
-                        <article>
-                            <i class="fa-solid fa-star" aria-hidden="true"></i>
-                            <h3>Festival Le Sens du Jeu</h3>
-                            <p>À Sens, aux côtés de Sens Ludique.</p>
-                        </article>
-                        <article>
-                            <i class="fa-solid fa-people-roof" aria-hidden="true"></i>
-                            <h3>Fête des associations</h3>
-                            <p>À Joigny, pour rencontrer celles et ceux qui ne nous connaissent pas encore.</p>
-                        </article>
-                    </div>
-                </div>
+                <article class="rdv-card rdv-card--yearly">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-moon" aria-hidden="true"></i> Quatre fois par an</p>
+                    <h4>Les Nuits du Jeu</h4>
+                    <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> De 15h à 4h du matin</p>
+                    <p>Treize heures de jeu d'affilée, pour les longues parties et les grosses tables. L'une des quatre nuits fête l'anniversaire de l'association.</p>
+                </article>
+
+                <article class="rdv-card rdv-card--yearly">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-week" aria-hidden="true"></i> Une fois par an</p>
+                    <h4>Le week-end du Jeu</h4>
+                    <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> Deux jours</p>
+                    <p>Deux jours de jeu pour la Fête des Jeux : la nuit du samedi, puis on remet ça le dimanche.</p>
+                </article>
+            </div>
+
+            <h3 class="rdv-zone-title">Hors de nos murs</h3>
+            <div class="rdv-grid rdv-grid--outside">
+                <article class="rdv-card rdv-card--outside">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> À Sens</p>
+                    <h4>Le festival Le Sens du Jeu</h4>
+                    <p>On y retrouve d'autres joueurs, aux côtés de Sens Ludique.</p>
+                </article>
+
+                <article class="rdv-card rdv-card--outside">
+                    <p class="rdv-card__rhythm"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> À Joigny</p>
+                    <h4>La fête des associations</h4>
+                    <p>Pour rencontrer celles et ceux qui ne nous connaissent pas encore.</p>
+                </article>
             </div>
 
             <div class="join-banner">
@@ -161,34 +161,98 @@
         </section>
 
         <section id="association" class="section association-section">
-            <div class="section__intro">
-                <p class="eyebrow">L'association</p>
-                <h2>Une ludothèque vivante à Joigny</h2>
-                <p>
-                    Créée en 2023, Envie de Jouer rassemble des passionnés de jeux de société
-                    autour de soirées régulières, d'après-midi ludiques et de manifestations.
-                </p>
+            <div class="association-layout">
+                <div>
+                    <div class="section__intro">
+                        <p class="eyebrow">L'association</p>
+                        <h2>Une association de joueurs</h2>
+                        <p>
+                            Créée en 2023, Envie de Jouer rassemble à Joigny des passionnés de jeux de société
+                            autour de soirées régulières, d'après-midi ludiques et de manifestations.
+                        </p>
+                    </div>
+
+                    {# L'association n'a pas de ludotheque a elle : les etapes disent
+                       d'ou viennent les jeux, pour qu'on ne vienne pas y chercher un
+                       pret. #}
+                    <h3 class="association-subtitle">Comment ça marche ?</h3>
+                    <ol class="how-steps">
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">1</span>
+                            <div>
+                                <strong>Chacun apporte</strong>
+                                <p>des jeux de sa collection, selon l'envie du jour.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">2</span>
+                            <div>
+                                <strong>On met en commun</strong>
+                                <p>les jeux sont à la disposition de tous, le temps d'une soirée.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="how-steps__number" aria-hidden="true">3</span>
+                            <div>
+                                <strong>On joue ensemble</strong>
+                                <p>les membres expliquent les règles, on essaie, on rit, on recommence.</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="games-highlight" role="group" aria-labelledby="games-highlight-title">
+                    <div class="stat-head">
+                        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+                        <p class="stat-prefix">Environ</p>
+                    </div>
+                    <strong class="counter" data-count="1300">1&#8239;300</strong>
+                    <h3 id="games-highlight-title">jeux dans les collections de nos membres</h3>
+                    <p>
+                        L'association n'a pas de ludothèque à elle : ce sont les jeux de ses membres,
+                        mis en commun, qui garnissent les tables.
+                    </p>
+                    <p class="games-highlight__source">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        <span>
+                            Les ludothèques de nos membres sont recensées sur
+                            <a href="https://www.myludo.fr/" target="_blank" rel="noopener noreferrer">MyLudo<span class="sr-only"> (nouvel onglet)</span></a>.
+                        </span>
+                    </p>
+                </div>
             </div>
 
             <div class="stats-grid" aria-label="Chiffres clés">
                 <article>
-                    <strong class="counter" data-count="2023">0</strong>
-                    <span>création</span>
+                    <div class="stat-head">
+                        <i class="fa-solid fa-seedling" aria-hidden="true"></i>
+                        
+                    </div>
+                    <strong class="counter" data-count="2023" data-plain>2023</strong>
+                    <span>création de l'association</span>
                 </article>
                 <article>
-                    <strong class="counter" data-count="70">0</strong>
-                    <span>adhérents 2025</span>
+                    <div class="stat-head">
+                        <i class="fa-solid fa-users" aria-hidden="true"></i>
+                        
+                    </div>
+                    <strong class="counter" data-count="40">40</strong>
+                    <span>adhérents en moyenne par an</span>
                 </article>
                 <article>
-                    <strong class="counter" data-count="1300">0</strong>
-                    <span>jeux dans les ludothèques de nos membres</span>
+                    <div class="stat-head">
+                        <i class="fa-solid fa-dice" aria-hidden="true"></i>
+                        <p class="stat-prefix">Plus de</p>
+                    </div>
+                    <strong class="counter" data-count="60">60</strong>
+                    <span>rencontres par an</span>
                 </article>
                 <article>
-                    <strong class="counter" data-count="110">0</strong>
-                    <span>soirées adhérents</span>
-                </article>
-                <article>
-                    <strong class="counter" data-count="125">0</strong>
+                    <div class="stat-head">
+                        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                        <p class="stat-prefix">Plus de</p>
+                    </div>
+                    <strong class="counter" data-count="150">150</strong>
                     <span>événements déjà organisés</span>
                 </article>
             </div>
@@ -261,7 +325,7 @@
                         <li>Les quatre Nuits du Jeu, dont celle de l'anniversaire.</li>
                         <li>Le week-end du Jeu pour la Fête des Jeux.</li>
                         <li>Nos sorties : le festival Le Sens du Jeu et la fête des associations.</li>
-                        <li>La ludothèque, les explications autour des tables et la vie de l'association.</li>
+                        <li>Les jeux de nos membres, les explications autour des tables et la vie de l'association.</li>
                     </ul>
 
 
@@ -335,46 +399,46 @@
                             <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                             Adhérer en ligne
                         </a>
-                        <a href="{{ social_facebook }}" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_facebook }}" target="_blank" rel="noopener noreferrer" class="button button--social">
                             <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
-                            Facebook
+                            Facebook<span class="sr-only"> (nouvel onglet)</span>
                         </a>
-                        <a href="{{ social_instagram }}" target="_blank" rel="noreferrer" class="button button--social">
+                        <a href="{{ social_instagram }}" target="_blank" rel="noopener noreferrer" class="button button--social">
                             <i class="fa-brands fa-instagram" aria-hidden="true"></i>
-                            Instagram
+                            Instagram<span class="sr-only"> (nouvel onglet)</span>
                         </a>
                     </div>
                 </div>
 
-                <aside id="partenaires" class="partners-panel">
+                <section id="partenaires" class="partners-panel" aria-labelledby="partenaires-titre">
                     <p class="eyebrow">Partenaires</p>
-                    <h2>Ils jouent avec nous</h2>
+                    <h2 id="partenaires-titre">Ils jouent avec nous</h2>
                     {# Les logos des partenaires sont servis depuis
                        public/img/partenaires : aucune ressource externe, le
                        site devant rester affichable sans acces a un CDN. #}
                     <div class="partners-list" aria-label="Liste des partenaires">
                         <article>
                             <img src="/img/partenaires/ville-de-joigny.png" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.ville-joigny.fr/" target="_blank" rel="noreferrer">Ville de Joigny</a></span>
+                            <span><a href="https://www.ville-joigny.fr/" target="_blank" rel="noopener noreferrer">Ville de Joigny<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/sens-ludique.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.sensludique.com/" target="_blank" rel="noreferrer">Sens Ludique</a></span>
+                            <span><a href="https://www.sensludique.com/" target="_blank" rel="noopener noreferrer">Sens Ludique<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/ludipassion.png" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://ludipassion.fr/" target="_blank" rel="noreferrer">LudiPassion</a></span>
+                            <span><a href="https://ludipassion.fr/" target="_blank" rel="noopener noreferrer">LudiPassion<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/la-crique-aux-jeux.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noreferrer">La Crique aux jeux</a></span>
+                            <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noopener noreferrer">La Crique aux jeux<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/cartes-sur-table.jpg" alt="" width="54" height="54" loading="lazy">
-                            <span><a href="https://www.facebook.com/cartessurtable89" target="_blank" rel="noreferrer">Cartes sur table</a></span>
+                            <span><a href="https://www.facebook.com/cartessurtable89" target="_blank" rel="noopener noreferrer">Cartes sur table<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                     </div>
-                </aside>
+                </section>
             </div>
         </section>
     </main>

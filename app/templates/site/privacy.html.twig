@@ -1,12 +1,13 @@
 {% extends 'site/layout.html.twig' %}
 
+{% block description %}Comment l'association Envie de Jouer traite vos données personnelles : données collectées, durées de conservation et exercice de vos droits (RGPD).{% endblock %}
 {% block title %}Données personnelles - Envie de Jouer{% endblock %}
 
 {% block main %}
-    <main class="section legal-page">
+    <main id="contenu" class="section legal-page">
         <div class="section__intro">
             <p class="eyebrow">Informations</p>
-            <h2>Données personnelles</h2>
+            <h1>Données personnelles</h1>
             <p>
                 Comment l'association Envie de Jouer traite les données que vous lui confiez,
                 en application du Règlement général sur la protection des données (RGPD) et de
@@ -72,8 +73,15 @@
                 <em>si et seulement si</em> vous avez coché la case correspondante.
             </p>
             <p>
-                Les données sont hébergées sur un serveur situé dans l'Union européenne. Aucun
-                transfert hors de l'Union européenne n'est réalisé.
+                Deux prestataires techniques traitent des données pour le compte de l'association,
+                sans les utiliser pour leur propre compte :
+            </p>
+            <ul>
+                <li><strong>Hostinger International Ltd.</strong> (Chypre, Union européenne) héberge le site et sa base de données, sur un serveur situé <strong>en France</strong>.</li>
+                <li><strong>Brevo</strong> (France, Union européenne) achemine les courriels de confirmation d'adhésion, ce qui l'amène à voir le nom et l'adresse du destinataire le temps de l'envoi.</li>
+            </ul>
+            <p>
+                Aucune donnée n'est transférée hors de l'Union européenne.
             </p>
         </article>
 

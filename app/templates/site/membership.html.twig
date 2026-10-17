@@ -1,12 +1,15 @@
 {% extends 'site/layout.html.twig' %}
 
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block description %}Remplissez en ligne le bulletin d'adhésion à Envie de Jouer, association de jeux de société à Joigny : 10 € par an, personne supplémentaire du même foyer 5 €.{% endblock %}
 {% block title %}Bulletin d'adhésion - Envie de Jouer{% endblock %}
 
 {% block main %}
-    <main id="bulletin" class="section membership-form-page">
+    <main id="contenu" class="section membership-form-page">
         <div class="section__intro">
             <p class="eyebrow">Adhésion</p>
-            <h2>Bulletin d'adhésion</h2>
+            <h1>Bulletin d'adhésion</h1>
             <p>
                 Le même bulletin que sur papier, à remplir en ligne. Une adhésion correspond à un
                 bulletin : pour une famille, chaque membre remplit le sien en désignant le même
@@ -14,7 +17,9 @@
             </p>
         </div>
 
-        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+        {# Mention des champs obligatoires, avant le premier champ. #}
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh input->membership-type#refresh'}}) }}
             {% if not form.vars.valid %}
                 <p class="form-alert" role="alert">
                     <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
@@ -44,8 +49,14 @@
 
             <fieldset>
                 <legend>Adhésion et cotisation</legend>
+                <p class="form-note">Choisissez la formule qui correspond à <strong>votre situation</strong> :</p>
                 {{ form_row(form.membershipType) }}
-                {{ form_row(form.principalMemberName) }}
+
+                {# Visible sans JavaScript ; avec, il n'apparait que pour la formule
+                   famille, qui est la seule a en avoir besoin. #}
+                <div class="family-panel" data-membership-type-target="family">
+                    {{ form_row(form.principalMemberName) }}
+                </div>
                 <p class="form-note">
                     Pour les enfants de <strong>moins de 14 ans</strong>, l'adhésion doit être rattachée
                     à un adulte. Pour les enfants de <strong>moins de 8 ans</strong>, elle est gratuite.
@@ -55,7 +66,7 @@
             <fieldset>
                 <legend>Responsable légal</legend>
                 <p class="form-note">
-                    À remplir si l'adhérent a moins de 18 ans : c'est le responsable légal qui signe.
+                    <strong>Obligatoire si l'adhérent a moins de 18 ans</strong> : c'est le responsable légal qui signe.
                 </p>
                 <div class="form-grid">
                     {{ form_row(form.guardianLastName) }}

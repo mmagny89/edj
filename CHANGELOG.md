@@ -35,6 +35,31 @@ GitHub, par `.github/workflows/publication.yml`.
   Cette variable est nouvelle : a declarer dans `.env.staging.local` et
   `.env.prod.local`, vide s'il n'y a pas de groupe WhatsApp, sinon `compose` refuse de
   demarrer.
+- Un destinataire ne recoit plus que trois courriels de confirmation par
+  jour : saisir l'adresse d'un tiers dans le bulletin ne permet plus de
+  l'inonder depuis des IP differentes.
+- Administration : textes gris assombris (contraste WCAG AA) et cases de
+  selection des adhesions nommees pour les lecteurs d'ecran ; axe-core ne
+  releve plus aucune erreur sur les neuf pages.
+- En-tetes de securite sur tout le site, plus seulement l'administration :
+  politique de contenu stricte a nonce (aucun script ni style en ligne, aucune
+  ressource externe), HSTS, interdiction d'etre place dans un cadre,
+  Referrer-Policy et Permissions-Policy.
+- Inscription d'un adherent depuis l'administration (`/admin/adhesions/nouveau`),
+  pour une personne qui a rempli une fiche papier : meme donnees que le
+  bulletin en ligne, date de la fiche, attestation obligatoire que le papier
+  signe existe, et choix d'envoyer ou non le courriel de confirmation. Le
+  bulletin est marque « fiche papier » et garde l'administrateur qui l'a saisi.
+- Gestion des administrateurs (`/admin/utilisateurs`, super-administrateur) :
+  creer un compte avec un mot de passe provisoire affiche une seule fois,
+  bloquer et debloquer, changer le role, reinitialiser un mot de passe. Un
+  compte bloque ne se connecte plus et sa session ouverte est coupee a la
+  requete suivante, de meme qu'apres un changement de role ou de mot de passe.
+  On ne touche pas a son propre compte, et le dernier super-administrateur
+  actif est protege. Chacun change son mot de passe depuis « Mon compte », et
+  doit le faire avant tout autre ecran tant que le sien est provisoire.
+  Migration additive : les comptes existants apparaissent « crees » a la date de
+  la migration.
 - Commande `app:memberships:demo` : bulletins fictifs pour le developpement,
   refusee en production.
 - Refonte de l'administration en Tailwind seul : theme Mosaic et Alpine
@@ -46,6 +71,62 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Mentions legales completees (RNA, SIRET, presidente, hebergeur Hostinger,
+  credit de conception) et signature « Site cree par Mylene Magny » en pied de
+  page ; la page « Donnees personnelles » nomme ses deux sous-traitants,
+  Hostinger et Brevo.
+- Courriels : l'expediteur (`MAILER_FROM`) est separe de l'adresse de contact.
+  Brevo exige un domaine authentifie chez lui et remplace sinon l'expediteur ;
+  une adresse gmail.com ne peut jamais l'etre. L'association continue de
+  recevoir et de repondre sur sa boite habituelle. Variable obligatoire en
+  staging et en production : a declarer dans `.env.prod.local`.
+- Mise en production : procedure complete dans `docs/MISE-EN-PRODUCTION.md`
+  (preparation du VPS, premier deploiement, deploiement continu, exploitation,
+  bascule d'un domaine provisoire vers le domaine definitif), et trois outils :
+  `sauvegarder.sh` (dump controle, rotation, droits fermes),
+  `tester-restauration.sh` (restauration dans une base jetable) et
+  `verifier-site.sh` (controle de recette depuis l'exterieur).
+- Domaine provisoire : `SITE_INDEXABLE` (0 par defaut) tient le site hors des
+  moteurs de recherche — `robots.txt` interdit tout, pages en `noindex` — jusqu'a
+  la mise en ligne sous le domaine definitif. `ANCIEN_DOMAINE` active une
+  redirection 301 de l'ancien domaine vers le nouveau.
+- Reglages d'accessibilite du site public : un bouton d'en-tete ouvre un panneau
+  de quatre options, memorisees dans le navigateur — contraste renforce (le
+  rouge de la charte, a 3,15:1 sous du texte blanc, passe a un rouge a plus de
+  5:1 ; la preference systeme « contraste eleve » l'active d'office), texte
+  20 % plus grand, liens soulignes, sans animation —, avec un bouton pour tout
+  reinitialiser. La charte reste intacte par defaut. Un lien d'evitement est
+  ajoute.
+- Referencement : description, URL canonique, Open Graph et Twitter sur chaque
+  page, donnees structurees schema.org (l'association et ses dix prochains
+  evenements), `robots.txt` et `sitemap.xml` generes par l'application, image de
+  partage 1200x630 et page 404 dediee. Hors production, tout est en `noindex`
+  et `robots.txt` interdit tout : la recette ne concurrence pas le vrai site.
+- Polices et icones servies par le site (Akaya Kanadaka, Atkinson
+  Hyperlegible, Font Awesome) : plus aucune requete vers Google ni un CDN, ce
+  qui rend vraie la page « Donnees personnelles ».
+- Bulletin d'adhesion : les champs obligatoires portent un asterisque — nom,
+  prenom, date de naissance, code postal, ville, e-mail, formule, declarations
+  et signature —, et ceux qui ne le sont que selon le cas le deviennent a
+  l'ecran : le membre de la famille pour la formule famille, les trois champs
+  du responsable legal pour un adherent de moins de 18 ans.
+- Bulletin d'adhesion, choix de la formule : trois cartes qui disent POUR QUI
+  elles sont (« Je viens seul(e) », « Un membre de ma famille a deja pris
+  l'adhesion a 10 € », « Je veux seulement payer a chaque evenement ») et ce que
+  la personne paie (10 €, 5 €, gratuit puis 1 € par evenement). Le champ « membre
+  de votre famille qui a deja adhere » n'apparait que pour la formule famille.
+- Bulletin d'adhesion : cases a cocher et boutons radio redessines — la case
+  precede son libelle sur la meme ligne au lieu de se perdre dessous, avec un
+  etat coche lisible et un focus visible. Le bouton « Contraste » de l'en-tete
+  n'affiche plus que son icone, avec une infobulle au survol et au clavier.
+- Le site ne parle plus d'une ludotheque de l'association, qui n'en a pas :
+  les jeux sont ceux de ses membres, et la section « L'association » le dit
+  (le mode d'emploi en trois etapes, et le chiffre de 1 300 jeux mis en avant). Les descriptions par defaut des evenements sont
+  reformulees, et une migration remplace l'ancien texte la ou il n'a pas ete
+  reecrit a la main.
+- La zone « Nos rendez-vous » est refaite : une carte par rendez-vous, avec son
+  rythme (chaque semaine, chaque mois, quatre fois par an, une fois par an) en
+  etiquette, ses horaires, puis les sorties hors de nos murs.
 - Les apres-midi mensuelles tombent desormais le **1er samedi** du mois et non
   plus le 3e : generation des dates (`SeasonGenerator`), libelles du
   back-office, du carrousel et de la page d'accueil.
@@ -55,6 +136,18 @@ GitHub, par `.github/workflows/publication.yml`.
   — ce que ca coute, ce que l'adhesion ouvre, comment adherer — au lieu de
   trois panneaux cote a cote. Les tarifs s'enoncent par ce qu'on paie :
   10 € par personne, + 5 € par personne supplementaire du meme foyer.
+
+### Corrige
+
+- Deploiement : les migrations passaient apres la bascule du code. Le code neuf
+  lisait des colonnes que l'ancien schema n'avait pas, et chaque depot de
+  bulletin ou page d'administration concernee repondait 500 entre le demarrage
+  et la migration. Elles jouent desormais avant la bascule, sur la base seule ;
+  une migration doit rester compatible avec le code precedent.
+- Deploiement : `MEMBERS_WHATSAPP_URL`, facultative, etait declaree comme un
+  secret obligatoire : son absence du fichier de secrets faisait echouer
+  `docker compose` avant meme les migrations. Elle est desormais vide par
+  defaut.
 
 ### Securite
 

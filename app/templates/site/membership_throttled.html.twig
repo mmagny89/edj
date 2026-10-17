@@ -1,12 +1,13 @@
 {% extends 'site/layout.html.twig' %}
 
+{% block robots %}noindex, nofollow{% endblock %}
 {% block title %}Trop de tentatives - Envie de Jouer{% endblock %}
 
 {% block main %}
-    <main class="section membership-form-page">
+    <main id="contenu" class="section membership-form-page">
         <div class="section__intro">
             <p class="eyebrow">Adhésion</p>
-            <h2>Trop de tentatives</h2>
+            <h1>Trop de tentatives</h1>
             <p>
                 Beaucoup de bulletins sont partis depuis cette connexion dans la dernière heure.
                 Si vous inscrivez toute une famille et que vous êtes arrivé au bout, écrivez-nous à

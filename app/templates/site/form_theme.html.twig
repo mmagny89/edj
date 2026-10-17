@@ -1,0 +1,38 @@
+{#- Theme du bulletin d'adhesion public.
+    form_div_layout rend une case a cocher APRES son libelle, sur deux lignes :
+    le libelle en gras, puis une petite case orpheline en dessous. Ici la case
+    precede son libelle sur une meme ligne — c'est ce qu'on attend d'une case a
+    cocher —, et chaque bouton radio de la formule d'adhesion est traite de
+    meme. -#}
+{% use 'form_div_layout.html.twig' %}
+
+{%- block checkbox_row -%}
+    <div class="choice-row">
+        {{- form_widget(form) -}}
+        <div class="choice-row__text">
+            {{- form_label(form) -}}
+            {{- form_help(form) -}}
+            {{- form_errors(form) -}}
+        </div>
+    </div>
+{%- endblock checkbox_row -%}
+
+{#- Formule d'adhesion : trois cartes a choisir, chacune disant POUR QUI elle est
+    et CE QUE LA PERSONNE PAIE. Les noms « individuelle », « famille »,
+    « consommateur » ne parlent qu'a qui connait deja l'association : on choisit
+    sur sa situation, pas sur un mot. -#}
+{%- block choice_widget_expanded -%}
+    <div {{ block('widget_container_attributes') }} class="choice-cards">
+        {%- for child in form -%}
+            {%- set type = enum('App\\Enum\\MembershipType').from(child.vars.value) -%}
+            <div class="choice-card">
+                {{- form_widget(child) -}}
+                <label for="{{ child.vars.id }}" class="choice-card__body">
+                    <span class="choice-card__audience">{{ type.audience }}</span>
+                    <span class="choice-card__title">{{ type.label }}</span>
+                    <span class="choice-card__price">{{ type.yourPrice }}</span>
+                </label>
+            </div>
+        {%- endfor -%}
+    </div>
+{%- endblock choice_widget_expanded -%}

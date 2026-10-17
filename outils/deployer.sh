@@ -36,6 +36,10 @@ journal() {
 	echo "[$(date '+%F %T')] $*"
 }
 
+lire_secret() {
+	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
+}
+
 journal "Deploiement $ENVIRONNEMENT depuis $BRANCHE, dans $PROJET"
 
 if [ ! -f "$SECRETS" ]; then
@@ -45,6 +49,15 @@ fi
 
 # Se deployer depuis la mauvaise branche passerait inapercu : la verification
 # coute une ligne et evite de livrer la recette en production.
+# Changement de domaine : tant que ANCIEN_DOMAINE est renseigne dans les secrets,
+# l'ancienne adresse redirige (301) vers le domaine principal. Retirer la ligne
+# pour supprimer la redirection au deploiement suivant.
+ANCIEN=$(lire_secret ANCIEN_DOMAINE)
+if [ -n "$ANCIEN" ]; then
+	COMPOSE="$COMPOSE -f compose.redirection.yml"
+	journal "Redirection de $ANCIEN vers le domaine principal"
+fi
+
 ACTUELLE=$(git rev-parse --abbrev-ref HEAD)
 if [ "$ACTUELLE" != "$BRANCHE" ]; then
 	journal "ECHEC : ce clone est sur '$ACTUELLE', or $ENVIRONNEMENT se deploie depuis '$BRANCHE'."
@@ -59,13 +72,30 @@ git fetch --quiet origin "$BRANCHE"
 git merge --ff-only "origin/$BRANCHE"
 journal "Version deployee : $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
-journal "Construction et demarrage"
-$COMPOSE up -d --build --wait
-
+# Les migrations passent AVANT la bascule du code, pas apres. Le code neuf lit
+# et ecrit des colonnes que l'ancien schema n'a pas : entre « up » et
+# « migrate », chaque depot de bulletin ou page d'administration touchant la
+# colonne manquante repondait 500, et le worker traitait ses messages avec un
+# schema en retard. Ici l'ancien code continue de servir pendant que le schema
+# avance, puis le nouveau prend la main sur un schema deja a jour.
+#
+# Consequence a respecter : une migration doit rester compatible avec le code
+# precedent (ajouter, ne pas retirer ni renommer d'un seul coup). Une
+# suppression se fait en deux livraisons.
+#
 # RUN_MIGRATIONS=0 en production (section 8) : la mise a jour de schema est une
 # etape explicite, jamais le demarrage du conteneur.
-journal "Mise a jour du schema"
-$COMPOSE exec -T php php bin/console doctrine:migrations:migrate --no-interaction
+journal "Construction de l'image"
+$COMPOSE build
+
+journal "Base de donnees"
+$COMPOSE up -d --wait database
+
+journal "Mise a jour du schema, avant la bascule du code"
+$COMPOSE run --rm --no-deps -e RUN_MIGRATIONS=0 php php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+
+journal "Demarrage"
+$COMPOSE up -d --wait
 
 # Sans lui, chaque deploiement laisse l'image precedente sans etiquette et le
 # disque du serveur se remplit en silence.
@@ -86,9 +116,6 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # Sans APP_DOMAIN dans cette liste, un projet qui nomme ainsi son domaine
 # (cas de edj) voyait la verification externe silencieusement ignoree — soit
 # exactement le controle pour lequel ce bloc existe.
-lire_secret() {
-	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
-}
 
 DOMAINE=$(lire_secret SERVER_HOST)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret APP_DOMAIN)

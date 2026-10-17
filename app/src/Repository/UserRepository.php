@@ -33,28 +33,26 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    //    /**
-    //     * @return User[] Returns an array of User objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * @return list<User>
+     */
+    public function findAllOrdered(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->orderBy('u.email', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Nombre de super-administrateurs actifs. Les roles sont un tableau JSON :
+     * le filtre se fait en PHP, sur une table de quelques lignes.
+     */
+    public function countActiveSuperAdmins(): int
+    {
+        return \count(array_filter(
+            $this->findAll(),
+            static fn (User $user) => $user->isSuperAdmin() && !$user->isBlocked(),
+        ));
+    }
 }

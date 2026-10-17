@@ -27,10 +27,25 @@ services:
       # Traefik des overrides, via APP_DOMAIN.
       SERVER_NAME: ${SERVER_NAME}
       MAILER_DSN: ${MAILER_DSN}
-      # Lien d'invitation du groupe WhatsApp des adherents. Vide autorise : sans
-      # lui, l'e-mail de confirmation omet simplement ce lien. Jamais committe :
-      # c'est une invitation, qui donne l'acces a quiconque la detient.
-      MEMBERS_WHATSAPP_URL: ${MEMBERS_WHATSAPP_URL?MEMBERS_WHATSAPP_URL doit etre declaree (vide s il n y a pas de groupe WhatsApp)}
+      # Adresse d'expedition des courriels du site. Obligatoire en staging et en
+      # production (compose.prod.yml), ou elle doit appartenir a un domaine que
+      # l'association controle : un fournisseur d'envoi (Brevo) refuse ou remplace
+      # l'expediteur d'un domaine qui n'est pas authentifie chez lui.
+      MAILER_FROM: ${MAILER_FROM}
+      # Lien d'invitation du groupe WhatsApp des adherents. FACULTATIF : sans lui,
+      # l'e-mail de confirmation omet simplement ce lien. Declaree sans « :? »,
+      # contrairement aux secrets obligatoires (conventions, section 5) : une
+      # integration facultative ne doit pas pouvoir faire echouer un deploiement
+      # — elle l'a fait, avant meme que les migrations ne tournent. Le repli
+      # est vide, jamais une valeur a recopier. Jamais committe : c'est une
+      # invitation, qui donne l'acces a quiconque la detient.
+      MEMBERS_WHATSAPP_URL: ${MEMBERS_WHATSAPP_URL-}
+      # Le site se declare-t-il indexable par les moteurs de recherche ? 0 tant
+      # que le domaine definitif n'est pas en service (domaine provisoire :
+      # robots.txt interdit tout et chaque page est en noindex), 1 ensuite.
+      # Facultative, sans « :? » : un oubli laisse le site invisible — le sens
+      # sur — et non un deploiement qui echoue. Repli a 0, jamais a 1.
+      SITE_INDEXABLE: ${SITE_INDEXABLE-0}
       SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     volumes:
       - edj-caddy-data:/data
