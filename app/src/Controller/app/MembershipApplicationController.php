@@ -161,6 +161,7 @@ final class MembershipApplicationController extends AbstractController
             // libre : la fiche dit si ce nom correspond a une adhesion
             // individuelle connue, plutot que de le presenter comme acquis.
             'actors' => $this->actorsOf($application),
+            'parcours' => null !== $application->getMember() ? $this->applications->findAllForMember($application->getMember()) : [],
             'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
                 ? $this->applications->findIndividualByName((string) $application->getPrincipalMemberName())
                 : null,

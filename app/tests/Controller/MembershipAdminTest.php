@@ -392,6 +392,34 @@ final class MembershipAdminTest extends WebTestCase
         );
     }
 
+    /**
+     * La fiche montre le parcours de la personne : tous ses bulletins, saison
+     * apres saison, avec un lien vers chacun. C'est ce qui dit, devant un
+     * renouvellement, depuis quand elle adhere.
+     */
+    public function testTheSheetListsEveryBulletinOfThePerson(): void
+    {
+        $old = $this->create('camille@example.test', validated: true, submittedAt: '2024-11-05');
+        $new = $this->create('camille@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$new->getId());
+
+        self::assertResponseIsSuccessful();
+        $section = $crawler->filter('#t-parcours')->ancestors()->first();
+        self::assertStringContainsString('2025', $section->text(), 'Un depot de novembre 2024 vaut pour la saison 2025.');
+        self::assertStringContainsString('cette fiche', $section->text());
+        self::assertCount(1, $section->filter(sprintf('a[href$="/admin/adhesions/%d"]', $old->getId())));
+    }
+
+    public function testASingleBulletinHasNoPathSection(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(0, $crawler->filter('#t-parcours'));
+    }
+
     public function testEveryBulletinCarriesAMemberNumber(): void
     {
         $application = $this->create('camille@example.test');

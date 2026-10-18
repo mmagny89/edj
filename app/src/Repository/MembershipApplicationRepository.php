@@ -117,6 +117,25 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Tous les bulletins d'un adherent, du plus recent au plus ancien : ce que
+     * la fiche d'administration montre de son parcours, saison apres saison.
+     * Les bulletins annules et anonymises en font partie — c'est l'historique,
+     * pas la liste de ce qui compte encore.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findAllForMember(Member $member): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.member = :member')
+            ->setParameter('member', $member)
+            ->orderBy('a.submittedAt', 'DESC')
+            ->addOrderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Le bulletin non annule d'un adherent pour une saison, s'il en existe un.
      * Sert a ne laisser renouveler qu'une fois : un bulletin en attente compte
      * — la personne a deja redepose, elle n'a plus qu'a payer.
