@@ -27,6 +27,14 @@ final class MemberAccessLink
      */
     public const LIFETIME = '+30 minutes';
 
+    /**
+     * Duree d'un lien de renouvellement : plus longue, parce qu'il ouvre un
+     * formulaire a remplir, signer et relire — un lien de trente minutes
+     * expirerait sous la main de qui prend le temps de verifier ses donnees.
+     * Elle reste celle d'une journee de travail, pas d'un historique de mails.
+     */
+    public const RENEWAL_LIFETIME = '+2 hours';
+
     public function __construct(
         private readonly UriSigner $signer,
         private readonly UrlGeneratorInterface $urls,
@@ -41,6 +49,11 @@ final class MemberAccessLink
     public function cardUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
     {
         return $this->sign('member_card', $member, $expiresAt);
+    }
+
+    public function renewalUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
+    {
+        return $this->sign('membership_renewal', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
     }
 
     public function isValid(Request $request): bool

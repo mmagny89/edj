@@ -117,6 +117,28 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Le bulletin non annule d'un adherent pour une saison, s'il en existe un.
+     * Sert a ne laisser renouveler qu'une fois : un bulletin en attente compte
+     * — la personne a deja redepose, elle n'a plus qu'a payer.
+     */
+    public function findInSeason(Member $member, int $season): ?MembershipApplication
+    {
+        [$from, $to] = self::seasonBounds($season);
+
+        return $this->createQueryBuilder('a')
+            ->where('a.member = :member')
+            ->andWhere('a.status != :cancelled')
+            ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
+            ->setParameter('member', $member)
+            ->setParameter('cancelled', MembershipStatus::Cancelled)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Tous les bulletins valides de ces adherents, toutes saisons confondues.
      * Sert a distinguer un renouvellement d'une premiere adhesion sans
      * parcourir la collection de chaque adherent, qui reste vide pour un
@@ -226,7 +248,12 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('validated', MembershipStatus::Validated)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
+            // Deux bulletins du meme foyer partagent souvent la meme seconde de
+            // depot (la colonne n'a pas de fraction) : sans departage, c'est le
+            // moteur qui choisit quelle graphie de l'adresse survit a la
+            // deduplication, et l'export change d'une execution a l'autre.
             ->orderBy('a.submittedAt', 'ASC')
+            ->addOrderBy('a.id', 'ASC')
             ->getQuery()
             ->getSingleColumnResult();
 

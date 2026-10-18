@@ -50,6 +50,9 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Deux bulletins d'un meme foyer deposes dans la meme seconde pouvaient
+  changer la graphie de l'adresse retenue dans l'export Philibert d'une
+  execution a l'autre. L'ordre est desormais departage par l'ordre de depot.
 - A 320 px de large, la page d'accueil debordait de 5 px sur la droite :
   l'adresse e-mail du bouton de contact, d'un seul tenant, etait plus large que
   la colonne. Le bouton se plafonne a la largeur de son conteneur et l'adresse

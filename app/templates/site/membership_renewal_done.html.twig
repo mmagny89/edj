@@ -1,0 +1,23 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Déjà renouvelé - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>C'est déjà fait</h1>
+            <p>
+                Votre renouvellement pour la saison {{ season }} est déjà enregistré : il n'y a rien
+                de plus à remplir. S'il n'est pas encore validé, le règlement de la cotisation se
+                fait sur place, lors d'une de nos soirées.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('member_access_request') }}" class="button button--primary">Voir ma fiche</a>
+            <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

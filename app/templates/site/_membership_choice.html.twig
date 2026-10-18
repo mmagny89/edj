@@ -1,0 +1,13 @@
+{#- Deux facons d'adherer, a choisir avant le formulaire : on ne demande pas a
+    quelqu'un qui revient de tout ressaisir, ni a un nouveau de chercher un
+    numero qu'il n'a pas. La page courante porte aria-current. -#}
+<nav class="membership-choice" aria-label="Type d'adhésion">
+    <a href="{{ path('membership_form') }}" class="membership-choice__item" {{ active == 'new' ? 'aria-current="page"' }}>
+        <strong>Nouvelle adhésion</strong>
+        <span>Je n'ai pas encore de numéro d'adhérent.</span>
+    </a>
+    <a href="{{ path('membership_renewal_request') }}" class="membership-choice__item" {{ active == 'renewal' ? 'aria-current="page"' }}>
+        <strong>Renouveler mon adhésion</strong>
+        <span>J'ai un numéro d'adhérent (EDJ-0001).</span>
+    </a>
+</nav>
