@@ -7,11 +7,14 @@ import { Controller } from '@hotwired/stimulus';
 //  - responsable legal (nom, prenom, e-mail) : pour un adherent de moins de 18 ans.
 //
 // Le champ passe en `required`, son etiquette recoit la classe `required` (qui
-// affiche l'asterisque, comme les autres champs obligatoires) et, pour la
-// famille, le champ n'apparait que s'il sert. Sans JavaScript, tout reste
-// affiche et le serveur applique les memes regles.
+// affiche l'asterisque, comme les autres champs obligatoires) et la zone
+// n'apparait que si elle sert : la famille pour la formule famille, le
+// responsable legal pour un mineur. Tant que la date de naissance n'est pas
+// saisie, l'age est inconnu : la zone reste masquee, et reparait des qu'une date
+// de moins de 18 ans est donnee. Sans JavaScript, tout reste affiche et le
+// serveur applique les memes regles.
 export default class extends Controller {
-  static targets = ['family'];
+  static targets = ['family', 'guardian'];
 
   connect() {
     this.refresh();
@@ -26,6 +29,10 @@ export default class extends Controller {
     this.setRequired(familyInput, isFamily);
 
     const isMinor = this.isMinor();
+    // « hidden » sur un fieldset retire aussi ses champs de la navigation au
+    // clavier et des lecteurs d'ecran : un adulte ne passe pas par trois champs
+    // qui ne le concernent pas.
+    this.guardianTarget.hidden = !isMinor;
     ['guardianLastName', 'guardianFirstName', 'guardianEmail'].forEach((field) => {
       this.setRequired(this.element.querySelector(`input[name$="[${field}]"]`), isMinor);
     });

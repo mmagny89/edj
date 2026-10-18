@@ -63,7 +63,9 @@
                 </p>
             </fieldset>
 
-            <fieldset>
+            {# Visible sans JavaScript ; avec, il n'apparait que pour un adherent de
+               moins de 18 ans (voir membership-type_controller.js). #}
+            <fieldset data-membership-type-target="guardian">
                 <legend>Responsable légal</legend>
                 <p class="form-note">
                     <strong>Obligatoire si l'adhérent a moins de 18 ans</strong> : c'est le responsable légal qui signe.
