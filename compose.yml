@@ -73,6 +73,16 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=${POSTGRES_VERSION}&charset=utf8
       RUN_MIGRATIONS: 0
       MAILER_DSN: ${MAILER_DSN}
+      # Les trois variables que les courriels lisent au rendu : expediteur,
+      # lien WhatsApp et drapeau d'indexation. Elles sont injectees ici a
+      # l'identique du conteneur web (conventions, section 3) : le worker est
+      # le service qui rend et envoie reellement les messages, et sans elles
+      # chaque envoi echoue sur « Environment variable not found », rejoue
+      # trois fois puis tombe en echec — le conteneur reste « running » et
+      # rien ne part. Defaut reel, constate le 2026-10-18.
+      MAILER_FROM: ${MAILER_FROM}
+      MEMBERS_WHATSAPP_URL: ${MEMBERS_WHATSAPP_URL-}
+      SITE_INDEXABLE: ${SITE_INDEXABLE-0}
       SERVER_NAME: ${SERVER_NAME}
       SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES?SYMFONY_TRUSTED_PROXIES doit etre declaree (vide en developpement, private_ranges derriere un proxy)}
     # --time-limit fait sortir le worker toutes les heures ; restart le

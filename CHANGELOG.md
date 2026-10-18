@@ -43,6 +43,11 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Le conteneur `worker` ne se voyait injecter ni `MAILER_FROM`, ni
+  `SITE_INDEXABLE`, ni `MEMBERS_WHATSAPP_URL` : comme c'est lui qui rend et
+  envoie les courriels, chaque envoi echouait sur « Environment variable not
+  found », etait rejoue trois fois puis abandonne. Aucun courriel ne partait,
+  le conteneur restait demarre et rien ne le signalait.
 - Une adhesion famille annoncait 10 € a regler sur la fiche d'administration et
   dans le courriel de confirmation, en reprenant le tarif du foyer (« 10 € par
   an, puis 5 € par personne supplementaire »). Le montant du est desormais
