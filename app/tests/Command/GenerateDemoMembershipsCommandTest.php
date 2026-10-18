@@ -106,4 +106,48 @@ final class GenerateDemoMembershipsCommandTest extends TestCase
 
         self::assertSame(2, $tester->execute(['--count' => '9999']));
     }
+
+    /**
+     * Les anciens adherents sont ce sur quoi se construit l'interface de
+     * renouvellement : quatre situations qui tournent, dont deux qui n'ont rien
+     * de valide pour la saison en cours.
+     */
+    public function testFormerMembersCarryAHistoryOverPastSeasons(): void
+    {
+        [$tester, $persisted] = $this->tester('dev');
+
+        self::assertSame(0, $tester->execute(['--count' => '0', '--former' => '8']));
+
+        // Quatre situations, deux fois chacune : 3 + 1 + 2 + 2 bulletins.
+        self::assertCount(16, $persisted);
+        self::assertStringContainsString('renouvel', $tester->getDisplay());
+    }
+
+    public function testFormerMembersAreNeverDatedInTheFuture(): void
+    {
+        [$tester, $persisted] = $this->tester('dev');
+        $tester->execute(['--count' => '0', '--former' => '12']);
+
+        $now = new \DateTimeImmutable();
+        foreach ($persisted as $application) {
+            self::assertLessThanOrEqual($now, $application->getSubmittedAt());
+        }
+    }
+
+    public function testFormerMembersStayInTheReservedDomain(): void
+    {
+        [$tester, $persisted] = $this->tester('dev');
+        $tester->execute(['--count' => '0', '--former' => '12']);
+
+        foreach ($persisted as $application) {
+            self::assertStringEndsWith('@example.test', (string) $application->getEmail());
+        }
+    }
+
+    public function testNothingToCreateIsAnError(): void
+    {
+        [$tester] = $this->tester('dev');
+
+        self::assertSame(2, $tester->execute(['--count' => '0']));
+    }
 }
