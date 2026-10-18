@@ -14,7 +14,7 @@
 {% block content %}
     {% import _self as f %}
 
-    <a href="{{ path('app_membership_applications') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+    <a href="{{ path('app_membership_applications') }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
         {{ ui.icon('arrow-left', 'size-4') }} Retour aux adhésions
     </a>
 
@@ -43,6 +43,9 @@
                 <a href="{{ path('app_membership_sheet', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
                     {{ ui.icon('printer') }} Imprimer la fiche<span class="sr-only"> (nouvel onglet)</span>
                 </a>
+                <a href="{{ path('app_membership_card', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
+                    {{ ui.icon('eye') }} Voir la carte<span class="sr-only"> d'adhérent, au format PDF (nouvel onglet)</span>
+                </a>
                 <form method="post" action="{{ path('app_membership_anonymize', {id: application.id}) }}"
                       data-controller="confirm"
                       data-confirm-message-value="Anonymiser ce bulletin ? Le nom, les coordonnées et la signature seront effacés définitivement."
@@ -69,7 +72,12 @@
             {% elseif application.cancelled %}
                 Annulée le {{ application.statusChangedAt|date('d/m/Y') }}. Le bulletin reste consultable.
             {% else %}
-                En attente : la cotisation n'est pas encore enregistrée comme réglée.
+                En attente :
+                {% if application.membershipType.amountDue %}
+                    <strong>{{ application.membershipType.amountDueLabel }}</strong> restent à encaisser.
+                {% else %}
+                    la formule consommateur est gratuite à l'année, il n'y a rien à encaisser.
+                {% endif %}
             {% endif %}
         </p>
 
@@ -134,7 +142,8 @@
             <h2 id="t-adhesion" class="text-lg font-bold text-ink">Adhésion</h2>
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
-                {{ f.row('Tarif', application.membershipType.priceLabel) }}
+                {{ f.row('Montant dû', application.membershipType.amountDueLabel) }}
+                {{ f.row('Tarif de la formule', application.membershipType.priceLabel) }}
                 {% if not application.anonymized %}
                     {{ f.row('Adhérent principal', application.principalMemberName) }}
                 {% endif %}

@@ -27,6 +27,9 @@ GitHub, par `.github/workflows/publication.yml`.
   recto a la marque de l'association, verso avec le nom, le numero et les huit
   saisons, celles reglees etant cochees. Telechargeable depuis l'espace
   adherent une fois l'adhesion validee.
+- Visualisation de la carte d'un adherent depuis l'administration, sur sa
+  fiche : la carte s'ouvre dans un onglet, meme avant validation, pour que le
+  bureau la verifie ou la reimprime.
 - Un oeil d'affichage sur tous les champs mot de passe (connexion et changement
   de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
   reste un champ mot de passe ordinaire.
@@ -37,6 +40,15 @@ GitHub, par `.github/workflows/publication.yml`.
   le travail courant du bureau. Les comptes d'administration restent reserves
   au super-administrateur, qui seul en cree, bloque ou promeut.
 - L'image PHP installe l'extension `gd`, exigee par la generation des cartes.
+
+### Corrige
+
+- Une adhesion famille annoncait 10 € a regler sur la fiche d'administration et
+  dans le courriel de confirmation, en reprenant le tarif du foyer (« 10 € par
+  an, puis 5 € par personne supplementaire »). Le montant du est desormais
+  celui de la personne : 5 € pour une adhesion famille, 10 € pour une adhesion
+  individuelle, rien a l'annee pour la formule consommateur. Le tarif complet
+  de la formule reste affiche a part.
 
 ### Securite
 

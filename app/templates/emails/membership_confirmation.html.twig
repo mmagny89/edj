@@ -26,9 +26,12 @@
                     </span>
                 </p>
             {% endif %}
+            {# Le montant du, pas le tarif de la formule : « 10 € par an, puis
+               5 € par personne supplementaire » se lisait comme 10 € sur une
+               adhesion famille, alors que la personne ne doit que 5 €. #}
             <p style="margin:0;">
                 <strong>{{ application.membershipType.label }}</strong><br>
-                {{ application.membershipType.priceLabel }}
+                À régler : <strong>{{ application.membershipType.amountDueLabel }}</strong>
             </p>
             <p style="margin:12px 0 0;">
                 Le règlement se fait sur place, lors d'une de nos soirées. La saison associative

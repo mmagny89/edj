@@ -43,6 +43,36 @@ enum MembershipType: string
     }
 
     /**
+     * Ce que doit la personne qui choisit cette formule, en euros, a
+     * encaisser a la validation. Nul pour la formule consommateur, gratuite a
+     * l'annee et reglee evenement par evenement.
+     *
+     * A ne pas confondre avec priceLabel(), qui decrit le tarif de la formule
+     * pour un foyer entier : « 10 € par an, puis 5 € par personne
+     * supplementaire » se lisait comme 10 € sur une fiche famille, alors que
+     * la personne ne doit que 5 €.
+     */
+    public function amountDue(): ?int
+    {
+        return match ($this) {
+            self::Individual => 10,
+            self::Family => 5,
+            self::Consumer => null,
+        };
+    }
+
+    /**
+     * Le montant du, ecrit pour etre lu : « 5 € » ou, faute de montant, ce que
+     * paie reellement la personne.
+     */
+    public function amountDueLabel(): string
+    {
+        return null !== $this->amountDue()
+            ? $this->amountDue().' €'
+            : "Gratuite à l'année, puis 1 € par évènement";
+    }
+
+    /**
      * Ce que paie la personne qui choisit cette formule, en une ligne.
      */
     public function yourPrice(): string

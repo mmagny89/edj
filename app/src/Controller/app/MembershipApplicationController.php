@@ -8,6 +8,7 @@ use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Form\PaperMembershipType;
 use App\Service\MemberDirectory;
+use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
 use App\Repository\MembershipApplicationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -20,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Bulletins d'adhesion : consultation, etat (validee, annulee), fiche
- * imprimable, anonymisation et liste Philibert.
+ * imprimable, carte d'adherent, anonymisation et liste Philibert.
  *
  * Ouvert aux contributeurs : le suivi des adhesions est le travail courant du
  * bureau, pas une prerogative du seul super-administrateur. Seule la gestion
@@ -157,6 +158,35 @@ final class MembershipApplicationController extends AbstractController
      * gratuite. Le moyen de reglement est obligatoire des que la formule est
      * payante — l'association doit savoir ce qu'elle a encaisse, et comment.
      */
+    /**
+     * La carte d'adherent, telle que la personne la telecharge depuis son
+     * espace : le bureau doit pouvoir la regarder avant de la remettre, ou la
+     * reimprimer pour qui n'a pas d'imprimante.
+     *
+     * Affichee dans l'onglet (« inline ») et non telechargee : on la consulte
+     * ici, on ne la collectionne pas. Elle s'ouvre meme si l'adhesion n'est
+     * pas encore validee — aucune saison n'y est alors cochee, ce qui est
+     * exactement ce qu'il faut voir avant d'encaisser.
+     */
+    #[Route('/{id}/carte.pdf', name: 'app_membership_card', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function card(MembershipApplication $application, MembershipCardRenderer $renderer): Response
+    {
+        if ($application->isAnonymized()) {
+            $this->addFlash('error', 'Ce bulletin est anonymisé : il n\'y a plus de carte à montrer.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        $response = new Response($renderer->render($application), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="%s"', $renderer->filename($application)),
+        ]);
+        // Carte nominative : ni le navigateur ni un intermediaire ne la gardent.
+        $response->headers->set('Cache-Control', 'no-store, private');
+
+        return $response;
+    }
+
     #[Route('/{id}/valider', name: 'app_membership_validate', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function validate(Request $request, MembershipApplication $application): Response
     {

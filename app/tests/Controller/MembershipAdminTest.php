@@ -292,6 +292,41 @@ final class MembershipAdminTest extends WebTestCase
         self::assertSelectorTextContains('tbody', 'Fiche papier');
     }
 
+    public function testTheSheetShowsWhatTheMemberOwes(): void
+    {
+        $application = $this->create('camille@example.test');
+        $application->setMembershipType(MembershipType::Family);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertSelectorTextContains('body', 'Montant dû');
+        self::assertSelectorTextContains('body', '5 €');
+    }
+
+    public function testTheCardIsShownInlineFromTheAdministration(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/carte.pdf', $application->getId()));
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'application/pdf');
+        self::assertStringStartsWith('inline;', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+        self::assertStringStartsWith('%PDF', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testAnAnonymizedBulletinHasNoCard(): void
+    {
+        $application = $this->create('camille@example.test');
+        $application->anonymize();
+        $this->entityManager->flush();
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/carte.pdf', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
     public function testEveryBulletinCarriesAMemberNumber(): void
     {
         $application = $this->create('camille@example.test');
