@@ -68,7 +68,8 @@ for dossier in "$RACINE"/*-prod; do
 	fi
 
 	# Une archive qui ne se relit pas rassure sans proteger : on la relit avant de la garder.
-	if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass "file:$PHRASE" -in "$partiel" | gzip -dc | tail -n 3 | grep -q 'PostgreSQL database dump complete'; then
+	# pg_dump 17.6+ ajoute des lignes apres la phrase de fin (\unrestrict) : on regarde les dix dernieres.
+	if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass "file:$PHRASE" -in "$partiel" | gzip -dc | tail -n 10 | grep -q 'PostgreSQL database dump complete'; then
 		rm -f "$partiel"
 		journal "ECHEC $projet : archive illisible ou incomplete, rien n'est garde."
 		ECHECS=$((ECHECS + 1))
