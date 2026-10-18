@@ -1,0 +1,6 @@
+# Surcharges de l'environnement de test.
+parameters:
+    # Les tests envoient un formulaire aussitot affiche : le delai minimal d'un
+    # humain les ferait tous echouer. La regle elle-meme est verifiee, avec un delai
+    # reel, par FormGuardTest.
+    app.form_guard.min_seconds: 0

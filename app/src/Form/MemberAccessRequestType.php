@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Member;
+use App\Form\Guard\GuardType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -29,6 +30,7 @@ final class MemberAccessRequestType extends AbstractType
                     message: 'Un numéro d\'adhérent s\'écrit '.Member::PREFIX.'0001.',
                 ),
             ],
-        ]);
+        ])
+            ->add('guard', GuardType::class);
     }
 }

@@ -31,6 +31,17 @@ class MembershipApplication
     /** En dessous de cet age, l'adhesion est gratuite. */
     public const FREE_UNDER_AGE = 8;
 
+    /**
+     * Ce qu'un champ de texte libre ne peut pas contenir : un caractere de
+     * controle (retour a la ligne, octet nul, caractere invisible) ou un chevron.
+     * Un nom, une adresse ou une ville n'en ont jamais l'usage ; ils ne servent
+     * qu'a glisser du balisage ou de quoi fausser un courriel, un export ou un
+     * tableur. Les lettres accentuees, apostrophes, tirets et chiffres passent.
+     */
+    private const FREE_TEXT = '/^[^\p{C}<>]*$/u';
+
+    private const FREE_TEXT_MESSAGE = 'Ce champ contient des caractères non autorisés.';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,11 +50,13 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas depasser {{ limit }} caracteres.')]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas depasser {{ limit }} caracteres.')]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $firstName = null;
 
     #[ORM\Column(type: 'date_immutable')]
@@ -54,6 +67,7 @@ class MembershipApplication
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $address = null;
 
     #[ORM\Column(length: 10)]
@@ -64,6 +78,7 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'La ville est obligatoire.')]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $city = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -90,6 +105,7 @@ class MembershipApplication
 
     #[ORM\Column(length: 200, nullable: true)]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $principalMemberName = null;
 
     #[ORM\Column]
@@ -113,10 +129,12 @@ class MembershipApplication
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $guardianLastName = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $guardianFirstName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
@@ -131,6 +149,7 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Indiquez le lieu de signature.')]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $signaturePlace = null;
 
     /**
@@ -140,6 +159,7 @@ class MembershipApplication
     #[ORM\Column(length: 200)]
     #[Assert\NotBlank(message: 'Signez en saisissant votre nom et prénom.')]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $signatureName = null;
 
     #[ORM\Column(type: 'datetime_immutable')]

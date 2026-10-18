@@ -19,6 +19,16 @@ GitHub, par `.github/workflows/publication.yml`.
   attente, l'annuelle n'etant pas gratuite. Un enfant de moins de huit ans, qui ne
   doit rien, reste valide. Le changement figure dans l'historique de la fiche.
 
+### Securite
+
+- Formulaires publics durcis : un jeton horodate et signe, emis a l'affichage de la
+  page, refuse un envoi parti en moins de trois secondes (un robot), falsifie ou reste
+  ouvert plus de six heures ; il s'ajoute au piege a robots, a la protection CSRF et aux
+  plafonds de debit, sans ouvrir de session pour chaque visiteur. Les champs de texte
+  libre refusent aussi les caracteres de controle et les chevrons — de quoi glisser du
+  balisage ou un retour a la ligne dans un courriel, un export ou un tableur —, sans
+  toucher aux accents, apostrophes, tirets ni chiffres.
+
 ## [1.3.0] - 2026-10-18
 
 ### Ajoute

@@ -54,6 +54,11 @@ parameters:
         - 'Sépeaux-Saint-Romain'
         - 'Verlin'
 
+    # Jeton horodate des formulaires publics (voir FormGuard) : un formulaire envoye
+    # avant ce delai est celui d'un robot, apres l'autre il est perime.
+    app.form_guard.min_seconds: 3
+    app.form_guard.max_seconds: 21600
+
 services:
     _defaults:
         autowire: true
