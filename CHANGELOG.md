@@ -10,7 +10,7 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Ajoute
 
-- Import d'une liste d'adherents depuis un fichier Excel (`app:memberships:import`).
+- Import d'une liste d'adherents depuis un fichier Excel, en ligne de commande (`app:memberships:import`) ou depuis l'administration (menu « Import », super-administrateur) : analyse sans rien ecrire, compte rendu, puis confirmation.
   Simulation par defaut : le fichier est lu et compris, le compte rendu dit ce qui sera
   importe, ecarte ou refuse, rien n'est ecrit — pas meme un numero d'adherent.
   `--appliquer` ecrit, tout ou rien. Les colonnes se reconnaissent par leur en-tete ;
