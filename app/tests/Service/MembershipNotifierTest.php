@@ -14,9 +14,17 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 final class MembershipNotifierTest extends KernelTestCase
 {
     /**
+     * Le plafond reel des confirmations, tel que rate_limiter.yaml le pose.
+     * Repris ici parce que l'environnement de test le releve a 100 000 pour
+     * que les compteurs, qui survivent d'une execution a l'autre, ne fassent
+     * pas echouer les suites — ce qui ne prouverait alors plus rien.
+     */
+    private const CONFIGURED_CONFIRMATIONS_A_DAY = 12;
+
+    /**
      * @return array{MembershipNotifier, \ArrayObject<int, RawMessage>}
      */
-    private function notifier(): array
+    private function notifier(int $confirmations = 3): array
     {
         self::bootKernel();
         $sent = new \ArrayObject();
@@ -40,8 +48,8 @@ final class MembershipNotifierTest extends KernelTestCase
         $notifier = new MembershipNotifier(
             $mailer,
             static::getContainer()->get('twig'),
-            $limiter(3, '1 day'),
-            $limiter(5, '1 hour'),
+            $limiter($confirmations, '1 day'),
+            $limiter(12, '1 hour'),
             'asso@example.test',
             'noreply@example.test',
             '',
@@ -60,7 +68,7 @@ final class MembershipNotifierTest extends KernelTestCase
             ->setMembershipType(MembershipType::Individual);
     }
 
-    public function testARecipientReceivesAtMostThreeConfirmationsADay(): void
+    public function testARecipientIsCappedPerDay(): void
     {
         [$notifier, $sent] = $this->notifier();
 
@@ -68,7 +76,25 @@ final class MembershipNotifierTest extends KernelTestCase
             $notifier->confirmToApplicant($this->application('cible@example.test'));
         }
 
-        self::assertCount(3, $sent);
+        self::assertCount(3, $sent, 'Le plafond du limiteur fourni ici est de trois.');
+    }
+
+    /**
+     * Une meme adresse sert legitimement a plusieurs bulletins : une adhesion
+     * = un bulletin, et un foyer partage souvent une seule boite — les parents
+     * saisissent la leur pour chacun de leurs enfants. Le plafond reel
+     * (rate_limiter.yaml) doit donc laisser passer un grand foyer entier ; a
+     * trois par jour, le quatrieme enfant ne recevait rien, en silence.
+     */
+    public function testAHouseholdSharingOneAddressAllGetTheirConfirmation(): void
+    {
+        [$notifier, $sent] = $this->notifier(confirmations: self::CONFIGURED_CONFIRMATIONS_A_DAY);
+
+        for ($i = 0; $i < 6; ++$i) {
+            $notifier->confirmToApplicant($this->application('famille@example.test'));
+        }
+
+        self::assertCount(6, $sent);
     }
 
     public function testTheCeilingIsPerAddressNotGlobal(): void
