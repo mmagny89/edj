@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.3.0] - 2026-10-18
+
 ### Ajoute
 
 - Numero d'adherent unique et stable, de la forme `EDJ-0001`. Il appartient a
