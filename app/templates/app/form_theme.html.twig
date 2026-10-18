@@ -35,6 +35,17 @@
     <input type="{{ type }}" {{ block('widget_attributes') }}{% if value is not empty %} value="{{ value }}"{% endif %}>
 {%- endblock form_widget_simple -%}
 
+{#- Tout champ mot de passe de l'administration recoit l'oeil d'affichage :
+    c'est le theme qui le pose, pas chaque gabarit. -#}
+{%- block password_widget -%}
+    {%- import 'app/_password.html.twig' as pw -%}
+    <div class="relative" data-controller="password-toggle">
+        {%- set attr = attr|merge({class: (attr.class|default('') ~ ' pr-12')|trim, 'data-password-toggle-target': 'input'}) -%}
+        {{- block('form_widget_simple') -}}
+        {{- pw.toggle() -}}
+    </div>
+{%- endblock password_widget -%}
+
 {%- block textarea_widget -%}
     {%- set attr = attr|merge({class: (attr.class|default('') ~ ' block w-full rounded-lg border bg-white px-3 py-2 text-base text-slate-900 focus:border-brand ' ~ (errors|length ? 'border-danger' : 'border-slate-300'))|trim}) -%}
     <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
