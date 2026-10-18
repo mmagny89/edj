@@ -143,8 +143,24 @@
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
                 {{ f.row('Montant dû', application.membershipType.amountDueLabel) }}
-                {% if not application.anonymized %}
-                    {{ f.row('Adhérent principal', application.principalMemberName) }}
+                {% if not application.anonymized and application.principalMemberName %}
+                    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-semibold text-slate-600">Adhérent principal</dt>
+                        <dd class="text-slate-900 sm:col-span-2">
+                            {{ application.principalMemberName }}
+                            {# Le bulletin public laisse saisir ce nom en texte libre : la
+                               fiche dit s'il correspond a une adhesion individuelle connue,
+                               plutot que de le presenter comme acquis. #}
+                            {% if principal %}
+                                <a href="{{ path('app_membership_show', {id: principal.id}) }}"
+                                   class="badge ml-1 border border-emerald-300 bg-emerald-50 text-emerald-900 underline underline-offset-2">
+                                    {{ principal.memberNumber }}
+                                </a>
+                            {% else %}
+                                <span class="badge ml-1 border border-amber-300 bg-amber-50 text-amber-900">aucune adhésion individuelle à ce nom</span>
+                            {% endif %}
+                        </dd>
+                    </div>
                 {% endif %}
             </dl>
 

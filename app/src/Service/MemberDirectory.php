@@ -101,7 +101,14 @@ final class MemberDirectory
         ]));
     }
 
-    private static function normalize(string $value): string
+    /**
+     * Forme comparable d'un nom : sans accent, sans casse, les traits d'union
+     * et apostrophes ramenes a des espaces. Publique parce que la comparaison
+     * de deux noms saisis ne se fait pas qu'ici — le bulletin verifie ainsi
+     * qu'un adherent famille ne se designe pas lui-meme comme adherent
+     * principal.
+     */
+    public static function normalize(string $value): string
     {
         return u($value)
             ->ascii()

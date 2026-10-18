@@ -20,7 +20,66 @@
         </div>
     </div>
 
-    <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-8"
+
+    {# Filtres en GET : une liste filtree se partage par son lien — « les
+       impayes de la saison 2027 » — et un rechargement ne change pas ce qu'on
+       regarde. Pas de JavaScript : le bouton suffit. #}
+    <form method="get" action="{{ path('app_membership_applications') }}" class="card mt-8 p-5" role="search" aria-labelledby="t-filtres">
+        <h2 id="t-filtres" class="text-base font-bold text-ink">Filtrer</h2>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="sm:col-span-2 lg:col-span-1">
+                <label for="f-q" class="mb-1.5 block text-sm font-semibold text-slate-800">Nom, e-mail ou numéro</label>
+                <input type="search" name="q" id="f-q" value="{{ filters.q }}"
+                       class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand"
+                       placeholder="Durand, EDJ-0012…" aria-describedby="f-q-aide">
+                <p id="f-q-aide" class="mt-1.5 text-sm text-slate-600">
+                    Cherche aussi dans l'adhérent principal : le nom d'un parent remonte tout le foyer.
+                </p>
+            </div>
+
+            <div>
+                <label for="f-etat" class="mb-1.5 block text-sm font-semibold text-slate-800">État</label>
+                <select name="etat" id="f-etat" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                    <option value="">Tous</option>
+                    {% for status in enum_cases('App\\Enum\\MembershipStatus') %}
+                        <option value="{{ status.value }}" {{ filters.status == status ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="f-formule" class="mb-1.5 block text-sm font-semibold text-slate-800">Formule</label>
+                <select name="formule" id="f-formule" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                    <option value="">Toutes</option>
+                    {% for type in enum_cases('App\\Enum\\MembershipType') %}
+                        <option value="{{ type.value }}" {{ filters.type == type ? 'selected' }}>{{ type.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="f-saison" class="mb-1.5 block text-sm font-semibold text-slate-800">Saison</label>
+                <select name="saison" id="f-saison" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand"
+                        aria-describedby="f-saison-aide">
+                    <option value="">Toutes</option>
+                    {% for season in seasons %}
+                        <option value="{{ season }}" {{ filters.season == season ? 'selected' }}>{{ season }}</option>
+                    {% endfor %}
+                </select>
+                <p id="f-saison-aide" class="mt-1.5 text-sm text-slate-600">Du 1<sup>er</sup> octobre au 30 septembre.</p>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primary">{{ ui.icon('eye') }} Filtrer</button>
+            {% if filtered %}
+                <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('x') }} Tout afficher</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-6"
           data-controller="select-all confirm"
           data-confirm-message-value="Anonymiser les bulletins cochés ? Les noms et coordonnées seront effacés définitivement."
           data-action="submit->confirm#ask">
@@ -29,6 +88,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <h2 class="text-lg font-bold text-ink">
                 Bulletins <span class="font-medium text-slate-500">{{ applications|length }}</span>
+                {% if filtered %}<span class="badge ml-1 bg-blue-100 text-blue-900">filtrés</span>{% endif %}
             </h2>
             {# Cache sous md, comme les cases a cocher du tableau : l'anonymisation
                en masse reste une action de bureau. Dupliquer les cases dans les
@@ -42,7 +102,13 @@
         </div>
 
         {% if applications is empty %}
-            <p class="px-5 py-8 text-slate-600">Aucun bulletin déposé pour le moment.</p>
+            <p class="px-5 py-8 text-slate-600">
+                {% if filtered %}
+                    Aucun bulletin ne correspond à ces filtres.
+                {% else %}
+                    Aucun bulletin déposé pour le moment.
+                {% endif %}
+            </p>
         {% else %}
             <div class="relative hidden overflow-x-auto md:block">
                 <table class="w-full text-left text-sm">

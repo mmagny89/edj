@@ -115,6 +115,14 @@ final class GenerateDemoMembershipsCommand extends Command
         // Un mineur a entre 8 et 15 ans ; un majeur, entre 20 et 70.
         $age = $minor ? 8 + ($index % 8) : 20 + (($index * 11) % 51);
 
+        // Un mineur ne prend jamais l'adhesion individuelle : il se rattache a
+        // celle d'un adulte de son foyer (voir MembershipApplication). Des
+        // donnees de demonstration qui l'enfreignent donneraient a lire dans
+        // l'administration un cas que le bulletin refuse.
+        if ($minor && MembershipType::Individual === $type) {
+            $type = MembershipType::Family;
+        }
+
         $application = (new MembershipApplication())
             ->setLastName($lastName)
             ->setFirstName($firstName)
@@ -133,7 +141,13 @@ final class GenerateDemoMembershipsCommand extends Command
             ->setSignatureName($fullName);
 
         if (MembershipType::Family === $type) {
-            $application->setPrincipalMemberName($fullName);
+            // Jamais son propre nom : une adhesion famille se greffe sur
+            // l'adhesion individuelle d'une autre personne du foyer. C'est
+            // precisement ce que le bulletin refuse desormais, et des donnees
+            // de demonstration qui l'enfreignent donnent a lire dans
+            // l'administration un cas qui ne peut plus se produire.
+            $principal = self::FIRST_NAMES[(($index + 3) * 7) % \count(self::FIRST_NAMES)].' '.$lastName;
+            $application->setPrincipalMemberName($principal);
         }
 
         // Les quatre etats possibles tournent, pour que la liste montre une

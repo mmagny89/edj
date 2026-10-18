@@ -4,6 +4,7 @@ namespace App\Controller\app;
 
 use App\Entity\MembershipApplication;
 use App\Entity\User;
+use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Form\PaperMembershipType;
@@ -41,11 +42,26 @@ final class MembershipApplicationController extends AbstractController
     ) {
     }
 
+    /**
+     * Les filtres passent par l'URL (GET) et non par une session : une liste
+     * filtree se partage alors par son lien — « les impayes de la saison
+     * 2027 » — et un rechargement ne change pas ce qu'on regarde.
+     */
     #[Route('', name: 'app_membership_applications', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'q' => trim((string) $request->query->get('q')),
+            'status' => MembershipStatus::tryFrom((string) $request->query->get('etat')),
+            'type' => MembershipType::tryFrom((string) $request->query->get('formule')),
+            'season' => $request->query->getInt('saison') ?: null,
+        ];
+
         return $this->render('app/membership_applications.html.twig', [
-            'applications' => $this->applications->findLatest(),
+            'applications' => $this->applications->findFiltered($filters),
+            'filters' => $filters,
+            'filtered' => '' !== $filters['q'] || null !== $filters['status'] || null !== $filters['type'] || null !== $filters['season'],
+            'seasons' => $this->applications->seasonsWithApplications(),
             'philibertCount' => \count($this->applications->findPhilibertEmails()),
         ]);
     }
@@ -134,7 +150,15 @@ final class MembershipApplicationController extends AbstractController
     #[Route('/{id}', name: 'app_membership_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(MembershipApplication $application): Response
     {
-        return $this->render('app/membership_show.html.twig', ['application' => $application]);
+        return $this->render('app/membership_show.html.twig', [
+            'application' => $application,
+            // Le bulletin public laisse saisir l'adherent principal en texte
+            // libre : la fiche dit si ce nom correspond a une adhesion
+            // individuelle connue, plutot que de le presenter comme acquis.
+            'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
+                ? $this->applications->findIndividualByName((string) $application->getPrincipalMemberName())
+                : null,
+        ]);
     }
 
     /**

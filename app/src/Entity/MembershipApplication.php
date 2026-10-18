@@ -7,6 +7,7 @@ use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\MemberDirectory;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -314,14 +315,35 @@ class MembershipApplication
     #[Assert\Callback]
     public function validateConditionalFields(ExecutionContextInterface $context): void
     {
-        if (MembershipType::Family === $this->membershipType && !$this->principalMemberName) {
-            $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
-                ->atPath('principalMemberName')
-                ->addViolation();
+        if (MembershipType::Family === $this->membershipType) {
+            if (!$this->principalMemberName) {
+                $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
+                    ->atPath('principalMemberName')
+                    ->addViolation();
+            } elseif ($this->designatesSelfAsPrincipal()) {
+                // L'adhesion famille a 5 € se greffe sur une adhesion
+                // individuelle a 10 € deja prise par quelqu'un d'autre du
+                // foyer. Se designer soi-meme, c'est declarer une famille d'une
+                // seule personne : l'association encaisserait 5 € la ou elle
+                // doit en encaisser 10.
+                $context->buildViolation("L'adhérent principal est la personne de votre foyer qui a déjà pris l'adhésion individuelle à 10 € : ce ne peut pas être vous.")
+                    ->atPath('principalMemberName')
+                    ->addViolation();
+            }
         }
 
         if (!$this->isMinor()) {
             return;
+        }
+
+        // Un mineur n'adhere jamais pour son propre compte : il se rattache a
+        // l'adhesion individuelle d'un adulte de son foyer, par la formule
+        // famille. L'adhesion individuelle engage son titulaire aupres de
+        // l'association, ce qu'un mineur ne peut pas faire seul.
+        if (MembershipType::Individual === $this->membershipType) {
+            $context->buildViolation("Un mineur ne peut pas prendre l'adhésion individuelle : choisissez l'adhésion famille, rattachée à l'adulte de votre foyer qui a déjà adhéré.")
+                ->atPath('membershipType')
+                ->addViolation();
         }
 
         foreach ([
@@ -333,6 +355,23 @@ class MembershipApplication
                 $context->buildViolation($message)->atPath($field)->addViolation();
             }
         }
+    }
+
+    /**
+     * Vrai quand le nom saisi comme adherent principal est celui du titulaire
+     * du bulletin, a la casse, aux accents et aux traits d'union pres, et quel
+     * que soit l'ordre prenom / nom.
+     */
+    public function designatesSelfAsPrincipal(): bool
+    {
+        if (!$this->principalMemberName) {
+            return false;
+        }
+
+        $principal = MemberDirectory::normalize($this->principalMemberName);
+        $parts = [MemberDirectory::normalize((string) $this->firstName), MemberDirectory::normalize((string) $this->lastName)];
+
+        return \in_array($principal, [implode(' ', $parts), implode(' ', array_reverse($parts))], true);
     }
 
     public function getId(): ?int

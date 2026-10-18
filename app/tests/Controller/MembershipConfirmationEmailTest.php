@@ -45,7 +45,7 @@ final class MembershipConfirmationEmailTest extends WebTestCase
     /**
      * @param array<string, string> $extra
      */
-    private function submit(string $birth, array $extra = []): void
+    private function submit(string $birth, array $extra = [], string $type = 'individuelle'): void
     {
         $server = ['REMOTE_ADDR' => '198.51.100.'.random_int(1, 254), 'HTTP_ORIGIN' => 'http://localhost'];
         $crawler = $this->client->request('GET', '/adhesion/bulletin', [], [], $server);
@@ -64,7 +64,7 @@ final class MembershipConfirmationEmailTest extends WebTestCase
         foreach ($values as $name => $value) {
             $form[$name] = $value;
         }
-        $form['membership_application[membershipType]']->select('individuelle');
+        $form['membership_application[membershipType]']->select($type);
         $form['membership_application[statutesAccepted]']->tick();
         $form['membership_application[rulesAccepted]']->tick();
 
@@ -137,11 +137,14 @@ final class MembershipConfirmationEmailTest extends WebTestCase
     public function testGuardianIsAlsoAddressedForAMinor(): void
     {
         $birth = (new \DateTimeImmutable('-10 years'))->format('Y-m-d');
+        // Formule famille : un mineur ne peut pas prendre l'adhesion
+        // individuelle, il se rattache a celle d'un adulte de son foyer.
         $this->submit($birth, [
+            'membership_application[principalMemberName]' => 'Sam Martin',
             'membership_application[guardianLastName]' => 'Martin',
             'membership_application[guardianFirstName]' => 'Sam',
             'membership_application[guardianEmail]' => 'sam@confirmation.example.test',
-        ]);
+        ], type: 'famille');
 
         $addresses = array_map(
             static fn ($a) => $a->getAddress(),
