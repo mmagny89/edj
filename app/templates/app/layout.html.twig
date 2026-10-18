@@ -47,6 +47,7 @@
                          icon: 'users'},
                     ] %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}
+                        {% set items = items|merge([{route: 'app_seasons', label: 'Saisons', active: route starts with 'app_season', icon: 'sparkles'}]) %}
                         {% set items = items|merge([{route: 'app_users', label: 'Administrateurs', active: route starts with 'app_user', icon: 'shield'}]) %}
                     {% endif %}
 

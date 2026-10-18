@@ -24,13 +24,17 @@ final class MembershipCardRenderer
     /** Format d'une carte bancaire (ISO/IEC 7810 ID-1), en points PostScript. */
     private const SIZE = [0.0, 0.0, 242.65, 153.0];
 
-    /** Nombre de saisons imprimees au verso, comme sur la carte papier. */
-    private const SEASONS = 8;
-
     public function __construct(
         private readonly Environment $twig,
+        private readonly MembershipSeasons $seasons,
         #[Autowire('%kernel.project_dir%/public')]
         private readonly string $publicDir,
+        // Dompdf ecrit un fichier de travail par police declaree en
+        // @font-face. Il le ferait par defaut dans vendor/, que l'application
+        // n'a pas a modifier en production : le cache de Symfony est le seul
+        // dossier qui lui appartienne et survive au demarrage.
+        #[Autowire('%kernel.cache_dir%/dompdf')]
+        private readonly string $fontCacheDir,
     ) {
     }
 
@@ -41,14 +45,26 @@ final class MembershipCardRenderer
         $options->setIsHtml5ParserEnabled(true);
         $options->setChroot($this->publicDir);
         $options->setDefaultFont('DejaVu Sans');
+        // Les polices livrees avec Dompdf viennent de rootDir et ne dependent
+        // pas de ce reglage : deplacer fontDir n'enleve donc pas DejaVu.
+        if (!is_dir($this->fontCacheDir)) {
+            mkdir($this->fontCacheDir, 0o775, true);
+        }
+        $options->setFontDir($this->fontCacheDir);
+        $options->setFontCache($this->fontCacheDir);
 
         $dompdf = new Dompdf($options);
         $dompdf->setBasePath($this->publicDir);
         $dompdf->setPaper(self::SIZE);
         $dompdf->loadHtml($this->twig->render('pdf/membership_card.html.twig', [
             'application' => $application,
-            'seasons' => $this->seasons($application),
+            'seasons' => $this->seasons->forApplication($application),
             'logo' => $this->publicDir.'/img/edj-mascotte-transparent.png',
+            'wordmark' => $this->publicDir.'/img/edj-mot-carte.png',
+            // Chemin relatif au « base path » : une URL absolue de systeme de
+            // fichiers dans un @font-face n'est pas resolue par Dompdf, qui
+            // retombe alors en silence sur la police par defaut.
+            'displayFont' => 'fonts/akaya-kanadaka.ttf',
         ]), 'UTF-8');
         $dompdf->render();
 
@@ -64,44 +80,4 @@ final class MembershipCardRenderer
         return sprintf('carte-adherent-%s.pdf', $application->getMemberNumber() ?? 'edj');
     }
 
-    /**
-     * Les huit saisons du verso, a partir de la premiere adhesion connue de la
-     * personne. Une saison est cochee quand un bulletin de cette annee-la est
-     * valide : une adhesion en attente ou annulee ne coche rien.
-     *
-     * La saison associative court du 1er octobre au 30 septembre suivant : un
-     * bulletin depose en novembre 2026 ouvre la saison 2026, un bulletin de
-     * mars 2026 appartient encore a la saison 2025. Compter en annees civiles
-     * ferait changer de case tous les bulletins de janvier a septembre.
-     *
-     * @return list<array{year: int, valid: bool}>
-     */
-    private function seasons(MembershipApplication $application): array
-    {
-        $validated = [];
-        $first = self::season($application->getSubmittedAt());
-
-        foreach ($application->getMember()?->getApplications() ?? [] as $other) {
-            $year = self::season($other->getSubmittedAt());
-            $first = min($first, $year);
-            if ($other->isValidated()) {
-                $validated[$year] = true;
-            }
-        }
-
-        $seasons = [];
-        for ($i = 0; $i < self::SEASONS; ++$i) {
-            $year = $first + $i;
-            $seasons[] = ['year' => $year, 'valid' => isset($validated[$year])];
-        }
-
-        return $seasons;
-    }
-
-    private static function season(\DateTimeImmutable $date): int
-    {
-        $year = (int) $date->format('Y');
-
-        return (int) $date->format('n') >= 10 ? $year : $year - 1;
-    }
 }

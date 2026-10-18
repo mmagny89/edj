@@ -23,10 +23,17 @@ GitHub, par `.github/workflows/publication.yml`.
   sur `/adhesion/ma-fiche`, recoit a l'adresse de son bulletin un lien signe
   valable trente minutes, et consulte sa fiche. Aucune autre voie n'y mene, et
   la reponse est la meme qu'un numero existe ou non.
-- Carte d'adherent dematerialisee, en PDF au format d'une carte bancaire :
-  recto a la marque de l'association, verso avec le nom, le numero et les huit
-  saisons, celles reglees etant cochees. Telechargeable depuis l'espace
-  adherent une fois l'adhesion validee.
+- Carte d'adherent dematerialisee, en PDF de deux pages au format d'une carte
+  bancaire : recto reprenant le logo de l'association, verso avec le nom, le
+  numero et les huit saisons. Telechargeable depuis l'espace adherent une fois
+  l'adhesion validee.
+- Tampons de saison, configures par le super-administrateur dans
+  « Saisons » : un symbole (etoile, couronne, coeur) et une couleur (orange ou
+  bleu) apposes sur la carte en face de chaque annee reglee, de quoi
+  reconnaitre une carte a jour a l'entree d'un evenement. Les quatre premieres
+  saisons sont posees d'apres les cartes papier en circulation (2024 etoile
+  orange, 2025 couronne bleue, 2026 coeur orange, 2027 etoile bleue) ; les
+  suivantes se saisissent, la rotation n'etant qu'une proposition.
 - Visualisation de la carte d'un adherent depuis l'administration, sur sa
   fiche : la carte s'ouvre dans un onglet, meme avant validation, pour que le
   bureau la verifie ou la reimprime.

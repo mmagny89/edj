@@ -1,0 +1,66 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% import 'app/seasons/_stamp.html.twig' as st %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Saisons - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Saisons</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        Le symbole et la couleur apposés sur la carte d'adhérent en face de chaque année réglée.
+        Ils changent chaque saison : c'est ce qui permet de reconnaître une carte à jour à l'entrée
+        d'un évènement. L'année associative courant du 1<sup>er</sup> octobre au 30 septembre,
+        une adhésion prise le 1<sup>er</sup> octobre 2026 vaut pour la saison 2027.
+    </p>
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-3">
+        <section class="card p-6 lg:col-span-2" aria-labelledby="t-liste">
+            <h2 id="t-liste" class="text-lg font-bold text-ink">Tampons enregistrés</h2>
+
+            {% if stamps is empty %}
+                <p class="mt-4 text-slate-600">Aucune saison enregistrée : les cartes ne portent encore aucun tampon.</p>
+            {% else %}
+                <ul class="mt-4 divide-y divide-slate-100">
+                    {% for stamp in stamps %}
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                            <div class="flex items-center gap-4">
+                                <span class="w-16 font-mono text-lg font-bold text-ink">{{ stamp.year }}</span>
+                                {{ st.badge(stamp) }}
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ path('app_season_edit', {id: stamp.id}) }}" class="btn btn-secondary">
+                                    {{ ui.icon('pencil') }} Modifier<span class="sr-only"> la saison {{ stamp.year }}</span>
+                                </a>
+                                <form method="post" action="{{ path('app_season_delete', {id: stamp.id}) }}"
+                                      data-controller="confirm"
+                                      data-confirm-message-value="Supprimer le tampon de la saison {{ stamp.year }} ? Les cartes ne porteront plus rien pour cette année."
+                                      data-action="submit->confirm#ask">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('season_delete_' ~ stamp.id) }}">
+                                    <button type="submit" class="btn btn-danger">
+                                        {{ ui.icon('trash') }} Supprimer<span class="sr-only"> la saison {{ stamp.year }}</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+
+        <section class="card p-6" aria-labelledby="t-ajout">
+            <h2 id="t-ajout" class="text-lg font-bold text-ink">Ajouter une saison</h2>
+            <p class="mt-2 text-sm text-slate-600">
+                La suite de la rotation est proposée ; rien n'oblige à la suivre.
+            </p>
+            {{ form_start(form, {attr: {class: 'mt-4 space-y-5', novalidate: 'novalidate'}}) }}
+                {{ form_errors(form) }}
+                {{ form_row(form.year) }}
+                {{ form_row(form.symbol) }}
+                {{ form_row(form.color) }}
+                <button type="submit" class="btn btn-primary">{{ ui.icon('plus') }} Enregistrer</button>
+            {{ form_end(form) }}
+        </section>
+    </div>
+{% endblock %}

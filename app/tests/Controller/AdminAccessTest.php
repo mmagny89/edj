@@ -35,6 +35,7 @@ final class AdminAccessTest extends WebTestCase
         yield 'nouvel evenement' => ['/admin/evenements/nouveau'];
         yield 'generation' => ['/admin/evenements/generer'];
         yield 'adhesions' => ['/admin/adhesions'];
+        yield 'saisons' => ['/admin/saisons'];
     }
 
     #[DataProvider('privatePaths')]
@@ -67,6 +68,30 @@ final class AdminAccessTest extends WebTestCase
         $client->request('GET', '/admin/utilisateurs');
 
         self::assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * Changer le tampon d'une saison change ce qui est imprime sur toutes les
+     * cartes de cette annee, y compris celles deja telechargees : la decision
+     * appartient au seul super-administrateur.
+     */
+    public function testSeasonStampsAreForbiddenToAContributor(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client, 'contributeur@example.test');
+        $client->request('GET', '/admin/saisons');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testSeasonStampsAreOpenToTheSuperAdmin(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client, 'admin@example.test');
+        $client->request('GET', '/admin/saisons');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Saisons');
     }
 
     public function testDeletionRefusesAGetRequest(): void
