@@ -31,57 +31,130 @@
         <article class="legal-block">
             <h3>Quelles données, et pourquoi</h3>
             <p>
-                Le seul formulaire du site est le <a href="{{ path('site_index') }}#adhesion">bulletin
-                d'adhésion</a>. Il recueille :
+                Le site recueille des données à quatre occasions : quand vous remplissez le
+                <a href="{{ path('membership_form') }}">bulletin d'adhésion</a>, quand vous
+                <a href="{{ path('membership_renewal_request') }}">renouvelez votre adhésion</a>,
+                quand vous demandez l'accès à
+                <a href="{{ path('member_access_request') }}">votre fiche d'adhérent</a>, et quand
+                un membre du Conseil d'Administration enregistre une adhésion pour vous, à partir
+                d'une fiche papier.
             </p>
+
+            <h4>Ce que contient votre fiche</h4>
             <ul>
                 <li>votre identité : nom, prénom, date de naissance ;</li>
                 <li>vos coordonnées : adresse postale, code postal, ville, téléphone, adresse e-mail ;</li>
-                <li>la formule d'adhésion choisie et, pour une adhésion familiale, le nom de l'adhérent principal ;</li>
+                <li>la formule d'adhésion choisie et, pour une adhésion famille, le nom de l'adhérent principal ;</li>
                 <li>pour un mineur : nom, prénom et adresse e-mail du responsable légal ;</li>
-                <li>vos choix : autorisation de transmission à la boutique Philibert, refus éventuel du droit à l'image, acceptation des statuts et du règlement intérieur ;</li>
-                <li>la ville et le nom portés en signature, ainsi que la date d'envoi.</li>
+                <li>vos choix : transmission de votre adresse à la boutique Philibert, refus éventuel du droit à l'image, acceptation des statuts et du règlement intérieur ;</li>
+                <li>le lieu et le nom portés en signature, et la date de dépôt ;</li>
+                <li>un <strong>numéro d'adhérent</strong> (EDJ-0001…), qui vous suit d'une saison à l'autre et vous permet de retrouver votre fiche.</li>
             </ul>
+
+            <h4>Ce que l'association y ajoute en gérant votre adhésion</h4>
+            <ul>
+                <li>l'état de l'adhésion (en attente, validée, annulée) et le moyen de règlement de la cotisation — chèque, espèces ou virement — jamais un numéro de carte ni de compte ;</li>
+                <li>un <strong>historique des décisions</strong> : qui a validé, annulé ou anonymisé votre adhésion, et quand. Il ne garde que l'identifiant du membre du Conseil d'Administration concerné, aucune donnée sur vous ;</li>
+                <li>une <strong>empreinte</strong> de votre identité (nom, prénom, date de naissance, brouillés de façon irréversible), qui sert uniquement à reconnaître que vous avez déjà un numéro quand vous adhérez de nouveau. Elle est effacée quand votre fiche est anonymisée ;</li>
+                <li>pour les adhésions saisies depuis une fiche papier, la mention « fiche papier » et l'identifiant de la personne qui l'a saisie.</li>
+            </ul>
+
+            <h4>À quoi cela sert</h4>
             <p>
-                Ces données servent à instruire votre demande d'adhésion, tenir le registre des
-                adhérents, vous informer de la vie de l'association et satisfaire aux obligations
-                légales d'une association loi 1901.
+                Instruire votre adhésion et la suivre d'une saison à l'autre, tenir le registre des
+                adhérents, vous délivrer votre carte d'adhérent, vous répondre, établir des
+                statistiques sur la vie de l'association (voir plus bas) et satisfaire aux
+                obligations d'une association loi 1901.
             </p>
             <p>
-                Dès le dépôt du bulletin, un courriel de confirmation est envoyé à l'adresse indiquée
-                — et à celle du responsable légal pour un mineur. Il rappelle la formule choisie et
-                renvoie vers les réseaux sociaux de l'association. Il n'est envoyé qu'une fois, et
-                ne vaut pas inscription à une lettre d'information.
+                Les courriels que le site envoie sont des courriels de service : la confirmation
+                de votre bulletin, le lien d'accès à votre fiche et le lien de renouvellement. Ils
+                partent à l'adresse indiquée sur votre dernier bulletin — et à celle du responsable
+                légal pour un mineur — et ne valent pas inscription à une lettre d'information.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Votre fiche et votre carte en ligne</h3>
+            <p>
+                Il n'y a ni compte ni mot de passe côté adhérent. Pour consulter votre fiche,
+                renouveler votre adhésion ou télécharger votre carte, vous saisissez votre numéro
+                d'adhérent : le site envoie alors un <strong>lien personnel</strong> à l'adresse e-mail
+                de votre dernier bulletin. C'est l'accès à cette boîte qui vous identifie.
+            </p>
+            <ul>
+                <li>le lien n'est valable que trente minutes pour consulter votre fiche, et deux heures pour renouveler ;</li>
+                <li>un lien modifié, recopié en partie ou expiré est refusé ;</li>
+                <li>la réponse est la même que le numéro existe ou non : le formulaire ne permet pas de savoir si quelqu'un est adhérent ;</li>
+                <li>le nombre de demandes est limité, pour qu'on ne puisse pas inonder une boîte de messages.</li>
+            </ul>
+            <p>
+                La carte d'adhérent est un fichier PDF fabriqué à la demande, à partir de votre
+                fiche ; l'association n'en garde pas de copie. Elle ne se télécharge qu'une fois
+                votre adhésion validée.
+            </p>
+        </article>
+
+        <article class="legal-block">
+            <h3>Statistiques</h3>
+            <p>
+                Le Conseil d'Administration consulte des chiffres par saison : nombre d'adhérents,
+                renouvellements, tranches d'âge, commune d'origine (Joigny, communauté de communes,
+                ailleurs), formules, moyens de règlement. Ils sont calculés à partir des fiches,
+                sans jamais afficher de nom. Ils servent à piloter l'association et à rendre compte
+                à ses partenaires.
+            </p>
+            <p>
+                Le Conseil d'Administration peut aussi exporter la liste des adhésions — avec les
+                informations de chaque fiche — pour ses besoins de gestion : relances, listes
+                d'émargement, suivi des cotisations. Chaque export est enregistré (qui, combien de
+                lignes).
             </p>
         </article>
 
         <article class="legal-block">
             <h3>Sur quelle base légale</h3>
             <ul>
-                <li><strong>Exécution du contrat d'adhésion</strong> pour l'identité, les coordonnées et la formule choisie : sans elles, l'adhésion ne peut pas être enregistrée.</li>
+                <li><strong>Exécution du contrat d'adhésion</strong> pour l'identité, les coordonnées, la formule, le numéro d'adhérent, l'état de l'adhésion et le moyen de règlement : sans eux, l'adhésion ne peut pas être enregistrée ni suivie.</li>
                 <li><strong>Votre consentement</strong>, libre et révocable à tout moment, pour la transmission de votre adresse e-mail à la boutique Philibert et pour l'usage de photos prises lors des activités.</li>
-                <li><strong>Intérêt légitime</strong> de l'association pour la conservation des preuves d'acceptation des statuts et du règlement intérieur.</li>
+                <li><strong>Intérêt légitime</strong> de l'association pour conserver la preuve de l'acceptation des statuts et du règlement intérieur, pour reconnaître un adhérent qui revient, pour limiter les envois abusifs et pour la sécurité du site.</li>
             </ul>
         </article>
 
         <article class="legal-block">
             <h3>Qui y a accès</h3>
             <p>
-                Les membres du Conseil d'Administration, pour les seuls besoins de la gestion
-                associative. Aucune donnée n'est vendue, louée ni transmise à des tiers, à une
-                exception : votre adresse e-mail est communiquée à la boutique Philibert
-                <em>si et seulement si</em> vous avez coché la case correspondante.
+                Les membres du Conseil d'Administration qui ont un compte de gestion, pour les
+                seuls besoins de la gestion associative. Aucune donnée n'est vendue ni louée.
+                Une seule communication à un tiers à son propre compte :
             </p>
+            <ul>
+                <li>
+                    <strong>La boutique Philibert</strong> reçoit votre adresse e-mail et votre
+                    <strong>date d'adhésion</strong> — rien d'autre — <em>si et seulement si</em>
+                    vous avez coché la case correspondante. Elle ne concerne que les adhérents à
+                    l'année, à jour de leur adhésion pour la saison en cours : la formule
+                    « consommateur », gratuite à l'année, n'y donne pas droit, et la case ne peut
+                    pas être cochée avec elle. Un adhérent dont l'adhésion est annulée ou d'une
+                    saison passée n'y figure plus.
+                </li>
+            </ul>
             <p>
-                Deux prestataires techniques traitent des données pour le compte de l'association,
+                Des prestataires techniques traitent des données pour le compte de l'association,
                 sans les utiliser pour leur propre compte :
             </p>
             <ul>
-                <li><strong>Hostinger International Ltd.</strong> (Chypre, Union européenne) héberge le site et sa base de données, sur un serveur situé <strong>en France</strong>.</li>
-                <li><strong>Brevo</strong> (France, Union européenne) achemine les courriels de confirmation d'adhésion, ce qui l'amène à voir le nom et l'adresse du destinataire le temps de l'envoi.</li>
+                <li><strong>Hostinger International Ltd.</strong> (Chypre, Union européenne) héberge le site et sa base de données, sur un serveur situé <strong>en France</strong>. C'est aussi là que sont gardées les sauvegardes.</li>
+                <li><strong>Brevo</strong> (France, Union européenne) achemine les courriels du site, ce qui l'amène à voir le nom et l'adresse du destinataire, et le contenu du message, le temps de l'envoi.</li>
             </ul>
             <p>
                 Aucune donnée n'est transférée hors de l'Union européenne.
+            </p>
+            <p>
+                Certains liens mènent vers des services tiers, qui ont leur propre politique et
+                auxquels l'association ne transmet rien : les statuts, le règlement intérieur et
+                les annexes sont hébergés sur Google Drive, et les pages de l'association sur
+                Facebook, Instagram et WhatsApp.
             </p>
         </article>
 
@@ -89,8 +162,10 @@
             <h3>Combien de temps</h3>
             <ul>
                 <li><strong>Adhérents à jour de cotisation</strong> : pendant toute la durée de l'adhésion.</li>
-                <li><strong>Après la dernière adhésion</strong> : trois ans, délai au terme duquel les données sont <em>anonymisées</em> : nom, coordonnées, signature et responsable légal sont effacés de façon irréversible. Seuls la formule choisie, les autorisations, la date de dépôt et l'année de naissance sont conservées, pour les statistiques de l'association.</li>
-                <li><strong>Demandes d'adhésion non abouties</strong> : un an.</li>
+                <li><strong>Après la dernière adhésion</strong> : trois ans, délai au terme duquel les données sont <em>anonymisées</em> par le Conseil d'Administration : nom, coordonnées, signature, responsable légal et empreinte d'identité sont effacés de façon irréversible. Restent la formule choisie, les autorisations, la date de dépôt, l'année de naissance, le moyen de règlement, le numéro d'adhérent — qui ne désigne alors plus personne — et l'historique des décisions, pour les statistiques et la comptabilité de l'association.</li>
+                <li><strong>Demandes d'adhésion non abouties</strong> (jamais validées) : un an.</li>
+                <li><strong>Sauvegardes</strong> : une par jour, les quatorze dernières sont gardées. Une donnée effacée ou anonymisée disparaît donc des sauvegardes dans les deux semaines.</li>
+                <li><strong>Liens d'accès à votre fiche</strong> : trente minutes à deux heures, puis ils ne fonctionnent plus.</li>
             </ul>
         </article>
 
@@ -119,22 +194,46 @@
         </article>
 
         <article class="legal-block">
-            <h3>Cookies et mesure d'audience</h3>
+            <h3>Cookies, mesure d'audience et préférences</h3>
             <p>
                 Ce site ne dépose aucun cookie publicitaire ni de mesure d'audience, et n'utilise
-                aucun service de statistiques tiers. Seul un cookie de session strictement
-                nécessaire est posé lors de l'envoi d'un formulaire, pour en vérifier la
-                provenance ; il expire à la fermeture du navigateur et ne demande pas votre
-                consentement.
+                aucun service de statistiques tiers : les polices, icônes et images sont servies
+                par le site lui-même.
+            </p>
+            <ul>
+                <li><strong>Envoi d'un formulaire</strong> : votre navigateur crée un cookie de courte durée qui permet de vérifier que le formulaire vient bien de cette page. Il est supprimé dès l'envoi, ou à la fermeture du navigateur.</li>
+                <li><strong>Espace de gestion</strong> : une fois connectés, les membres du Conseil d'Administration reçoivent un cookie de session, qui disparaît à la déconnexion.</li>
+                <li><strong>Vos préférences d'affichage</strong> (contraste renforcé, taille du texte, soulignement des liens, réduction des animations) sont mémorisées dans votre navigateur, à votre demande. Elles ne quittent jamais votre appareil.</li>
+            </ul>
+            <p>
+                Ces éléments sont strictement nécessaires au fonctionnement du site ou demandés
+                par vous : ils ne demandent pas votre consentement.
+            </p>
+            <p>
+                Comme tout serveur, celui qui héberge le site enregistre dans des journaux
+                techniques l'adresse IP, la date et la page demandée de chaque visite, pour
+                assurer la sécurité et le bon fonctionnement du site. Le site garde aussi,
+                quelques minutes à quelques heures, une empreinte de l'adresse IP pour limiter
+                les envois répétés.
             </p>
         </article>
 
         <article class="legal-block">
             <h3>Sécurité</h3>
             <p>
-                Les échanges avec le site sont chiffrés (HTTPS). L'accès à l'espace de gestion
-                est restreint aux membres du Conseil d'Administration et protégé par mot de
-                passe.
+                Les échanges avec le site sont chiffrés (HTTPS). L'espace de gestion est réservé
+                aux membres du Conseil d'Administration, chacun avec son propre compte protégé par
+                un mot de passe, et le nombre d'essais de connexion est limité. Les actions
+                sensibles — valider, annuler, anonymiser, exporter — sont enregistrées.
+            </p>
+            <p>
+                Les sauvegardes sont conservées sur le serveur, dans un dossier fermé à tous sauf
+                à l'exploitant.
+            </p>
+            <p>
+                En cas de violation de données susceptible de vous exposer à un risque,
+                l'association en informe la CNIL dans les 72 heures, et vous-même si le risque
+                est élevé.
             </p>
         </article>
 

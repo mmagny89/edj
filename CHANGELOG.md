@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.3.0] - 2026-10-18
+
 ### Ajoute
 
 - Numero d'adherent unique et stable, de la forme `EDJ-0001`. Il appartient a
@@ -110,6 +112,15 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Modifie
 
+- Pages « Donnees personnelles » et « Mentions legales » remises d'aplomb sur ce
+  que le site fait reellement : le numero d'adherent, l'empreinte d'identite,
+  l'historique des decisions et le moyen de reglement ; l'espace adherent par lien
+  personnel et la carte ; les statistiques et les exports ; ce que recoit
+  Philibert (adresse et date d'adhesion, adherents a l'annee seulement) ; les
+  cookies reels et le stockage local des preferences d'affichage ; les
+  sauvegardes (quatorze jours) ; les liens vers des services tiers. La page
+  affirmait qu'un cookie de session etait pose a l'envoi d'un formulaire : c'est
+  faux depuis la protection sans session.
 - Le suivi des adhesions passe du super-administrateur au contributeur : c'est
   le travail courant du bureau. Les comptes d'administration restent reserves
   au super-administrateur, qui seul en cree, bloque ou promeut.
