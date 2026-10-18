@@ -1,0 +1,51 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Passer à l'adhésion annuelle - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <a href="{{ path('app_membership_show', {id: application.id}) }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+        {{ ui.icon('arrow-left', 'size-4') }} Retour à la fiche
+    </a>
+    <h1 class="mt-3 text-3xl font-bold text-ink">
+        Passer à l'adhésion annuelle
+        <span class="font-mono text-xl font-bold tracking-wider text-brand">{{ application.memberNumber }}</span>
+    </h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        {{ application.firstName }} {{ application.lastName }} est adhérent consommateur : gratuit à l'année,
+        1 € par évènement. Le passage à l'annuelle se fait sur la même adhésion, sous le même numéro —
+        ce n'est pas un renouvellement. L'historique garde la trace du changement.
+    </p>
+
+    <div class="card mt-8 max-w-3xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-8', novalidate: 'novalidate'}}) }}
+            {{ form_errors(form) }}
+
+            <fieldset class="space-y-4">
+                <legend class="mb-2 text-lg font-bold text-ink">Formule</legend>
+                <div class="space-y-3">
+                    {% for choice in form.membershipType %}
+                        <div class="flex items-start gap-3">
+                            {{ form_widget(choice, {attr: {class: 'mt-1 size-5 shrink-0 border-slate-300 text-brand'}}) }}
+                            {{ form_label(choice, null, {label_attr: {class: 'font-medium'}}) }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.membershipType) }}
+                {{ form_row(form.principalMemberName) }}
+            </fieldset>
+
+            <fieldset class="space-y-4">
+                <legend class="mb-2 text-lg font-bold text-ink">Cotisation</legend>
+                {{ form_row(form.paymentMethod) }}
+            </fieldset>
+
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Passer à l'annuelle</button>
+                <a href="{{ path('app_membership_show', {id: application.id}) }}" class="btn btn-secondary">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

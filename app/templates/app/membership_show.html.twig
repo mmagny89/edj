@@ -43,6 +43,11 @@
                 <a href="{{ path('app_membership_sheet', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
                     {{ ui.icon('printer') }} Imprimer la fiche<span class="sr-only"> (nouvel onglet)</span>
                 </a>
+                {% if upgradable %}
+                    <a href="{{ path('app_membership_upgrade', {id: application.id}) }}" class="btn btn-primary">
+                        {{ ui.icon('plus') }} Passer à l'adhésion annuelle
+                    </a>
+                {% endif %}
                 {% if renewable %}
                     <a href="{{ path('app_membership_renew', {id: application.id}) }}" class="btn btn-primary">
                         {{ ui.icon('plus') }} Renouveler pour la saison {{ currentSeason }}

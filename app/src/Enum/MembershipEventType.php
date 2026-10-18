@@ -13,6 +13,7 @@ enum MembershipEventType: string
     case Cancelled = 'annulee';
     case Reopened = 'rouverte';
     case Anonymized = 'anonymisee';
+    case Upgraded = 'formule';
 
     public function label(): string
     {
@@ -21,6 +22,7 @@ enum MembershipEventType: string
             self::Cancelled => 'Adhésion annulée',
             self::Reopened => 'Remise en attente',
             self::Anonymized => 'Bulletin anonymisé',
+            self::Upgraded => 'Formule modifiée',
         };
     }
 }

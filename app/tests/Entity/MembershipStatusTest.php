@@ -112,4 +112,37 @@ final class MembershipStatusTest extends TestCase
         self::assertCount(1, $application->getHistory());
         self::assertSame(7, $application->getHistory()->first()->getActorId());
     }
+
+    public function testAFormulaChangeIsKeptInTheHistory(): void
+    {
+        $application = $this->application(MembershipType::Consumer);
+        $application->setMembershipType(MembershipType::Individual)->recordFormulaChange(MembershipType::Consumer, 7);
+
+        $event = $application->getHistory()->first();
+
+        self::assertSame('formule', $event->getType()->value);
+        self::assertSame('consommateur → individuelle', $event->getDetail());
+        self::assertSame(7, $event->getActorId());
+    }
+
+    /**
+     * Rien a inscrire si la formule n'a pas change : l'historique ne ment pas par
+     * exces de zele.
+     */
+    public function testNoFormulaChangeIsRecordedWhenNothingChanged(): void
+    {
+        $application = $this->application(MembershipType::Consumer)->recordFormulaChange(MembershipType::Consumer, 7);
+
+        self::assertCount(0, $application->getHistory());
+    }
+
+    public function testOnlyACurrentConsumerCanBecomeAnnual(): void
+    {
+        $season = \App\Service\MembershipSeasons::of(new \DateTimeImmutable());
+
+        self::assertTrue($this->application(MembershipType::Consumer)->canBecomeAnnual($season));
+        self::assertFalse($this->application(MembershipType::Individual)->canBecomeAnnual($season));
+        self::assertFalse($this->application(MembershipType::Consumer)->cancel(null)->canBecomeAnnual($season));
+        self::assertFalse($this->application(MembershipType::Consumer)->canBecomeAnnual($season + 1), 'Une autre saison : on renouvelle.');
+    }
 }

@@ -8,6 +8,7 @@ use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Form\PaperMembershipType;
+use App\Form\UpgradeMembershipType;
 use App\Service\MemberDirectory;
 use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
@@ -300,6 +301,61 @@ final class MembershipApplicationController extends AbstractController
     }
 
     /**
+     * Fait passer un adherent consommateur a une adhesion annuelle, sur le meme
+     * bulletin : c'est la meme saison, la meme personne, le meme numero — pas un
+     * renouvellement, qu'une saison n'autorise qu'une fois.
+     *
+     * Le bulletin change de formule ; l'historique le garde (de quoi, vers quoi,
+     * par qui). Reste la cotisation : si elle est encaissee sur le moment, le
+     * bureau choisit le moyen de reglement et l'adhesion est validee ; sinon elle
+     * repasse en attente, car une adhesion consommateur validee est gratuite et
+     * l'annuelle ne l'est pas. Un enfant de moins de huit ans ne doit rien : son
+     * adhesion reste validee.
+     */
+    #[Route('/{id}/passer-annuel', name: 'app_membership_upgrade', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function upgrade(Request $request, MembershipApplication $application): Response
+    {
+        if (!$application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable()))) {
+            $this->addFlash('error', 'Seule une adhésion consommateur de la saison en cours peut passer à l\'adhésion annuelle.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        $from = $application->getMembershipType();
+        $form = $this->createForm(UpgradeMembershipType::class, $application);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $to = $application->getMembershipType();
+            if (MembershipType::Family !== $to) {
+                $application->setPrincipalMemberName(null);
+            }
+
+            $method = $form->get('paymentMethod')->getData();
+            $owed = ($application->amountDue() ?? 0) > 0;
+
+            $application->recordFormulaChange($from, $this->adminId());
+            if ($owed && $method instanceof PaymentMethod) {
+                $application->validate($method, $this->adminId());
+            } elseif ($owed && $application->isValidated()) {
+                $application->reopen($this->adminId());
+            }
+
+            $this->entityManager->flush();
+
+            $this->addFlash('success', match (true) {
+                $owed && $method instanceof PaymentMethod => sprintf('Adhésion annuelle enregistrée et validée, cotisation réglée par %s.', mb_lcfirst($method->label())),
+                $owed => sprintf('Adhésion annuelle enregistrée. Elle est en attente : %s restent à encaisser.', $application->amountDueLabel()),
+                default => 'Adhésion annuelle enregistrée : rien à encaisser pour cet adhérent.',
+            });
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        return $this->render('app/membership_upgrade.html.twig', ['form' => $form, 'application' => $application]);
+    }
+
+    /**
      * Ce qu'on transmet a Philibert : l'adresse et la date d'adhesion des
      * adherents actifs de la saison en cours, hors consommateurs (voir
      * MembershipApplicationRepository::findPhilibertRows).
@@ -342,6 +398,7 @@ final class MembershipApplicationController extends AbstractController
             // individuelle connue, plutot que de le presenter comme acquis.
             'actors' => $this->actorsOf($application),
             'renewable' => $this->isRenewable($application),
+            'upgradable' => $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable())),
             'currentSeason' => MembershipSeasons::of(new \DateTimeImmutable()),
             'parcours' => null !== $application->getMember() ? $this->applications->findAllForMember($application->getMember()) : [],
             'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
