@@ -51,7 +51,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->loginUser($provider->loadUserByIdentifier($identifier));
     }
 
-    private function create(string $email, bool $philibert = false, string $first = 'Camille', bool $validated = false, ?string $submittedAt = null): MembershipApplication
+    private function create(string $email, bool $philibert = false, string $first = 'Camille', bool $validated = false, ?string $submittedAt = null, MembershipType $type = MembershipType::Individual): MembershipApplication
     {
         $application = (new MembershipApplication())
             ->setLastName('Durand')
@@ -60,7 +60,7 @@ final class MembershipAdminTest extends WebTestCase
             ->setPostalCode('89300')
             ->setCity('Joigny')
             ->setEmail($email)
-            ->setMembershipType(MembershipType::Individual)
+            ->setMembershipType($type)
             ->setPhilibertConsent($philibert)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($first.' Durand');
@@ -173,7 +173,7 @@ final class MembershipAdminTest extends WebTestCase
     }
 
     /**
-     * La liste part chez un tiers : elle ne nomme que des adherents a jour.
+     * La liste part chez un tiers : elle ne nomme que des adherents actifs.
      * Chaque ligne ci-dessous est une raison d'etre exclu, sauf la premiere.
      */
     public function testPhilibertListHoldsOnlyConsentingNonAnonymizedAddresses(): void
@@ -184,7 +184,11 @@ final class MembershipAdminTest extends WebTestCase
         $this->create('OUI@Example.test', philibert: true, first: 'Doublon', validated: true);
         $this->entityManager->flush();
 
-        self::assertSame(['email', 'oui@example.test'], $this->philibertLines());
+        $lines = $this->philibertLines();
+
+        self::assertSame('email;date_adhesion', $lines[0]);
+        self::assertCount(2, $lines);
+        self::assertSame('oui@example.test;'.date('Y-m-d'), $lines[1]);
         self::assertStringContainsString('text/csv', (string) $this->client->getResponse()->headers->get('Content-Type'));
         self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
     }
@@ -193,7 +197,7 @@ final class MembershipAdminTest extends WebTestCase
     {
         $this->create('attente@example.test', philibert: true);
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
     }
 
     public function testPhilibertListExcludesACancelledApplication(): void
@@ -201,7 +205,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->create('annulee@example.test', philibert: true, validated: true)->cancel(null);
         $this->entityManager->flush();
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
     }
 
     /**
@@ -213,19 +217,37 @@ final class MembershipAdminTest extends WebTestCase
     {
         $this->create('ancien@example.test', philibert: true, validated: true, submittedAt: '-2 years');
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
+    }
+
+    /**
+     * La formule consommateur, gratuite a l'annee, n'ouvre pas droit a
+     * l'avantage : meme validee, meme autorisee, elle n'est pas dans la liste.
+     */
+    public function testPhilibertListExcludesConsumers(): void
+    {
+        $this->create('conso@example.test', philibert: true, validated: true, type: MembershipType::Consumer);
+        $this->create('annuel@example.test', philibert: true, validated: true);
+
+        $lines = $this->philibertLines();
+
+        self::assertCount(2, $lines);
+        self::assertStringStartsWith('annuel@example.test;', $lines[1]);
     }
 
     /**
      * Un foyer qui a plusieurs bulletins valides sur une meme adresse ne la
-     * recoit qu'une fois, quelle que soit la casse.
+     * recoit qu'une fois, quelle que soit la casse, avec sa premiere date.
      */
     public function testPhilibertListHasNoDuplicate(): void
     {
         $this->create('foyer@example.test', philibert: true, validated: true);
         $this->create('FOYER@example.test', philibert: true, first: 'Alice', validated: true);
 
-        self::assertSame(['email', 'foyer@example.test'], $this->philibertLines());
+        $lines = $this->philibertLines();
+
+        self::assertCount(2, $lines);
+        self::assertStringStartsWith('foyer@example.test;', $lines[1]);
     }
 
     /**
@@ -246,7 +268,8 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->request('GET', '/admin/adhesions/philibert.csv');
         $content = (string) $this->client->getInternalResponse()->getContent();
 
-        // L'autorisation donnee porte sur l'adresse e-mail seule.
+        // L'autorisation porte sur l'adresse e-mail, a laquelle s'ajoute la date
+        // d'adhesion : ni nom, ni telephone.
         self::assertStringNotContainsString('Camille', $content);
         self::assertStringNotContainsString('Durand', $content);
     }
@@ -542,6 +565,88 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
 
         self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
+    /**
+     * L'export de la liste : exactement ce qu'on voit, avec toutes les
+     * informations d'un bulletin.
+     *
+     * @return list<array<string, string>>
+     */
+    private function exportRows(string $query = ''): array
+    {
+        $this->client->request('GET', '/admin/adhesions/export.csv'.$query);
+        self::assertResponseIsSuccessful();
+
+        $lines = array_values(array_filter(explode("\n", ltrim((string) $this->client->getInternalResponse()->getContent(), "\xEF\xBB\xBF"))));
+        $header = str_getcsv(array_shift($lines), ';', '"', '');
+
+        return array_map(static fn (string $line) => array_combine($header, str_getcsv($line, ';', '"', '')), $lines);
+    }
+
+    public function testTheExportCarriesEveryInformation(): void
+    {
+        $this->create('camille@example.test', philibert: true, validated: true);
+
+        $rows = $this->exportRows();
+
+        self::assertCount(1, $rows);
+        self::assertSame('Durand', $rows[0]['nom']);
+        self::assertSame('Camille', $rows[0]['prenom']);
+        self::assertSame('camille@example.test', $rows[0]['email']);
+        self::assertSame('Joigny', $rows[0]['ville']);
+        self::assertSame('Validée', $rows[0]['etat']);
+        self::assertSame('Chèque', $rows[0]['moyen_reglement']);
+        self::assertSame('oui', $rows[0]['philibert']);
+        self::assertSame('10', $rows[0]['montant_du']);
+        self::assertMatchesRegularExpression('/^EDJ-\d+$/', $rows[0]['numero']);
+        self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+    }
+
+    /**
+     * Les memes filtres que la liste, lus dans la meme URL : l'export est ce
+     * qu'on voit. Par defaut, la saison en cours.
+     */
+    public function testTheExportFollowsTheFiltersAndDefaultsToTheCurrentSeason(): void
+    {
+        $this->create('courant@example.test', validated: true);
+        $this->create('ancien@example.test', validated: true, submittedAt: '-3 years', first: 'Ancien');
+
+        self::assertCount(1, $this->exportRows(), 'Sans filtre de saison : la saison en cours.');
+        self::assertCount(2, $this->exportRows('?saison=toutes'));
+    }
+
+    public function testTheExportKeepsOnlyWhatTheFiltersKeep(): void
+    {
+        $this->create('cheque@example.test', validated: true);
+        $this->create('attente@example.test', first: 'Attente');
+
+        $rows = $this->exportRows('?etat=en_attente');
+
+        self::assertCount(1, $rows);
+        self::assertSame('attente@example.test', $rows[0]['email']);
+    }
+
+    /**
+     * Une cellule qui commence par = + - @ est lue comme une formule par un
+     * tableur : le fichier sort d'ici pour etre ouvert ailleurs.
+     */
+    public function testTheExportNeutralizesSpreadsheetFormulas(): void
+    {
+        $application = $this->create('camille@example.test', validated: true, first: '=HYPERLINK("http://mal.example")');
+
+        $rows = $this->exportRows();
+
+        self::assertStringStartsWith("'", $rows[0]['prenom']);
+    }
+
+    public function testAContributorCanExport(): void
+    {
+        $this->logIn('contributeur@example.test');
+
+        $this->client->request('GET', '/admin/adhesions/export.csv');
+
+        self::assertResponseIsSuccessful();
     }
 
     public function testEveryBulletinCarriesAMemberNumber(): void

@@ -443,6 +443,16 @@ class MembershipApplication
             }
         }
 
+        // L'avantage Philibert fait partie de l'adhesion annuelle : la formule
+        // consommateur, gratuite a l'annee, n'y donne pas droit. Accepter la case
+        // ici ferait transmettre a un tiers l'adresse de quelqu'un qui n'a droit a
+        // rien chez lui.
+        if (MembershipType::Consumer === $this->membershipType && $this->philibertConsent) {
+            $context->buildViolation("La communication de votre adresse à Philibert est réservée aux adhérents à l'année : la formule consommateur n'y donne pas droit.")
+                ->atPath('philibertConsent')
+                ->addViolation();
+        }
+
         if (!$this->isMinor()) {
             return;
         }

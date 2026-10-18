@@ -114,4 +114,28 @@ final class MembershipRulesTest extends KernelTestCase
     {
         self::assertSame([], $this->errorsOn($this->application(MembershipType::Individual), 'membershipType'));
     }
+
+    /**
+     * L'avantage Philibert fait partie de l'adhesion annuelle : cocher la case en
+     * consommateur ferait transmettre a un tiers l'adresse de quelqu'un qui n'a
+     * droit a rien chez lui.
+     */
+    public function testAConsumerCannotTickThePhilibertBox(): void
+    {
+        $application = $this->application(MembershipType::Consumer)->setPhilibertConsent(true);
+
+        self::assertNotEmpty($this->errorsOn($application, 'philibertConsent'));
+    }
+
+    public function testAConsumerWithoutThePhilibertBoxIsFine(): void
+    {
+        self::assertSame([], $this->errorsOn($this->application(MembershipType::Consumer), 'philibertConsent'));
+    }
+
+    public function testAnAnnualMemberMayTickThePhilibertBox(): void
+    {
+        $application = $this->application(MembershipType::Individual)->setPhilibertConsent(true);
+
+        self::assertSame([], $this->errorsOn($application, 'philibertConsent'));
+    }
 }

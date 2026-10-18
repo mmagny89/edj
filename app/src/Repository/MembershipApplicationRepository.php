@@ -6,6 +6,7 @@ use App\Entity\Member;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
 use App\Service\MemberDirectory;
 use App\Service\MembershipSeasons;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -41,7 +42,13 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      * : relancer les impayes d'une saison, retrouver un foyer. Aucun n'est
      * obligatoire ; sans aucun, la liste est celle d'avant.
      *
-     * @param array{q?: ?string, status?: ?MembershipStatus, type?: ?MembershipType, season?: ?int} $filters
+     * Philibert, droit a l'image et moyen de reglement s'ajoutent aux quatre
+     * premiers : « les cheques de la saison », « les refus de photo », « ceux
+     * dont l'adresse part chez Philibert ». « none » en moyen de reglement
+     * designe les bulletins sans aucun encaissement — en attente, annules ou
+     * gratuits.
+     *
+     * @param array{q?: ?string, status?: ?MembershipStatus, type?: ?MembershipType, season?: ?int, philibert?: ?bool, images?: ?string, payment?: PaymentMethod|string|null} $filters
      *
      * @return list<MembershipApplication>
      */
@@ -76,6 +83,24 @@ class MembershipApplicationRepository extends ServiceEntityRepository
 
         if (($filters['type'] ?? null) instanceof MembershipType) {
             $query->andWhere('a.membershipType = :type')->setParameter('type', $filters['type']);
+        }
+
+        if (null !== ($philibert = $filters['philibert'] ?? null)) {
+            $query->andWhere('a.philibertConsent = :philibert')->setParameter('philibert', $philibert);
+        }
+
+        // « refused » : la case « je refuse les photos » est cochee.
+        if ('refused' === ($filters['images'] ?? null)) {
+            $query->andWhere('a.imageRightsRefused = true');
+        } elseif ('allowed' === ($filters['images'] ?? null)) {
+            $query->andWhere('a.imageRightsRefused = false');
+        }
+
+        $payment = $filters['payment'] ?? null;
+        if ($payment instanceof PaymentMethod) {
+            $query->andWhere('a.paymentMethod = :payment')->setParameter('payment', $payment);
+        } elseif ('none' === $payment) {
+            $query->andWhere('a.paymentMethod IS NULL');
         }
 
         if (null !== ($season = $filters['season'] ?? null)) {
@@ -239,32 +264,36 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Adresses a transmettre a Philibert : celles dont le titulaire a coche
-     * l'autorisation ET dont l'adhesion est **validee pour la saison en
-     * cours**, sans doublon, de la plus ancienne a la plus recente.
+     * Ce qu'on transmet a Philibert : l'adresse et la date d'adhesion des
+     * adherents **actifs de la saison en cours** qui ont autorise la
+     * communication, sans doublon, du plus ancien au plus recent.
      *
-     * La liste part chez un tiers : elle ne doit nommer que des adherents a
-     * jour. Une adhesion en attente n'est pas encaissee, une adhesion annulee
-     * ne compte plus, et celle d'une saison passee n'engage plus personne — la
-     * transmettre serait communiquer l'adresse de quelqu'un qui n'est plus
-     * adherent. Un bulletin anonymise n'a de toute facon plus d'adresse.
+     * La liste part chez un tiers : elle ne nomme que des adherents a jour.
+     * Actif veut dire adhesion annuelle validee pour la saison — une adhesion
+     * en attente n'est pas encaissee, une adhesion annulee ne compte plus, celle
+     * d'une saison passee n'engage plus personne, et la formule consommateur,
+     * gratuite a l'annee, n'ouvre pas droit aux avantages du programme. Un
+     * bulletin anonymise n'a de toute facon plus d'adresse.
      *
-     * L'autorisation porte sur l'adresse e-mail seule : la liste ne contient
-     * rien d'autre.
+     * L'autorisation porte sur l'adresse e-mail : la date d'adhesion s'y ajoute
+     * parce que Philibert doit savoir depuis quand la personne adhere, rien de
+     * plus. Ni nom, ni telephone.
      *
-     * @return list<string>
+     * @return list<array{email: string, joinedAt: \DateTimeImmutable}>
      */
-    public function findPhilibertEmails(?\DateTimeImmutable $now = null): array
+    public function findPhilibertRows(?\DateTimeImmutable $now = null): array
     {
         [$from, $to] = self::seasonBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
 
         $rows = $this->createQueryBuilder('a')
-            ->select('a.email')
+            ->select('a.email AS email, a.submittedAt AS joinedAt')
             ->where('a.philibertConsent = true')
             ->andWhere('a.anonymizedAt IS NULL')
             ->andWhere('a.status = :validated')
+            ->andWhere('a.membershipType != :consumer')
             ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
             ->setParameter('validated', MembershipStatus::Validated)
+            ->setParameter('consumer', MembershipType::Consumer)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
             // Deux bulletins du meme foyer partagent souvent la meme seconde de
@@ -274,13 +303,13 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->orderBy('a.submittedAt', 'ASC')
             ->addOrderBy('a.id', 'ASC')
             ->getQuery()
-            ->getSingleColumnResult();
+            ->getArrayResult();
 
         // La casse ne distingue pas deux adresses : un meme foyer qui depose
-        // plusieurs bulletins ne doit pas recevoir plusieurs fois le message.
+        // plusieurs bulletins ne la recoit qu'une fois, avec sa premiere date.
         $unique = [];
-        foreach ($rows as $email) {
-            $unique[mb_strtolower((string) $email)] ??= (string) $email;
+        foreach ($rows as $row) {
+            $unique[mb_strtolower((string) $row['email'])] ??= ['email' => (string) $row['email'], 'joinedAt' => $row['joinedAt']];
         }
 
         return array_values($unique);

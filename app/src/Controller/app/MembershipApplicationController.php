@@ -16,6 +16,8 @@ use App\Repository\UserRepository;
 use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,38 +39,130 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_CONTRIBUTOR')]
 final class MembershipApplicationController extends AbstractController
 {
+    /** Lignes affichees dans la liste ; l'export, lui, n'a pas cette limite. */
+    private const LIST_LIMIT = 200;
+
     public function __construct(
         private readonly MembershipApplicationRepository $applications,
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
         private readonly MemberDirectory $members,
         private readonly UserRepository $users,
+        #[Autowire(service: 'monolog.logger.security')]
+        private readonly LoggerInterface $securityLogger,
     ) {
     }
 
     /**
      * Les filtres passent par l'URL (GET) et non par une session : une liste
-     * filtree se partage alors par son lien — « les impayes de la saison
+     * filtree se partage alors par son lien — « les cheques de la saison
      * 2027 » — et un rechargement ne change pas ce qu'on regarde.
+     *
+     * Sans filtre de saison, la liste s'ouvre sur la saison en cours : c'est
+     * celle dont on s'occupe, et les saisons passees noyaient la liste. « Toutes
+     * les saisons » est un choix explicite (saison=toutes).
      */
     #[Route('', name: 'app_membership_applications', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $filters = [
-            'q' => trim((string) $request->query->get('q')),
-            'status' => MembershipStatus::tryFrom((string) $request->query->get('etat')),
-            'type' => MembershipType::tryFrom((string) $request->query->get('formule')),
-            'season' => $request->query->getInt('saison') ?: null,
-        ];
+        $filters = $this->filtersFrom($request);
+        $current = MembershipSeasons::of(new \DateTimeImmutable());
+        $applications = $this->applications->findFiltered($filters, self::LIST_LIMIT);
 
         return $this->render('app/membership_applications.html.twig', [
-            'applications' => $this->applications->findFiltered($filters),
+            'applications' => $applications,
+            'truncated' => \count($applications) >= self::LIST_LIMIT,
+            'limit' => self::LIST_LIMIT,
             'filters' => $filters,
-            'filtered' => '' !== $filters['q'] || null !== $filters['status'] || null !== $filters['type'] || null !== $filters['season'],
+            // « Filtree » : autre chose que la vue par defaut — la saison en
+            // cours, sans autre critere.
+            'filtered' => '' !== $filters['q'] || null !== $filters['status'] || null !== $filters['type']
+                || null !== $filters['philibert'] || null !== $filters['images'] || null !== $filters['payment']
+                || $current !== $filters['season'],
             'seasons' => $this->applications->seasonsWithApplications(),
-            'philibertCount' => \count($this->applications->findPhilibertEmails()),
-            'philibertSeason' => MembershipSeasons::of(new \DateTimeImmutable()),
+            'currentSeason' => $current,
+            'paymentMethods' => PaymentMethod::cases(),
+            'philibertCount' => \count($this->applications->findPhilibertRows()),
+            'philibertSeason' => $current,
         ]);
+    }
+
+    /**
+     * La liste filtree, en CSV, avec toutes les informations d'un bulletin :
+     * ce que le bureau retravaille dans un tableur (relances, listes
+     * d'emargement, statistiques a sa facon).
+     *
+     * Memes filtres que la liste, lus dans la meme URL : l'export est
+     * exactement ce qu'on voit, sans la limite d'affichage. Chaque export est
+     * journalise — qui, combien de lignes — parce que le fichier sort du site
+     * avec des donnees personnelles, dont celles de mineurs.
+     */
+    #[Route('/export.csv', name: 'app_membership_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $filters = $this->filtersFrom($request);
+        $applications = $this->applications->findFiltered($filters, 20000);
+
+        $this->securityLogger->warning('Export des adhesions.', [
+            'by_user_id' => $this->adminId(),
+            'rows' => \count($applications),
+            'season' => $filters['season'] ?? 'toutes',
+        ]);
+
+        $header = [
+            'numero', 'saison', 'date_depot', 'source', 'etat', 'date_etat', 'moyen_reglement', 'formule', 'montant_du',
+            'nom', 'prenom', 'date_naissance', 'mineur', 'adresse', 'code_postal', 'ville', 'telephone', 'email',
+            'adherent_principal', 'responsable_nom', 'responsable_prenom', 'responsable_email',
+            'philibert', 'photos_refusees', 'anonymise',
+        ];
+
+        $response = new StreamedResponse(function () use ($applications, $header): void {
+            $out = fopen('php://output', 'wb');
+            // BOM : Excel lit sinon l'UTF-8 comme du Windows-1252.
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, $header, ';', '"', '');
+            foreach ($applications as $a) {
+                fputcsv($out, array_map($this->neutralize(...), [
+                    (string) $a->getMemberNumber(),
+                    (string) MembershipSeasons::of($a->getSubmittedAt()),
+                    $a->getSubmittedAt()->format('Y-m-d'),
+                    $a->getSource()->label(),
+                    $a->getStatus()->label(),
+                    $a->getStatusChangedAt()?->format('Y-m-d') ?? '',
+                    $a->getPaymentMethod()?->label() ?? '',
+                    (string) $a->getMembershipType()?->label(),
+                    (string) ($a->amountDue() ?? ''),
+                    (string) $a->getLastName(),
+                    (string) $a->getFirstName(),
+                    $a->getBirthDate()?->format('Y-m-d') ?? '',
+                    $a->isMinor() ? 'oui' : 'non',
+                    (string) $a->getAddress(),
+                    (string) $a->getPostalCode(),
+                    (string) $a->getCity(),
+                    (string) $a->getPhone(),
+                    (string) $a->getEmail(),
+                    (string) $a->getPrincipalMemberName(),
+                    (string) $a->getGuardianLastName(),
+                    (string) $a->getGuardianFirstName(),
+                    (string) $a->getGuardianEmail(),
+                    $a->isPhilibertConsent() ? 'oui' : 'non',
+                    $a->isImageRightsRefused() ? 'oui' : 'non',
+                    $a->isAnonymized() ? 'oui' : 'non',
+                ]), ';', '"', '');
+            }
+            fclose($out);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', sprintf(
+            'attachment; filename="adhesions-%s-%s.csv"',
+            null !== $filters['season'] ? 'saison-'.$filters['season'] : 'toutes-saisons',
+            (new \DateTimeImmutable())->format('Y-m-d'),
+        ));
+        // Donnees personnelles : ni le navigateur ni un intermediaire ne les gardent.
+        $response->headers->set('Cache-Control', 'no-store, private');
+
+        return $response;
     }
 
     /**
@@ -205,18 +299,25 @@ final class MembershipApplicationController extends AbstractController
         ]);
     }
 
+    /**
+     * Ce qu'on transmet a Philibert : l'adresse et la date d'adhesion des
+     * adherents actifs de la saison en cours, hors consommateurs (voir
+     * MembershipApplicationRepository::findPhilibertRows).
+     */
     #[Route('/philibert.csv', name: 'app_membership_philibert', methods: ['GET'])]
     public function philibert(): Response
     {
-        $emails = $this->applications->findPhilibertEmails();
+        $rows = $this->applications->findPhilibertRows();
 
-        $response = new StreamedResponse(function () use ($emails): void {
+        $response = new StreamedResponse(function () use ($rows): void {
             $out = fopen('php://output', 'wb');
             // BOM : Excel lit sinon l'UTF-8 comme du Windows-1252.
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['email'], ';', '"', '');
-            foreach ($emails as $email) {
-                fputcsv($out, [$this->neutralize($email)], ';', '"', '');
+            fputcsv($out, ['email', 'date_adhesion'], ';', '"', '');
+            foreach ($rows as $row) {
+                // Date au format ISO : sans ambiguite jour / mois, quel que soit
+                // le logiciel qui la lira.
+                fputcsv($out, [$this->neutralize($row['email']), $row['joinedAt']->format('Y-m-d')], ';', '"', '');
             }
             fclose($out);
         });
@@ -449,6 +550,32 @@ final class MembershipApplicationController extends AbstractController
         return null !== $member
             && !$application->isAnonymized()
             && null === $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
+    }
+
+    /**
+     * Les filtres de la liste, lus dans l'URL — les memes pour l'affichage et
+     * pour l'export. Une valeur inconnue vaut « pas de filtre » : l'URL est
+     * modifiable a la main, rien de ce qu'elle porte n'est de confiance.
+     *
+     * @return array{q: string, status: ?MembershipStatus, type: ?MembershipType, season: ?int, philibert: ?bool, images: ?string, payment: PaymentMethod|string|null}
+     */
+    private function filtersFrom(Request $request): array
+    {
+        $season = $request->query->has('saison') ? (string) $request->query->get('saison') : null;
+        $payment = (string) $request->query->get('paiement');
+        $philibert = (string) $request->query->get('philibert');
+        $images = (string) $request->query->get('photos');
+
+        return [
+            'q' => trim((string) $request->query->get('q')),
+            'status' => MembershipStatus::tryFrom((string) $request->query->get('etat')),
+            'type' => MembershipType::tryFrom((string) $request->query->get('formule')),
+            // Absente : la saison en cours. « toutes » : aucune restriction.
+            'season' => 'toutes' === $season ? null : ((int) $season ?: MembershipSeasons::of(new \DateTimeImmutable())),
+            'philibert' => match ($philibert) { 'oui' => true, 'non' => false, default => null },
+            'images' => \in_array($images, ['refused', 'allowed'], true) ? $images : null,
+            'payment' => 'none' === $payment ? 'none' : PaymentMethod::tryFrom($payment),
+        ];
     }
 
     private function refuseStatusChange(MembershipApplication $application, string $reason): Response

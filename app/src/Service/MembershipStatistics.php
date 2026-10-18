@@ -75,7 +75,9 @@ final class MembershipStatistics
 
             $counters['minors'] += $application->isMinor($this->seasonStart($season)) ? 1 : 0;
             $counters['imageRightsRefused'] += $application->isImageRightsRefused() ? 1 : 0;
-            $counters['philibertConsent'] += $application->isPhilibertConsent() ? 1 : 0;
+            // Hors consommateurs : la formule n'ouvre pas droit a l'avantage, et
+            // l'export Philibert ne les compte pas non plus.
+            $counters['philibertConsent'] += $application->isPhilibertConsent() && MembershipType::Consumer !== $type ? 1 : 0;
             $counters['renewals'] += isset($earlierSeasons[$application->getMember()?->getId()]) ? 1 : 0;
 
             ++$geography[$this->territoryOf($application)];

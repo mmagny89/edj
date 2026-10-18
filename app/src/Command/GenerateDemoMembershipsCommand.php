@@ -257,7 +257,8 @@ final class GenerateDemoMembershipsCommand extends Command
             ->setPhone(0 === $index % 3 ? null : sprintf('06 00 00 %02d %02d', $index % 100, ($index * 3) % 100))
             ->setEmail(sprintf('demo.%02d%s', $index + 1, self::DEMO_DOMAIN))
             ->setMembershipType($type)
-            ->setPhilibertConsent(0 === $index % 2)
+            // Jamais pour un consommateur : le bulletin le refuse.
+            ->setPhilibertConsent(0 === $index % 2 && MembershipType::Consumer !== $type)
             ->setImageRightsRefused(0 === $index % 5)
             ->setStatutesAccepted(true)
             ->setRulesAccepted(true)

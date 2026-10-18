@@ -36,6 +36,9 @@ final class AdminAccessTest extends WebTestCase
         yield 'generation' => ['/admin/evenements/generer'];
         yield 'adhesions' => ['/admin/adhesions'];
         yield 'saisons' => ['/admin/saisons'];
+        // Donnees personnelles, dont celles de mineurs : jamais sans connexion.
+        yield 'export des adhesions' => ['/admin/adhesions/export.csv'];
+        yield 'export Philibert' => ['/admin/adhesions/philibert.csv'];
     }
 
     #[DataProvider('privatePaths')]

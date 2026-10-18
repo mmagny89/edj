@@ -41,6 +41,16 @@ GitHub, par `.github/workflows/publication.yml`.
   de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
   reste un champ mot de passe ordinaire.
 
+- Export de la liste des adhesions, filtree ou non, en CSV avec toutes les
+  informations d'un bulletin : numero, saison, etat, moyen de reglement, montant
+  du, identite, coordonnees, responsable legal, autorisations. Il suit les
+  filtres de la liste, sans sa limite d'affichage, et chaque export est
+  journalise (qui, combien de lignes) : le fichier sort du site avec des
+  donnees personnelles, dont celles de mineurs.
+- Trois filtres de plus sur la liste des adhesions : case Philibert, droit a
+  l'image (photos refusees ou autorisees) et moyen de reglement (virement,
+  especes, cheque, ou aucun). La liste s'ouvre desormais sur la saison en
+  cours ; « Toutes les saisons » est un choix explicite.
 - Renouvellement d'adhesion depuis le site : la page « Bulletin d'adhesion »
   propose de faire une nouvelle adhesion ou de renouveler la sienne. Pour
   renouveler, on saisit son numero d'adherent ; un lien signe, valable deux
@@ -98,6 +108,13 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- L'export Philibert ne contient plus que les adherents actifs de la saison en
+  cours, **hors consommateurs** — la formule gratuite a l'annee n'ouvre pas droit
+  a l'avantage —, avec leur date d'adhesion (`email;date_adhesion`). Le bouton le
+  dit : « Liste Philibert · adherents actifs 2027 ».
+- La formule consommateur ne permet plus de cocher la communication a
+  Philibert : la case se desactive sur le bulletin public, avec la raison, et le
+  serveur le refuse aussi.
 - L'export pour Philibert listait toute adresse autorisee, adhesion validee ou
   non, de toute saison. Il ne contient desormais que les adresses d'adherents
   dont l'adhesion est **validee pour la saison en cours**, sans doublon : la
