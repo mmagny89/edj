@@ -31,6 +31,20 @@ enum StampColor: string
         };
     }
 
+    /**
+     * Classe de couleur du texte dans l'administration. Pas de style en ligne :
+     * la politique de contenu n'autorise les styles que par nonce, et un
+     * attribut « style » est refuse — la couleur du tampon disparaissait en
+     * production sans la moindre erreur visible.
+     */
+    public function textClass(): string
+    {
+        return match ($this) {
+            self::Orange => 'text-orange-700',
+            self::Blue => 'text-blue-700',
+        };
+    }
+
     public function next(): self
     {
         return self::Orange === $this ? self::Blue : self::Orange;

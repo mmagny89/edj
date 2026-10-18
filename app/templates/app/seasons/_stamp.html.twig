@@ -3,7 +3,7 @@
     accessible : les deux sont donc toujours ecrits en toutes lettres a cote. -#}
 {% macro badge(stamp, size = 'text-2xl') %}
     <span class="inline-flex items-center gap-2">
-        <span class="{{ size }} leading-none" style="color: {{ stamp.color.hex }}" aria-hidden="true">{{ stamp.symbol.glyph }}</span>
+        <span class="{{ size }} leading-none {{ stamp.color.textClass }}" aria-hidden="true">{{ stamp.symbol.glyph }}</span>
         <span class="text-sm font-semibold text-slate-700">{{ stamp.symbol.label }} {{ stamp.color.label|lower }}</span>
     </span>
 {% endmacro %}

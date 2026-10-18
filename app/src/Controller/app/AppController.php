@@ -5,6 +5,7 @@ namespace App\Controller\app;
 use App\Enum\MembershipStatus;
 use App\Repository\EventRepository;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\Chart\DashboardCharts;
 use App\Service\MembershipStatistics;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ final class AppController extends AbstractController
         EventRepository $events,
         MembershipApplicationRepository $applications,
         MembershipStatistics $statistics,
+        DashboardCharts $charts,
     ): Response {
         $seasons = $statistics->availableSeasons();
         $season = $request->query->getInt('saison') ?: $statistics->currentSeason();
@@ -34,13 +36,49 @@ final class AppController extends AbstractController
             $season = $statistics->currentSeason();
         }
 
+        $stats = $statistics->forSeason($season);
+        $trend = $statistics->trend();
+        $previous = null;
+        foreach ($trend as $row) {
+            if ($row['season'] === $season - 1) {
+                $previous = $row['active'];
+            }
+        }
+
+        $people = $stats['active'] + $stats['consumers'];
+        $geography = $stats['geography'];
+
         return $this->render('app/index.html.twig', [
             'upcoming' => \array_slice($events->findUpcoming(), 0, 5),
             'applicationCount' => $applications->count([]),
             'pendingCount' => $applications->count(['status' => MembershipStatus::Pending]),
-            'stats' => $statistics->forSeason($season),
+            'stats' => $stats,
+            // Pour le chiffre en vedette : la saison choisie contre la precedente,
+            // lue sur la saison entiere. Nul s'il n'y a pas de precedente.
+            'previousActive' => $previous,
+            'charts' => [
+                'trend' => $charts->seasonTrend($trend, $season, $this->generateUrl('app_index')),
+                'cumulative' => $charts->cumulative($season, $statistics->cumulative($season), $statistics->cumulative($season - 1)),
+                'ages' => $charts->ageBands($stats['ageBands']),
+                'geography' => $charts->bars('geography', [
+                    ['label' => 'Joigny', 'value' => $geography['joigny']],
+                    ['label' => 'Communauté de communes', 'value' => $geography['intercommunality']],
+                    ['label' => 'Hors territoire', 'value' => $geography['outside']],
+                    ['label' => 'Non renseigné', 'value' => $geography['unknown']],
+                ]),
+                'types' => $charts->bars('types', $charts->typeRows($stats['byType'])),
+                'payments' => $charts->bars('payments', [
+                    ['label' => 'Chèque', 'value' => $stats['payments']['cheque']],
+                    ['label' => 'Espèces', 'value' => $stats['payments']['especes']],
+                    ['label' => 'Virement', 'value' => $stats['payments']['virement']],
+                    ['label' => 'Gratuit', 'value' => $stats['payments']['gratuit']],
+                ]),
+                'photos' => $charts->meter('Photos refusées', $stats['imageRightsRefused'], $people),
+                'philibert' => $charts->meter('E-mail transmis à Philibert', $stats['philibertConsent'], $stats['active']),
+            ],
             'seasons' => $seasons,
             'season' => $season,
+            'currentSeason' => $statistics->currentSeason(),
         ]);
     }
 }

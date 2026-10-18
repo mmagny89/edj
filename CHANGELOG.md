@@ -41,6 +41,15 @@ GitHub, par `.github/workflows/publication.yml`.
   de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
   reste un champ mot de passe ordinaire.
 
+- Tableau de bord a graphiques, pour la saison choisie : un chiffre en vedette
+  (adherents a l'annee, compare a la saison precedente), les chiffres cles, puis
+  six graphiques — adherents par saison (nouveaux, renouvellements,
+  consommateurs ; cliquer une saison l'ouvre), cumul mois par mois contre la saison
+  precedente, ages, origine geographique, formules et moyens de reglement — et les
+  autorisations en jauges. Au survol ou au clavier, une infobulle donne les valeurs ;
+  chaque graphique a sa vue en tableau, qui porte les memes nombres. Sans
+  bibliotheque ni ressource externe : des SVG dessines cote serveur, sans style en
+  ligne.
 - Export de la liste des adhesions, filtree ou non, en CSV avec toutes les
   informations d'un bulletin : numero, saison, etat, moyen de reglement, montant
   du, identite, coordonnees, responsable legal, autorisations. Il suit les
@@ -108,6 +117,12 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- La couleur des tampons de saison, dans l'administration, reposait sur un style
+  en ligne que la politique de contenu refuse : en production, le symbole aurait
+  perdu sa couleur sans la moindre erreur. Elle passe par une classe.
+- Dans la liste des adhesions, la colonne « Etat et autorisations » ne montre plus
+  que l'etat : le moyen de reglement et les autorisations se lisent sur la fiche, et
+  se filtrent.
 - L'export Philibert ne contient plus que les adherents actifs de la saison en
   cours, **hors consommateurs** — la formule gratuite a l'annee n'ouvre pas droit
   a l'avantage —, avec leur date d'adhesion (`email;date_adhesion`). Le bouton le

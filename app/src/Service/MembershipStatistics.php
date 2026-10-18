@@ -6,6 +6,7 @@ use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
 use App\Repository\MembershipApplicationRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Chiffres d'une saison, pour le tableau de bord : qui adhere, d'ou vient le
@@ -21,7 +22,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  *  - l'age se calcule sur une date de naissance ramenee au 1er janvier pour
  *    les bulletins anonymises, donc a un an pres pour ceux-la.
  */
-final class MembershipStatistics
+final class MembershipStatistics implements ResetInterface
 {
     /**
      * @param list<string> $intercommunality
@@ -62,6 +63,8 @@ final class MembershipStatistics
         $ages = [];
         $geography = ['joigny' => 0, 'intercommunality' => 0, 'outside' => 0, 'unknown' => 0];
         $byType = [];
+        $ageBands = array_fill_keys(array_keys(self::AGE_BANDS), 0);
+        $payments = ['cheque' => 0, 'especes' => 0, 'virement' => 0, 'gratuit' => 0];
         $counters = ['consumers' => 0, 'renewals' => 0, 'minors' => 0, 'imageRightsRefused' => 0, 'philibertConsent' => 0];
 
         foreach ($validated as $application) {
@@ -84,7 +87,12 @@ final class MembershipStatistics
 
             if (null !== $age = $this->ageAt($application, $season)) {
                 $ages[] = $age;
+                ++$ageBands[$this->ageBand($age)];
             }
+
+            // « Gratuit » : rien n'a ete encaisse parce que rien n'etait du — un
+            // enfant de moins de huit ans, ou la formule consommateur.
+            ++$payments[$application->getPaymentMethod()?->value ?? 'gratuit'];
         }
 
         return [
@@ -103,7 +111,150 @@ final class MembershipStatistics
             'philibertConsent' => $counters['philibertConsent'],
             'geography' => $geography,
             'byType' => $byType,
+            'ageBands' => $ageBands,
+            'payments' => $payments,
         ];
+    }
+
+    /**
+     * Tranches d'age du tableau de bord : borne haute incluse, libelle affiche.
+     * Les moins de huit ans ont leur tranche — ce sont ceux dont l'adhesion est
+     * gratuite — puis les mineurs, puis les adultes par pas de quinze ans.
+     */
+    public const AGE_BANDS = [
+        'under8' => ['label' => '0–7 ans', 'max' => 7],
+        'minor' => ['label' => '8–17 ans', 'max' => 17],
+        'young' => ['label' => '18–29 ans', 'max' => 29],
+        'adult' => ['label' => '30–44 ans', 'max' => 44],
+        'mature' => ['label' => '45–59 ans', 'max' => 59],
+        'senior' => ['label' => '60 ans et +', 'max' => \PHP_INT_MAX],
+    ];
+
+    /**
+     * Une ligne par saison, de la premiere a la saison en cours : combien
+     * d'adherents a l'annee, nouveaux ou renouvelant, et combien de
+     * consommateurs. C'est l'histoire que la saison choisie vient s'inscrire
+     * dedans.
+     *
+     * Un renouvellement est un adherent qui avait deja une adhesion validee
+     * lors d'une saison anterieure — le numero, stable, les relie. Une seule
+     * lecture de la base : tout se compte en memoire.
+     *
+     * @return list<array{season: int, newcomers: int, renewals: int, consumers: int, active: int}>
+     */
+    public function trend(): array
+    {
+        $all = $this->validatedApplications();
+        if ([] === $all) {
+            return [];
+        }
+
+        $firstSeasonOf = [];
+        foreach ($all as $a) {
+            $key = $a->getMember()?->getId();
+            if (null !== $key) {
+                $firstSeasonOf[$key] = min($firstSeasonOf[$key] ?? \PHP_INT_MAX, MembershipSeasons::of($a->getSubmittedAt()));
+            }
+        }
+
+        $rows = [];
+        foreach ($all as $a) {
+            $season = MembershipSeasons::of($a->getSubmittedAt());
+            $rows[$season] ??= ['season' => $season, 'newcomers' => 0, 'renewals' => 0, 'consumers' => 0, 'active' => 0];
+
+            if (MembershipType::Consumer === $a->getMembershipType()) {
+                ++$rows[$season]['consumers'];
+
+                continue;
+            }
+
+            ++$rows[$season]['active'];
+            $renewal = null !== ($key = $a->getMember()?->getId()) && $firstSeasonOf[$key] < $season;
+            ++$rows[$season][$renewal ? 'renewals' : 'newcomers'];
+        }
+
+        // Les saisons sans aucune adhesion figurent aussi, a zero : un trou dans
+        // l'axe ferait croire a deux saisons voisines qui ne le sont pas.
+        $current = $this->currentSeason();
+        $filled = [];
+        for ($season = min(array_keys($rows)); $season <= max($current, max(array_keys($rows))); ++$season) {
+            $filled[] = $rows[$season] ?? ['season' => $season, 'newcomers' => 0, 'renewals' => 0, 'consumers' => 0, 'active' => 0];
+        }
+
+        return $filled;
+    }
+
+    /**
+     * Adherents a l'annee cumules mois par mois sur une saison, d'octobre a
+     * septembre : la courbe qui dit si la saison demarre plus fort ou plus
+     * doucement que la precedente.
+     *
+     * Pour la saison en cours, les mois qui ne sont pas encore venus valent
+     * null : une courbe qui retombe a plat ferait croire a une saison arretee.
+     *
+     * @return list<?int> douze valeurs, octobre en premier
+     */
+    public function cumulative(int $season): array
+    {
+        $perMonth = array_fill(0, 12, 0);
+        foreach ($this->validatedApplications() as $a) {
+            if (MembershipType::Consumer === $a->getMembershipType() || MembershipSeasons::of($a->getSubmittedAt()) !== $season) {
+                continue;
+            }
+            ++$perMonth[self::monthIndex($a->getSubmittedAt())];
+        }
+
+        $lastKnown = $season === $this->currentSeason() ? self::monthIndex(new \DateTimeImmutable()) : 11;
+        $running = 0;
+        $values = [];
+        foreach ($perMonth as $index => $count) {
+            $running += $count;
+            $values[] = $index <= $lastKnown ? $running : null;
+        }
+
+        return $values;
+    }
+
+    /**
+     * Rang du mois dans la saison : octobre 0 ... septembre 11.
+     */
+    public static function monthIndex(\DateTimeImmutable $date): int
+    {
+        return ((int) $date->format('n') + 2) % 12;
+    }
+
+    /**
+     * @var list<MembershipApplication>|null
+     */
+    private ?array $validatedCache = null;
+
+    /**
+     * @return list<MembershipApplication>
+     */
+    private function validatedApplications(): array
+    {
+        return $this->validatedCache ??= $this->applications->findAllValidated();
+    }
+
+    /**
+     * Vide la lecture gardee en memoire. En mode worker le conteneur vit autant
+     * que le worker : sans cela, le tableau de bord d'une requete montrerait les
+     * adhesions de la precedente, ou celles d'avant la derniere validation.
+     */
+    public function reset(): void
+    {
+        $this->validatedCache = null;
+    }
+
+    private function ageBand(int $age): string
+    {
+        foreach (self::AGE_BANDS as $key => $band) {
+            if ($age <= $band['max']) {
+                return $key;
+            }
+        }
+
+        return array_key_last(self::AGE_BANDS);
     }
 
     /**

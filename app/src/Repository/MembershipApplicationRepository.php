@@ -142,6 +142,27 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Tous les bulletins valides, avec leur adherent, du plus ancien au plus
+     * recent : la matiere des courbes du tableau de bord, qui comparent des
+     * saisons entre elles. Une seule requete — un adherent charge en meme temps
+     * que son bulletin, jamais une requete par ligne.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findAllValidated(): array
+    {
+        return $this->createQueryBuilder('a')
+            ->leftJoin('a.member', 'm')
+            ->addSelect('m')
+            ->where('a.status = :validated')
+            ->setParameter('validated', MembershipStatus::Validated)
+            ->orderBy('a.submittedAt', 'ASC')
+            ->addOrderBy('a.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Tous les bulletins d'un adherent, du plus recent au plus ancien : ce que
      * la fiche d'administration montre de son parcours, saison apres saison.
      * Les bulletins annules et anonymises en font partie — c'est l'historique,

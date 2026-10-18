@@ -1,0 +1,221 @@
+{#- Les graphiques du tableau de bord, en SVG a coordonnees en pourcentage.
+
+    Toute la geometrie vient de DashboardCharts : ce fichier ne fait que dessiner.
+    Aucun style en ligne — la politique de contenu les refuse — : les couleurs sont
+    des classes (voir « Graphiques » dans app.css), les positions des attributs SVG.
+
+    Chaque graphique a son jumeau accessible, un tableau de donnees dans un
+    « details » : tout ce que l'infobulle montre s'y lit sans souris. -#}
+
+{# Legende : un trait de couleur et un libelle, jamais le libelle colore. Presente
+   des deux series — une seule n'en a pas besoin, le titre la nomme. #}
+{% macro legend(items) %}
+    {% if items|length > 1 %}
+        <ul class="viz-legend" aria-label="Légende">
+            {% for item in items %}
+                <li><span class="viz-key {{ item.class }}" aria-hidden="true"></span>{{ item.label }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+
+{% macro table(table, caption) %}
+    <details class="viz-data">
+        <summary>Voir les données<span class="sr-only"> : {{ caption }}</span></summary>
+        <div class="relative overflow-x-auto">
+            <table>
+                <caption class="sr-only">{{ caption }}</caption>
+                <thead>
+                    <tr>{% for cell in table.head %}<th scope="col">{{ cell }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                    {% for row in table.rows %}
+                        <tr>
+                            {% for cell in row %}
+                                {% if loop.first %}<th scope="row">{{ cell }}</th>{% else %}<td>{{ cell }}</td>{% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </details>
+{% endmacro %}
+
+{# Colonnes, empilees ou non. Une colonne est une cible de survol entiere : la
+   barre peut etre fine, la zone a viser reste large. #}
+{% macro columns(chart, title, caption) %}
+    {% import _self as v %}
+    {% set selection = chart.columns|filter(c => c.selected)|length > 0 %}
+    <figure class="viz {{ selection ? 'viz-has-selection' }}" data-controller="chart">
+        <figcaption>
+            <h3 class="viz-title">{{ title }}</h3>
+            <p class="viz-caption">{{ caption }}</p>
+            {{ v.legend(chart.series) }}
+        </figcaption>
+
+        <div class="viz-body">
+            <div class="viz-yaxis" aria-hidden="true">
+                {% for tick in chart.ticks %}<span>{{ tick.value }}</span>{% endfor %}
+            </div>
+
+            {# Les colonnes ne se resserrent pas sous 2,75 rem : au-dela, le graphique
+               defile de cote plutot que d'ecraser les etiquettes des saisons. #}
+            <div class="min-w-0 flex-1 overflow-x-auto">
+              <div class="viz-scroll">
+                <svg class="viz-grid" aria-hidden="true" focusable="false">
+                    {% for position in [0, 50, 100] %}
+                        <line x1="0" x2="100%" y1="{{ position }}%" y2="{{ position }}%"/>
+                    {% endfor %}
+                </svg>
+
+                <div class="viz-columns">
+                    {% for column in chart.columns %}
+                        {% set label = column.label ~ ' : ' ~ column.tip.rows|map(r => r.value ~ ' ' ~ (r.label|lower))|join(', ') %}
+                        {% if column.href %}
+                            <a href="{{ column.href }}" class="viz-col {{ column.selected ? 'is-selected' }}"
+                               {{ column.selected ? 'aria-current="true"' }}
+                               aria-label="{{ column.hint }}. {{ label }}"
+                               data-tip="{{ column.tip|json_encode }}"
+                               data-action="pointerenter->chart#show pointerleave->chart#hide focus->chart#show blur->chart#hide">
+                        {% else %}
+                            <div class="viz-col" tabindex="0" role="img" aria-label="{{ label }}"
+                                 data-tip="{{ column.tip|json_encode }}"
+                                 data-action="pointerenter->chart#show pointerleave->chart#hide focus->chart#show blur->chart#hide">
+                        {% endif %}
+                            <svg class="viz-plot" aria-hidden="true" focusable="false">
+                                {% for segment in column.segments %}
+                                    <rect class="{{ segment.class }}" x="25%" width="50%" y="{{ segment.y }}%" height="{{ segment.height }}%" rx="{{ segment.round ? 4 : 0 }}"/>
+                                    {% if segment.round %}
+                                        <rect class="{{ segment.class }}" x="25%" width="50%" y="{{ segment.squareY }}%" height="{{ segment.squareHeight }}%"/>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if column.total > 0 %}
+                                    <text class="viz-value" x="50%" y="{{ column.labelY }}%" dy="-6" text-anchor="middle">{{ column.total }}</text>
+                                {% endif %}
+                            </svg>
+                            <span class="viz-xlabel">{{ column.label }}</span>
+                        {% if column.href %}</a>{% else %}</div>{% endif %}
+                    {% endfor %}
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <div class="viz-tip" data-chart-target="tip" role="status" hidden></div>
+        {{ v.table(chart.table, title) }}
+    </figure>
+{% endmacro %}
+
+{# Courbes : la saison choisie en couleur, la precedente en gris. Une croix suit le
+   pointeur et se cale sur le mois le plus proche ; l'infobulle donne les deux
+   saisons pour ce mois. #}
+{% macro line(chart, title, caption) %}
+    {% import _self as v %}
+    <figure class="viz" data-controller="chart">
+        <figcaption>
+            <h3 class="viz-title">{{ title }}</h3>
+            <p class="viz-caption">{{ caption }}</p>
+            {{ v.legend(chart.series) }}
+        </figcaption>
+
+        <div class="viz-body">
+            <div class="viz-yaxis" aria-hidden="true">
+                {% for tick in chart.ticks %}<span>{{ tick.value }}</span>{% endfor %}
+            </div>
+
+            <div class="relative min-w-0 flex-1">
+                <svg class="viz-grid" aria-hidden="true" focusable="false">
+                    {% for position in [0, 50, 100] %}
+                        <line x1="0" x2="100%" y1="{{ position }}%" y2="{{ position }}%"/>
+                    {% endfor %}
+                </svg>
+
+                {# Traits : repere 0-100 etire a la boite, « non-scaling-stroke » garde
+                   les 2 px quelle que soit la largeur. #}
+                <svg class="viz-plot viz-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                    {% for s in chart.series|reverse %}
+                        {% if s.line.path %}
+                            <path class="viz-line {{ s.class }}" d="{{ s.line.path }}" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                        {% endif %}
+                    {% endfor %}
+                </svg>
+
+                {# Reperes et zones de survol : coordonnees en pourcentage, donc ronds
+                   (un repere etire par le repere ci-dessus serait une ellipse). #}
+                <svg class="viz-plot viz-overlay" aria-hidden="false" focusable="false">
+                    <line class="viz-cross" data-chart-target="cross" x1="0" x2="0" y1="0" y2="100%"/>
+                    {% for s in chart.series %}
+                        {% if s.line.end %}
+                            <circle class="viz-dot {{ s.class }}" cx="{{ s.line.end.x }}%" cy="{{ s.line.end.y }}%" r="4"/>
+                        {% endif %}
+                    {% endfor %}
+                    {% for hit in chart.hits %}
+                        <rect class="viz-hit" x="{{ hit.start }}%" y="0" width="{{ hit.width }}%" height="100%" tabindex="0"
+                              role="img" aria-label="{{ hit.title ~ ' : ' ~ hit.rows|map(r => r.label ~ ' ' ~ r.value)|join(', ') }}"
+                              data-x="{{ hit.x }}%"
+                              data-tip="{{ {title: hit.title, rows: hit.rows}|json_encode }}"
+                              data-action="pointerenter->chart#show pointerleave->chart#hide focus->chart#show blur->chart#hide"/>
+                    {% endfor %}
+                </svg>
+
+                <div class="viz-months" aria-hidden="true">
+                    {% for month in chart.months %}<span>{{ month }}</span>{% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="viz-tip" data-chart-target="tip" role="status" hidden></div>
+        {{ v.table(chart.table, title) }}
+    </figure>
+{% endmacro %}
+
+{# Barres horizontales : un libelle, une barre, une valeur. Le libelle et la valeur
+   sont du texte HTML a taille reelle ; seule la barre est un SVG. #}
+{% macro bars(chart, title, caption) %}
+    {% import _self as v %}
+    <figure class="viz" data-controller="chart">
+        <figcaption>
+            <h3 class="viz-title">{{ title }}</h3>
+            <p class="viz-caption">{{ caption }}</p>
+        </figcaption>
+
+        <ul class="viz-bars">
+            {% for row in chart.rows %}
+                <li class="viz-row" tabindex="0" aria-label="{{ row.label }} : {{ row.value }}{{ chart.total > 0 ? ' (' ~ row.share ~ ' %)' }}"
+                    data-tip="{{ row.tip|json_encode }}"
+                    data-action="pointerenter->chart#show pointerleave->chart#hide focus->chart#show blur->chart#hide">
+                    <span class="viz-rowlabel">{{ row.label }}</span>
+                    <svg class="viz-bar" aria-hidden="true" focusable="false">
+                        {% if row.value > 0 %}
+                            <rect class="{{ row.class }}" x="0" y="0" width="{{ row.width }}%" height="100%" rx="4"/>
+                            {# Moitie gauche carree : la barre part d'une ligne droite, seul le bout est arrondi. #}
+                            <rect class="{{ row.class }}" x="0" y="0" width="{{ row.width / 2 }}%" height="100%"/>
+                        {% endif %}
+                    </svg>
+                    <span class="viz-rowvalue">{{ row.value }}{% if chart.total > 0 %}<span class="viz-rowshare"> · {{ row.share }} %</span>{% endif %}</span>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <div class="viz-tip" data-chart-target="tip" role="status" hidden></div>
+        {{ v.table({head: ['', 'Nombre', 'Part'], rows: chart.rows|map(r => [r.label, r.value, r.share ~ ' %'])}, title) }}
+    </figure>
+{% endmacro %}
+
+{# Jauge : la part remplie sur une piste plus claire de la meme teinte. #}
+{% macro meter(meter) %}
+    <div class="viz-meter" role="meter" aria-valuemin="0" aria-valuemax="{{ meter.of }}" aria-valuenow="{{ meter.value }}" aria-label="{{ meter.label }}">
+        <div class="flex items-baseline justify-between gap-3 text-sm">
+            <span class="font-semibold text-slate-700">{{ meter.label }}</span>
+            <span class="tabular-nums text-slate-600"><strong class="text-ink">{{ meter.value }}</strong> sur {{ meter.of }}</span>
+        </div>
+        <svg class="viz-track" aria-hidden="true" focusable="false">
+            <rect class="viz-trackbg" x="0" y="0" width="100%" height="100%" rx="4"/>
+            {% if meter.value > 0 %}
+                <rect class="viz-s1" x="0" y="0" width="{{ meter.width }}%" height="100%" rx="4"/>
+                <rect class="viz-s1" x="0" y="0" width="{{ meter.width / 2 }}%" height="100%"/>
+            {% endif %}
+        </svg>
+    </div>
+{% endmacro %}
