@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.4.0] - 2026-10-18
+
 ### Ajoute
 
 - Feuille d'emargement pour les assemblees generales (ordinaires et extraordinaires), en PDF A4 :
