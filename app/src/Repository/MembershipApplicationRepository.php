@@ -310,6 +310,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->select('a.email AS email, a.submittedAt AS joinedAt')
             ->where('a.philibertConsent = true')
             ->andWhere('a.anonymizedAt IS NULL')
+            ->andWhere('a.email IS NOT NULL')
             ->andWhere('a.status = :validated')
             ->andWhere('a.membershipType != :consumer')
             ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')

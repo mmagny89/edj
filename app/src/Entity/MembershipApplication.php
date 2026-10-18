@@ -90,11 +90,13 @@ class MembershipApplication
     private ?string $phone = null;
 
     /**
-     * Obligatoire alors que le bulletin papier le laisse facultatif : depose
-     * en ligne, c'est le seul moyen pour l'association de repondre.
+     * Obligatoire pour un bulletin depose en ligne — c'est le seul moyen pour
+     * l'association de repondre —, facultative pour une fiche papier ou un fichier
+     * repris : beaucoup d'adherents n'en ont pas, ou n'en ont jamais donne. Sans
+     * adresse, la personne n'a ni confirmation ni lien d'acces ; le bureau la joint
+     * autrement. Voir validateConditionalFields().
      */
-    #[ORM\Column(length: 180)]
-    #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire.")]
+    #[ORM\Column(length: 180, nullable: true)]
     #[Assert\Email(message: "Cette adresse e-mail n'est pas valide.")]
     #[Assert\Length(max: 180)]
     private ?string $email = null;
@@ -483,6 +485,12 @@ class MembershipApplication
     #[Assert\Callback(groups: ['Default', 'upgrade'])]
     public function validateConditionalFields(ExecutionContextInterface $context): void
     {
+        // En ligne, l'adresse est le seul moyen de repondre : elle est obligatoire.
+        // Une fiche papier ou un fichier repris peut ne pas en avoir.
+        if (MembershipSource::Online === $this->source && (null === $this->email || '' === trim($this->email))) {
+            $context->buildViolation("L'adresse e-mail est obligatoire.")->atPath('email')->addViolation();
+        }
+
         if (MembershipType::Family === $this->membershipType) {
             if (!$this->principalMemberName) {
                 $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
@@ -861,6 +869,24 @@ class MembershipApplication
     public function enterFromPaper(?int $adminId): static
     {
         $this->source = MembershipSource::Paper;
+        $this->enteredById = $adminId;
+
+        return $this;
+    }
+
+    public function isImported(): bool
+    {
+        return MembershipSource::Import === $this->source;
+    }
+
+    /**
+     * Marque le bulletin comme repris d'un fichier d'adherents existants, par
+     * l'administrateur donne. L'adhesion date de ce que dit le fichier, pas du jour
+     * de l'import : c'est la date d'origine qui compte pour la saison.
+     */
+    public function enterFromImport(?int $adminId): static
+    {
+        $this->source = MembershipSource::Import;
         $this->enteredById = $adminId;
 
         return $this;

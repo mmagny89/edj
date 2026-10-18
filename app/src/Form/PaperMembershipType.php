@@ -48,7 +48,10 @@ final class PaperMembershipType extends AbstractType
             ->add('phone', TelType::class, ['label' => 'Téléphone', 'required' => false])
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
-                'help' => 'Pour le courriel de confirmation, et pour la liste Philibert si l\'autorisation est donnée.',
+                // Une fiche papier peut ne pas en avoir : la personne n'aura alors ni
+                // confirmation ni lien d'acces, et le bureau la joint autrement.
+                'required' => false,
+                'help' => 'Pour le courriel de confirmation, et pour la liste Philibert si l\'autorisation est donnée. Laisser vide si la personne n\'en a pas.',
             ])
             ->add('membershipType', EnumType::class, [
                 'label' => "Formule d'adhésion",

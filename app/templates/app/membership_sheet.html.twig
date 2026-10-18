@@ -40,7 +40,7 @@
                     <dt class="font-semibold text-slate-600">Adresse</dt>
                     <dd>{% if application.address %}{{ application.address }}, {% endif %}{{ application.postalCode }} {{ application.city }}</dd>
                     <dt class="font-semibold text-slate-600">Téléphone</dt><dd>{{ application.phone ?: '—' }}</dd>
-                    <dt class="font-semibold text-slate-600">E-mail</dt><dd>{{ application.email }}</dd>
+                    <dt class="font-semibold text-slate-600">E-mail</dt><dd>{{ application.email ?: '—' }}</dd>
                 </dl>
             </section>
 

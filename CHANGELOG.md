@@ -10,6 +10,20 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Ajoute
 
+- Import d'une liste d'adherents depuis un fichier Excel (`app:memberships:import`).
+  Simulation par defaut : le fichier est lu et compris, le compte rendu dit ce qui sera
+  importe, ecarte ou refuse, rien n'est ecrit — pas meme un numero d'adherent.
+  `--appliquer` ecrit, tout ou rien. Les colonnes se reconnaissent par leur en-tete ;
+  celles sans usage dans la fiche (sexe, reseaux sociaux, lettre d'information,
+  numero WhatsApp) sont nommees et laissees de cote. Le sens de la colonne des photos
+  est un choix explicite (`--image=refus|accord`), jamais une valeur par defaut. Relancer
+  un import est sans danger : une personne deja inscrite pour la saison est ecartee. Le
+  compte rendu ne nomme personne (`--noms` pour les afficher). Le lecteur de classeurs,
+  sans dependance, refuse archives et XML hostiles.
+- L'adresse e-mail d'un bulletin est facultative hors du formulaire en ligne : une
+  fiche papier ou un fichier repris peut decrire des personnes qui n'en ont pas — dans
+  le fichier de l'association, pres d'un tiers. Elles ne recoivent ni confirmation ni
+  lien d'acces, et le bureau les joint autrement. Obligatoire en ligne, comme avant.
 - Passage d'un adherent consommateur a l'adhesion annuelle depuis l'administration :
   la fiche d'un consommateur de la saison en cours propose « Passer a l'adhesion
   annuelle ». C'est la meme adhesion, sous le meme numero — pas un renouvellement,
