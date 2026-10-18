@@ -212,4 +212,29 @@
             {% endif %}
         </section>
     </div>
+
+    {# Historique : discret a dessein. Il repond a « qui a fait quoi, et
+       quand » quand on le cherche, sans disputer la place aux informations
+       de l'adhesion. Il ne porte aucune donnee de l'adherent : il survit donc
+       a l'anonymisation du bulletin qu'il raconte. #}
+    {% if application.history is not empty %}
+        <section class="mt-8 border-t border-slate-200 pt-4" aria-labelledby="t-historique">
+            <h2 id="t-historique" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Historique</h2>
+            <ol class="mt-2 space-y-1 text-xs text-slate-500">
+                {% for event in application.history %}
+                    <li>
+                        <time datetime="{{ event.occurredAt|date('Y-m-d\\TH:i') }}">{{ event.occurredAt|date('d/m/Y à H:i') }}</time>
+                        — {{ event.type.label }}{% if event.detail %} ({{ event.detail }}){% endif %},
+                        {% if event.actorId is null %}
+                            auteur inconnu
+                        {% elseif actors[event.actorId] is defined %}
+                            par {{ actors[event.actorId] }}
+                        {% else %}
+                            par un compte supprimé
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+    {% endif %}
 {% endblock %}

@@ -2,12 +2,15 @@
 
 namespace App\Entity;
 
+use App\Enum\MembershipEventType;
 use App\Enum\MembershipSource;
 use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
 use App\Service\MemberDirectory;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -195,9 +198,33 @@ class MembershipApplication
     #[ORM\Column(nullable: true)]
     private ?int $statusChangedById = null;
 
+    /**
+     * Les decisions du bureau sur ce bulletin, de la plus ancienne a la plus
+     * recente : qui a valide, annule, remis en attente ou anonymise, et quand.
+     *
+     * @var Collection<int, MembershipEvent>
+     */
+    #[ORM\OneToMany(targetEntity: MembershipEvent::class, mappedBy: 'application', cascade: ['persist'])]
+    #[ORM\OrderBy(['occurredAt' => 'ASC', 'id' => 'ASC'])]
+    private Collection $history;
+
     public function __construct()
     {
         $this->submittedAt = new \DateTimeImmutable();
+        $this->history = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, MembershipEvent>
+     */
+    public function getHistory(): Collection
+    {
+        return $this->history;
+    }
+
+    private function record(MembershipEventType $type, ?int $actorId, ?\DateTimeImmutable $at, ?string $detail = null): void
+    {
+        $this->history->add(new MembershipEvent($this, $type, $actorId, $at, $detail));
     }
 
     public function getMember(): ?Member
@@ -268,6 +295,7 @@ class MembershipApplication
 
         $this->status = MembershipStatus::Validated;
         $this->paymentMethod = $paymentMethod;
+        $this->record(MembershipEventType::Validated, $adminId, $now, $paymentMethod?->value);
 
         return $this->recordStatusChange($adminId, $now);
     }
@@ -280,6 +308,7 @@ class MembershipApplication
     {
         $this->status = MembershipStatus::Cancelled;
         $this->paymentMethod = null;
+        $this->record(MembershipEventType::Cancelled, $adminId, $now);
 
         return $this->recordStatusChange($adminId, $now);
     }
@@ -292,6 +321,7 @@ class MembershipApplication
     {
         $this->status = MembershipStatus::Pending;
         $this->paymentMethod = null;
+        $this->record(MembershipEventType::Reopened, $adminId, $now);
 
         return $this->recordStatusChange($adminId, $now);
     }
@@ -683,7 +713,7 @@ class MembershipApplication
      * Idempotente : anonymiser deux fois ne change rien, et conserve la date
      * de la premiere anonymisation.
      */
-    public function anonymize(?\DateTimeImmutable $now = null): static
+    public function anonymize(?\DateTimeImmutable $now = null, ?int $adminId = null): static
     {
         if ($this->isAnonymized()) {
             return $this;
@@ -704,6 +734,7 @@ class MembershipApplication
         $this->signaturePlace = '—';
         $this->signatureName = '—';
         $this->anonymizedAt = $now ?? new \DateTimeImmutable();
+        $this->record(MembershipEventType::Anonymized, $adminId, $this->anonymizedAt);
 
         return $this;
     }

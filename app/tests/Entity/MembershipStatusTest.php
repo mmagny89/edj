@@ -79,4 +79,37 @@ final class MembershipStatusTest extends TestCase
         self::assertTrue($application->isPending());
         self::assertNull($application->getPaymentMethod());
     }
+
+    /**
+     * L'historique dit qui a decide quoi, dans l'ordre : c'est ce qui permet de
+     * repondre « qui a annule cette adhesion ? » des mois apres.
+     */
+    public function testTheHistoryKeepsWhoDecidedWhatInOrder(): void
+    {
+        $application = $this->application()
+            ->validate(PaymentMethod::Cheque, 7, new \DateTimeImmutable('2026-10-05 10:00'))
+            ->cancel(9, new \DateTimeImmutable('2026-10-06 11:30'))
+            ->anonymize(new \DateTimeImmutable('2026-10-07 09:00'), 9);
+
+        $events = $application->getHistory()->toArray();
+
+        self::assertSame(
+            ['validee', 'annulee', 'anonymisee'],
+            array_map(static fn ($e) => $e->getType()->value, $events),
+        );
+        self::assertSame([7, 9, 9], array_map(static fn ($e) => $e->getActorId(), $events));
+        self::assertSame('cheque', $events[0]->getDetail());
+    }
+
+    /**
+     * Anonymiser deux fois ne change rien : la seconde ne s'inscrit pas non
+     * plus, sans quoi l'historique mentirait sur la date de l'effacement.
+     */
+    public function testAnonymizingTwiceRecordsItOnce(): void
+    {
+        $application = $this->application()->anonymize(adminId: 7)->anonymize(adminId: 9);
+
+        self::assertCount(1, $application->getHistory());
+        self::assertSame(7, $application->getHistory()->first()->getActorId());
+    }
 }

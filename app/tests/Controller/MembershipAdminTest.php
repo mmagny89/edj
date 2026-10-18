@@ -44,7 +44,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->loginUser($provider->loadUserByIdentifier($identifier));
     }
 
-    private function create(string $email, bool $philibert = false, string $first = 'Camille'): MembershipApplication
+    private function create(string $email, bool $philibert = false, string $first = 'Camille', bool $validated = false, ?string $submittedAt = null): MembershipApplication
     {
         $application = (new MembershipApplication())
             ->setLastName('Durand')
@@ -57,6 +57,12 @@ final class MembershipAdminTest extends WebTestCase
             ->setPhilibertConsent($philibert)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($first.' Durand');
+        if (null !== $submittedAt) {
+            $application->setSubmittedAt(new \DateTimeImmutable($submittedAt));
+        }
+        if ($validated) {
+            $application->validate(PaymentMethod::Cheque, null);
+        }
         static::getContainer()->get(MemberDirectory::class)->attach($application);
         $this->entityManager->persist($application);
         $this->entityManager->flush();
@@ -159,27 +165,76 @@ final class MembershipAdminTest extends WebTestCase
         self::assertFalse($this->entityManager->find(MembershipApplication::class, $application->getId())->isAnonymized());
     }
 
+    /**
+     * La liste part chez un tiers : elle ne nomme que des adherents a jour.
+     * Chaque ligne ci-dessous est une raison d'etre exclu, sauf la premiere.
+     */
     public function testPhilibertListHoldsOnlyConsentingNonAnonymizedAddresses(): void
     {
-        $this->create('oui@example.test', philibert: true);
-        $this->create('non@example.test', philibert: false);
-        $this->create('anonyme@example.test', philibert: true)->anonymize();
-        $this->create('OUI@Example.test', philibert: true, first: 'Doublon');
+        $this->create('oui@example.test', philibert: true, validated: true);
+        $this->create('non@example.test', philibert: false, validated: true);
+        $this->create('anonyme@example.test', philibert: true, validated: true)->anonymize();
+        $this->create('OUI@Example.test', philibert: true, first: 'Doublon', validated: true);
         $this->entityManager->flush();
 
-        $this->client->request('GET', '/admin/adhesions/philibert.csv');
-        $response = $this->client->getResponse();
-        $lines = array_values(array_filter(explode("\n", ltrim((string) $this->client->getInternalResponse()->getContent(), "\xEF\xBB\xBF"))));
+        self::assertSame(['email', 'oui@example.test'], $this->philibertLines());
+        self::assertStringContainsString('text/csv', (string) $this->client->getResponse()->headers->get('Content-Type'));
+        self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+    }
 
+    public function testPhilibertListExcludesAnApplicationNotYetPaid(): void
+    {
+        $this->create('attente@example.test', philibert: true);
+
+        self::assertSame(['email'], $this->philibertLines());
+    }
+
+    public function testPhilibertListExcludesACancelledApplication(): void
+    {
+        $this->create('annulee@example.test', philibert: true, validated: true)->cancel(null);
+        $this->entityManager->flush();
+
+        self::assertSame(['email'], $this->philibertLines());
+    }
+
+    /**
+     * Une adhesion d'une saison passee n'engage plus personne : transmettre
+     * son adresse serait communiquer celle de quelqu'un qui n'est plus
+     * adherent.
+     */
+    public function testPhilibertListExcludesAPastSeason(): void
+    {
+        $this->create('ancien@example.test', philibert: true, validated: true, submittedAt: '-2 years');
+
+        self::assertSame(['email'], $this->philibertLines());
+    }
+
+    /**
+     * Un foyer qui a plusieurs bulletins valides sur une meme adresse ne la
+     * recoit qu'une fois, quelle que soit la casse.
+     */
+    public function testPhilibertListHasNoDuplicate(): void
+    {
+        $this->create('foyer@example.test', philibert: true, validated: true);
+        $this->create('FOYER@example.test', philibert: true, first: 'Alice', validated: true);
+
+        self::assertSame(['email', 'foyer@example.test'], $this->philibertLines());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function philibertLines(): array
+    {
+        $this->client->request('GET', '/admin/adhesions/philibert.csv');
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
-        self::assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
-        self::assertSame(['email', 'oui@example.test'], array_map('trim', $lines));
+
+        return array_map('trim', array_values(array_filter(explode("\n", ltrim((string) $this->client->getInternalResponse()->getContent(), "\xEF\xBB\xBF")))));
     }
 
     public function testPhilibertListContainsNothingButTheEmail(): void
     {
-        $this->create('oui@example.test', philibert: true, first: 'Camille');
+        $this->create('oui@example.test', philibert: true, first: 'Camille', validated: true);
 
         $this->client->request('GET', '/admin/adhesions/philibert.csv');
         $content = (string) $this->client->getInternalResponse()->getContent();
@@ -372,6 +427,35 @@ final class MembershipAdminTest extends WebTestCase
         $this->submitStatus($application, "Valider l'adhésion", remove: ['paymentMethod']);
 
         self::assertTrue($this->reload($application)->isPending());
+    }
+
+    /**
+     * Qui a decide quoi, et quand : l'historique se lit sur la fiche, y
+     * compris apres l'anonymisation — il ne porte aucune donnee de l'adherent.
+     */
+    public function testTheHistoryRecordsEveryDecision(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->submitStatus($application, "Valider l'adhésion", ['paymentMethod' => 'cheque']);
+        $this->submitStatus($application, "Annuler l'adhésion");
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+        $text = $crawler->filter('#t-historique')->ancestors()->first()->text();
+
+        self::assertStringContainsString('Adhésion validée', $text);
+        self::assertStringContainsString('Adhésion annulée', $text);
+    }
+
+    public function testAnonymizationIsAddedToTheHistory(): void
+    {
+        $application = $this->create('camille@example.test');
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+        $this->client->submit($crawler->selectButton('Anonymiser')->form());
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertStringContainsString('Bulletin anonymisé', $crawler->filter('#t-historique')->ancestors()->first()->text());
     }
 
     public function testCancellationLeavesTheBulletinReadable(): void

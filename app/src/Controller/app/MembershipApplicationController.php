@@ -12,6 +12,8 @@ use App\Service\MemberDirectory;
 use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
 use App\Repository\MembershipApplicationRepository;
+use App\Repository\UserRepository;
+use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,6 +41,7 @@ final class MembershipApplicationController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
         private readonly MemberDirectory $members,
+        private readonly UserRepository $users,
     ) {
     }
 
@@ -63,6 +66,7 @@ final class MembershipApplicationController extends AbstractController
             'filtered' => '' !== $filters['q'] || null !== $filters['status'] || null !== $filters['type'] || null !== $filters['season'],
             'seasons' => $this->applications->seasonsWithApplications(),
             'philibertCount' => \count($this->applications->findPhilibertEmails()),
+            'philibertSeason' => MembershipSeasons::of(new \DateTimeImmutable()),
         ]);
     }
 
@@ -140,7 +144,8 @@ final class MembershipApplicationController extends AbstractController
 
         $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
         $response->headers->set('Content-Disposition', sprintf(
-            'attachment; filename="philibert-%s.csv"',
+            'attachment; filename="philibert-saison-%d-%s.csv"',
+            MembershipSeasons::of(new \DateTimeImmutable()),
             (new \DateTimeImmutable())->format('Y-m-d'),
         ));
 
@@ -155,6 +160,7 @@ final class MembershipApplicationController extends AbstractController
             // Le bulletin public laisse saisir l'adherent principal en texte
             // libre : la fiche dit si ce nom correspond a une adhesion
             // individuelle connue, plutot que de le presenter comme acquis.
+            'actors' => $this->actorsOf($application),
             'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
                 ? $this->applications->findIndividualByName((string) $application->getPrincipalMemberName())
                 : null,
@@ -272,7 +278,7 @@ final class MembershipApplicationController extends AbstractController
             return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
         }
 
-        $application->anonymize();
+        $application->anonymize(adminId: $this->adminId());
         if ($member = $application->getMember()) {
             $this->members->forgetIfFullyAnonymized($member);
         }
@@ -311,7 +317,7 @@ final class MembershipApplicationController extends AbstractController
         $count = 0;
         foreach ($this->applications->findBy(['id' => $ids]) as $application) {
             if (!$application->isAnonymized()) {
-                $application->anonymize();
+                $application->anonymize(adminId: $this->adminId());
                 ++$count;
             }
             if ($member = $application->getMember()) {
@@ -323,6 +329,30 @@ final class MembershipApplicationController extends AbstractController
         $this->addFlash('success', sprintf('%d bulletin(s) anonymisé(s).', $count));
 
         return $this->redirectToRoute('app_membership_applications');
+    }
+
+    /**
+     * Les adresses des administrateurs qui ont decide, indexees par
+     * identifiant. L'historique ne garde que l'identifiant : un compte supprime
+     * depuis n'a plus d'entree ici, et la fiche l'ecrit comme tel.
+     *
+     * @return array<int, string>
+     */
+    private function actorsOf(MembershipApplication $application): array
+    {
+        $ids = [];
+        foreach ($application->getHistory() as $event) {
+            if (null !== $event->getActorId()) {
+                $ids[$event->getActorId()] = true;
+            }
+        }
+
+        $actors = [];
+        foreach ([] === $ids ? [] : $this->users->findBy(['id' => array_keys($ids)]) as $user) {
+            $actors[(int) $user->getId()] = (string) $user->getEmail();
+        }
+
+        return $actors;
     }
 
     private function refuseStatusChange(MembershipApplication $application, string $reason): Response

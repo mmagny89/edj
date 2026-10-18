@@ -82,10 +82,11 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             // Une saison court du 1er octobre au 30 septembre et porte le
             // millesime de l'annee qu'elle couvre (voir MembershipSeasons) :
             // la saison 2027 va du 1er octobre 2026 au 30 septembre 2027.
+            [$from, $to] = self::seasonBounds($season);
             $query
                 ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
-                ->setParameter('from', new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season - 1)))
-                ->setParameter('to', new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season)));
+                ->setParameter('from', $from)
+                ->setParameter('to', $to);
         }
 
         return $query->getQuery()->getResult();
@@ -197,29 +198,60 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Adresses des adherents qui ont autorise leur communication a Philibert,
-     * hors bulletins anonymises, sans doublon, de la plus ancienne a la plus
-     * recente.
+     * Adresses a transmettre a Philibert : celles dont le titulaire a coche
+     * l'autorisation ET dont l'adhesion est **validee pour la saison en
+     * cours**, sans doublon, de la plus ancienne a la plus recente.
+     *
+     * La liste part chez un tiers : elle ne doit nommer que des adherents a
+     * jour. Une adhesion en attente n'est pas encaissee, une adhesion annulee
+     * ne compte plus, et celle d'une saison passee n'engage plus personne — la
+     * transmettre serait communiquer l'adresse de quelqu'un qui n'est plus
+     * adherent. Un bulletin anonymise n'a de toute facon plus d'adresse.
+     *
+     * L'autorisation porte sur l'adresse e-mail seule : la liste ne contient
+     * rien d'autre.
      *
      * @return list<string>
      */
-    public function findPhilibertEmails(): array
+    public function findPhilibertEmails(?\DateTimeImmutable $now = null): array
     {
+        [$from, $to] = self::seasonBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
+
         $rows = $this->createQueryBuilder('a')
             ->select('a.email')
             ->where('a.philibertConsent = true')
             ->andWhere('a.anonymizedAt IS NULL')
+            ->andWhere('a.status = :validated')
+            ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
+            ->setParameter('validated', MembershipStatus::Validated)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
             ->orderBy('a.submittedAt', 'ASC')
             ->getQuery()
             ->getSingleColumnResult();
 
         // La casse ne distingue pas deux adresses : un meme foyer qui depose
-        // deux bulletins ne doit pas recevoir deux fois le message.
+        // plusieurs bulletins ne doit pas recevoir plusieurs fois le message.
         $unique = [];
         foreach ($rows as $email) {
             $unique[mb_strtolower((string) $email)] ??= (string) $email;
         }
 
         return array_values($unique);
+    }
+
+    /**
+     * Du 1er octobre de l'annee precedente (inclus) au 1er octobre du
+     * millesime (exclu) : la saison 2027 va du 1er octobre 2026 au 30
+     * septembre 2027.
+     *
+     * @return array{\DateTimeImmutable, \DateTimeImmutable}
+     */
+    public static function seasonBounds(int $season): array
+    {
+        return [
+            new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season - 1)),
+            new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season)),
+        ];
     }
 }
