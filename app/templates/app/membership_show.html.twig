@@ -142,7 +142,13 @@
                     {{ f.row('Téléphone', application.phone) }}
                     <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
                         <dt class="text-sm font-semibold text-slate-600">E-mail</dt>
-                        <dd class="sm:col-span-2"><a class="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.email }}">{{ application.email }}</a></dd>
+                        <dd class="sm:col-span-2">
+                            {% if application.email %}
+                                <a class="font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.email }}">{{ application.email }}</a>
+                            {% else %}
+                                <span class="text-slate-500">Aucune adresse e-mail : cette personne ne reçoit ni confirmation ni lien d'accès.</span>
+                            {% endif %}
+                        </dd>
                     </div>
                 </dl>
             </section>

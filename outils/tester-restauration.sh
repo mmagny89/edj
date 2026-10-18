@@ -5,6 +5,9 @@
 #   sh outils/tester-restauration.sh prod                  # la plus recente
 #   sh outils/tester-restauration.sh prod fichier.sql.gz   # une sauvegarde precise
 #
+# Une sauvegarde chiffree (.sql.gz.enc) se restaure avec la meme phrase que celle qui
+# l'a produite : BACKUP_PASSPHRASE_FILE=/chemin/phrase sh outils/tester-restauration.sh prod
+#
 # Un dump jamais restaure n'est pas une sauvegarde : c'est un fichier dont on
 # espere qu'il marche. Ce script restaure dans une base JETABLE, au nom
 # distinct, sur le meme serveur PostgreSQL, compte les lignes des tables qui
@@ -31,7 +34,7 @@ cd "$PROJET"
 DOSSIER=/srv/sauvegardes/edj-$ENVIRONNEMENT
 FICHIER=${2:-}
 if [ -z "$FICHIER" ]; then
-	FICHIER=$(ls -1t "$DOSSIER"/edj-"$ENVIRONNEMENT"-*.sql.gz 2>/dev/null | head -n 1 || true)
+	FICHIER=$(ls -1t "$DOSSIER"/edj-"$ENVIRONNEMENT"-*.sql.gz "$DOSSIER"/edj-"$ENVIRONNEMENT"-*.sql.gz.enc 2>/dev/null | head -n 1 || true)
 fi
 if [ -z "$FICHIER" ] || [ ! -f "$FICHIER" ]; then
 	echo "Aucune sauvegarde a restaurer (cherche dans $DOSSIER)." >&2
@@ -41,6 +44,28 @@ fi
 journal() {
 	echo "[$(date '+%F %T')] $*"
 }
+
+# Lit l'archive, chiffree ou non, et ecrit le SQL sur la sortie standard.
+lire() {
+	case "$1" in
+		*.enc)
+			if [ -z "${BACKUP_PASSPHRASE_FILE:-}" ] || [ ! -s "$BACKUP_PASSPHRASE_FILE" ]; then
+				echo "Cette sauvegarde est chiffree : indiquer BACKUP_PASSPHRASE_FILE=/chemin/phrase." >&2
+				return 1
+			fi
+			openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass "file:$BACKUP_PASSPHRASE_FILE" -in "$1" | gzip -dc
+			;;
+		*) gzip -dc "$1" ;;
+	esac
+}
+
+# L'archive doit d'abord se lire : une mauvaise phrase ou un fichier abime produit
+# un flux vide, que psql accepterait sans rien restaurer — et l'erreur serait
+# alors « la table manque », loin de sa cause.
+if ! lire "$FICHIER" | head -c 64 | grep -q .; then
+	journal "ECHEC : l'archive est illisible (mauvaise phrase de chiffrement, ou fichier abime)."
+	exit 1
+fi
 
 UTILISATEUR=$($COMPOSE exec -T database printenv POSTGRES_USER)
 BASE=$($COMPOSE exec -T database printenv POSTGRES_DB)
@@ -60,7 +85,7 @@ journal "Restauration de $FICHIER dans la base jetable $ESSAI"
 psql_admin -c "DROP DATABASE IF EXISTS \"$ESSAI\"" >/dev/null
 psql_admin -c "CREATE DATABASE \"$ESSAI\"" >/dev/null
 
-if ! gzip -dc "$FICHIER" | $COMPOSE exec -T database psql -U "$UTILISATEUR" -d "$ESSAI" -v ON_ERROR_STOP=1 -q >/dev/null; then
+if ! lire "$FICHIER" | $COMPOSE exec -T database psql -U "$UTILISATEUR" -d "$ESSAI" -v ON_ERROR_STOP=1 -q >/dev/null; then
 	journal "ECHEC : la restauration a rencontre une erreur."
 	exit 1
 fi

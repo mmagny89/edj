@@ -1,0 +1,26 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Import - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Importer des adhérents</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        Reprenez une liste tenue dans un tableur. Le fichier est d'abord <strong>analysé sans rien enregistrer</strong> :
+        vous lisez le compte rendu, puis vous confirmez. Une personne déjà inscrite est ignorée, pas dupliquée.
+        Le fichier est supprimé du serveur dès que vous avez confirmé ou annulé.
+    </p>
+
+    <div class="card mt-8 max-w-3xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-6', novalidate: 'novalidate'}}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.file) }}
+            {{ form_row(form.imageMeaning) }}
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Analyser le fichier</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\MembershipApplication;
+use App\Form\Guard\GuardType;
 use App\Enum\MembershipType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -104,6 +105,8 @@ final class MembershipApplicationType extends AbstractType
                 'label' => 'Signature : saisissez vos prénom et nom',
                 'help' => "Pour un adhérent de moins de 18 ans, c'est le responsable légal qui signe.",
             ])
+            // Jeton horodate et signe : voir FormGuard.
+            ->add('guard', GuardType::class)
             // Piege a robots : champ invisible et sans autocompletion, qu'un
             // visiteur ne peut pas remplir et qu'un automate remplit presque
             // toujours. Non mappe sur l'entite : il ne doit jamais etre

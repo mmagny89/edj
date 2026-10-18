@@ -1,0 +1,80 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}Compte rendu de l'import - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Compte rendu de l'analyse</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">Rien n'est encore enregistré. Relisez, puis confirmez ou annulez.</p>
+
+    <dl class="mt-6 grid max-w-3xl gap-4 sm:grid-cols-3">
+        <div class="card p-4"><dt class="text-sm text-slate-600">À importer</dt><dd class="text-2xl font-bold text-ink">{{ report.importable }}</dd></div>
+        <div class="card p-4"><dt class="text-sm text-slate-600">Ignorées</dt><dd class="text-2xl font-bold text-ink">{{ report.skipped|length }}</dd></div>
+        <div class="card p-4"><dt class="text-sm text-slate-600">Erreurs</dt><dd class="text-2xl font-bold {{ report.hasErrors ? 'text-red-700' : 'text-ink' }}">{{ report.errors|length }}</dd></div>
+    </dl>
+
+    {% if report.hasErrors %}
+        <section class="card mt-6 p-6" aria-labelledby="t-err">
+            <h2 id="t-err" class="text-lg font-bold text-red-800">Erreurs à corriger dans le fichier</h2>
+            <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
+                {% for e in report.errors %}<li>Ligne {{ e.line }} : {{ e.message }}</li>{% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if report.skipped is not empty %}
+        <section class="card mt-6 p-6" aria-labelledby="t-skip">
+            <h2 id="t-skip" class="text-lg font-bold text-ink">Lignes ignorées</h2>
+            <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
+                {% for s in report.skipped %}<li>Ligne {{ s.line }} : {{ s.reason }}</li>{% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if report.rows is not empty %}
+        <section class="card mt-6 p-6" aria-labelledby="t-rows">
+            <h2 id="t-rows" class="text-lg font-bold text-ink">Adhésions qui seront créées ({{ report.warningCount }} point(s) à vérifier)</h2>
+            <div class="relative mt-4 overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <caption class="sr-only">Lignes prêtes à être importées</caption>
+                    <thead><tr class="border-b border-slate-200 text-slate-600">
+                        <th scope="col" class="py-2 pr-3">Ligne</th>
+                        <th scope="col" class="py-2 pr-3">Nom</th>
+                        <th scope="col" class="py-2 pr-3">Courriel</th>
+                        <th scope="col" class="py-2 pr-3">État</th>
+                        <th scope="col" class="py-2">À vérifier</th>
+                    </tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for row in report.rows %}
+                            <tr class="align-top">
+                                <td class="py-2 pr-3">{{ row.line }}</td>
+                                <td class="py-2 pr-3">{{ row.application.lastName }} {{ row.application.firstName }}</td>
+                                <td class="py-2 pr-3">{{ row.application.email ?? '—' }}</td>
+                                <td class="py-2 pr-3">{{ row.validated ? 'Validée' : 'En attente' }}</td>
+                                <td class="py-2">{% for w in row.warnings %}<span class="block">{{ w }}</span>{% else %}—{% endfor %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        {% if not report.hasErrors and report.importable > 0 %}
+            <form method="post" action="{{ path('app_import_apply', {token: token}) }}"
+                  data-controller="confirm"
+                  data-confirm-message-value="Importer {{ report.importable }} adhésion(s) ? Chacune reçoit un numéro d'adhérent."
+                  data-action="submit->confirm#ask">
+                <input type="hidden" name="_token" value="{{ csrf_token('import_' ~ token) }}">
+                <input type="hidden" name="image" value="{{ image }}">
+                <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Importer {{ report.importable }} adhésion(s)</button>
+            </form>
+        {% endif %}
+        <form method="post" action="{{ path('app_import_cancel', {token: token}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('import_' ~ token) }}">
+            <button type="submit" class="btn btn-secondary">{{ ui.icon('x') }} Annuler et supprimer le fichier</button>
+        </form>
+    </div>
+{% endblock %}

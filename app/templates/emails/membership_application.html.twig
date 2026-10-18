@@ -14,7 +14,7 @@
     {% if application.address %}<li><strong>Adresse :</strong> {{ application.address }}</li>{% endif %}
     <li><strong>Code postal et ville :</strong> {{ application.postalCode }} {{ application.city }}</li>
     {% if application.phone %}<li><strong>Téléphone :</strong> {{ application.phone }}</li>{% endif %}
-    <li><strong>E-mail :</strong> {{ application.email }}</li>
+    <li><strong>E-mail :</strong> {{ application.email ?: '—' }}</li>
 </ul>
 
 <h2>Adhésion</h2>

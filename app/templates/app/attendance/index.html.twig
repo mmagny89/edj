@@ -1,0 +1,29 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Feuille d'émargement - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">Feuille d'émargement</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        La liste des adhérents à jour pour une assemblée générale, en PDF à imprimer : un numéro, un nom,
+        une case de signature et une case de pouvoir. Aucune coordonnée n'y figure.
+    </p>
+
+    <div class="card mt-8 max-w-3xl p-6">
+        {{ form_start(form, {attr: {class: 'space-y-6', novalidate: 'novalidate', 'data-turbo': 'false'}}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.kind) }}
+            <div class="grid gap-6 sm:grid-cols-2">
+                {{ form_row(form.date) }}
+                {{ form_row(form.season) }}
+            </div>
+            {{ form_row(form.place) }}
+            {{ form_row(form.withMinors) }}
+            {{ form_row(form.withConsumers) }}
+            <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Télécharger la feuille (PDF)</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

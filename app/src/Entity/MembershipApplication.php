@@ -31,6 +31,17 @@ class MembershipApplication
     /** En dessous de cet age, l'adhesion est gratuite. */
     public const FREE_UNDER_AGE = 8;
 
+    /**
+     * Ce qu'un champ de texte libre ne peut pas contenir : un caractere de
+     * controle (retour a la ligne, octet nul, caractere invisible) ou un chevron.
+     * Un nom, une adresse ou une ville n'en ont jamais l'usage ; ils ne servent
+     * qu'a glisser du balisage ou de quoi fausser un courriel, un export ou un
+     * tableur. Les lettres accentuees, apostrophes, tirets et chiffres passent.
+     */
+    private const FREE_TEXT = '/^[^\p{C}<>]*$/u';
+
+    private const FREE_TEXT_MESSAGE = 'Ce champ contient des caractères non autorisés.';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,11 +50,13 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas depasser {{ limit }} caracteres.')]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas depasser {{ limit }} caracteres.')]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $firstName = null;
 
     #[ORM\Column(type: 'date_immutable')]
@@ -54,6 +67,7 @@ class MembershipApplication
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $address = null;
 
     #[ORM\Column(length: 10)]
@@ -64,6 +78,7 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'La ville est obligatoire.')]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $city = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -75,11 +90,13 @@ class MembershipApplication
     private ?string $phone = null;
 
     /**
-     * Obligatoire alors que le bulletin papier le laisse facultatif : depose
-     * en ligne, c'est le seul moyen pour l'association de repondre.
+     * Obligatoire pour un bulletin depose en ligne — c'est le seul moyen pour
+     * l'association de repondre —, facultative pour une fiche papier ou un fichier
+     * repris : beaucoup d'adherents n'en ont pas, ou n'en ont jamais donne. Sans
+     * adresse, la personne n'a ni confirmation ni lien d'acces ; le bureau la joint
+     * autrement. Voir validateConditionalFields().
      */
-    #[ORM\Column(length: 180)]
-    #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire.")]
+    #[ORM\Column(length: 180, nullable: true)]
     #[Assert\Email(message: "Cette adresse e-mail n'est pas valide.")]
     #[Assert\Length(max: 180)]
     private ?string $email = null;
@@ -90,6 +107,7 @@ class MembershipApplication
 
     #[ORM\Column(length: 200, nullable: true)]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $principalMemberName = null;
 
     #[ORM\Column]
@@ -113,10 +131,12 @@ class MembershipApplication
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $guardianLastName = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $guardianFirstName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
@@ -131,6 +151,7 @@ class MembershipApplication
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Indiquez le lieu de signature.')]
     #[Assert\Length(max: 100)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $signaturePlace = null;
 
     /**
@@ -140,6 +161,7 @@ class MembershipApplication
     #[ORM\Column(length: 200)]
     #[Assert\NotBlank(message: 'Signez en saisissant votre nom et prénom.')]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $signatureName = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
@@ -463,6 +485,12 @@ class MembershipApplication
     #[Assert\Callback(groups: ['Default', 'upgrade'])]
     public function validateConditionalFields(ExecutionContextInterface $context): void
     {
+        // En ligne, l'adresse est le seul moyen de repondre : elle est obligatoire.
+        // Une fiche papier ou un fichier repris peut ne pas en avoir.
+        if (MembershipSource::Online === $this->source && (null === $this->email || '' === trim($this->email))) {
+            $context->buildViolation("L'adresse e-mail est obligatoire.")->atPath('email')->addViolation();
+        }
+
         if (MembershipType::Family === $this->membershipType) {
             if (!$this->principalMemberName) {
                 $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
@@ -841,6 +869,24 @@ class MembershipApplication
     public function enterFromPaper(?int $adminId): static
     {
         $this->source = MembershipSource::Paper;
+        $this->enteredById = $adminId;
+
+        return $this;
+    }
+
+    public function isImported(): bool
+    {
+        return MembershipSource::Import === $this->source;
+    }
+
+    /**
+     * Marque le bulletin comme repris d'un fichier d'adherents existants, par
+     * l'administrateur donne. L'adhesion date de ce que dit le fichier, pas du jour
+     * de l'import : c'est la date d'origine qui compte pour la saison.
+     */
+    public function enterFromImport(?int $adminId): static
+    {
+        $this->source = MembershipSource::Import;
         $this->enteredById = $adminId;
 
         return $this;

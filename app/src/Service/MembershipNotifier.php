@@ -44,7 +44,6 @@ final class MembershipNotifier
             ->to($this->contactEmail)
             // L'adresse saisie sert de "repondre a", jamais d'expediteur :
             // usurper le From ferait tomber le message dans les indesirables.
-            ->replyTo(new Address((string) $application->getEmail()))
             ->subject(sprintf(
                 '%s : %s %s',
                 $renewal ? 'Renouvellement' : "Bulletin d'adhésion",
@@ -55,6 +54,11 @@ final class MembershipNotifier
                 'application' => $application,
                 'renewal' => $renewal,
             ]));
+
+        // « Repondre a » : l'adresse saisie, quand il y en a une.
+        if ($application->getEmail()) {
+            $email->replyTo(new Address((string) $application->getEmail()));
+        }
 
         $this->send($email);
     }
@@ -71,14 +75,16 @@ final class MembershipNotifier
         // Un destinataire ne recoit que trois confirmations par jour : saisir
         // l'adresse d'un tiers dans le bulletin ne permet pas de l'inonder. Le
         // bulletin est enregistre dans tous les cas ; seul le courriel est omis.
-        $key = mb_strtolower((string) $application->getEmail());
-        if (!$this->membershipConfirmationEmailLimiter->create($key)->consume()->isAccepted()) {
+        $recipients = $this->recipients($application, named: true);
+        if ([] === $recipients) {
+            // Ni adresse, ni responsable legal joignable : rien a envoyer, et le
+            // bulletin est enregistre dans tous les cas.
             return;
         }
 
-        $recipients = [new Address((string) $application->getEmail(), trim($application->getFirstName().' '.$application->getLastName()))];
-        if ($application->isMinor() && $application->getGuardianEmail()) {
-            $recipients[] = new Address($application->getGuardianEmail());
+        $key = mb_strtolower($recipients[0]->getAddress());
+        if (!$this->membershipConfirmationEmailLimiter->create($key)->consume()->isAccepted()) {
+            return;
         }
 
         $context = [
@@ -125,14 +131,14 @@ final class MembershipNotifier
         // confirmations d'adhesion ne convenait pas : trois par jour, c'est
         // assez pour un accuse de reception, trop peu pour qui redemande son
         // lien apres avoir perdu le premier.
-        $key = mb_strtolower((string) $application->getEmail());
-        if (!$this->memberAccessEmailLimiter->create($key)->consume()->isAccepted()) {
+        $recipients = $this->recipients($application);
+        if ([] === $recipients) {
             return;
         }
 
-        $recipients = [new Address((string) $application->getEmail())];
-        if ($application->isMinor() && $application->getGuardianEmail()) {
-            $recipients[] = new Address($application->getGuardianEmail());
+        $key = mb_strtolower($recipients[0]->getAddress());
+        if (!$this->memberAccessEmailLimiter->create($key)->consume()->isAccepted()) {
+            return;
         }
 
         $context = [
@@ -150,6 +156,26 @@ final class MembershipNotifier
             ->html($this->twig->render(sprintf('emails/%s.html.twig', $template), $context));
 
         $this->send($email);
+    }
+
+    /**
+     * Les destinataires d'un courriel a l'adherent : son adresse quand il en a une,
+     * et celle de son responsable legal s'il est mineur. Vide si personne n'est
+     * joignable — beaucoup d'adherents repris d'un fichier n'ont pas d'adresse.
+     *
+     * @return list<Address>
+     */
+    private function recipients(MembershipApplication $application, bool $named = false): array
+    {
+        $recipients = [];
+        if ($application->getEmail()) {
+            $recipients[] = new Address($application->getEmail(), $named ? trim($application->getFirstName().' '.$application->getLastName()) : '');
+        }
+        if ($application->isMinor() && $application->getGuardianEmail()) {
+            $recipients[] = new Address($application->getGuardianEmail());
+        }
+
+        return $recipients;
     }
 
     private function send(Email $email): void

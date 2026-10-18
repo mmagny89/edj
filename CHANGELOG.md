@@ -8,8 +8,27 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+## [1.4.0] - 2026-10-18
+
 ### Ajoute
 
+- Feuille d'emargement pour les assemblees generales (ordinaires et extraordinaires), en PDF A4 :
+  adherents annuels a jour de la saison, classes par nom, avec numero, signature et pouvoir. Les mineurs
+  et les consommateurs n'y figurent que sur demande. Aucune coordonnee n'y est imprimee.
+- Import d'une liste d'adherents depuis un fichier Excel, en ligne de commande (`app:memberships:import`) ou depuis l'administration (menu « Import », super-administrateur) : analyse sans rien ecrire, compte rendu, puis confirmation.
+  Simulation par defaut : le fichier est lu et compris, le compte rendu dit ce qui sera
+  importe, ecarte ou refuse, rien n'est ecrit — pas meme un numero d'adherent.
+  `--appliquer` ecrit, tout ou rien. Les colonnes se reconnaissent par leur en-tete ;
+  celles sans usage dans la fiche (sexe, reseaux sociaux, lettre d'information,
+  numero WhatsApp) sont nommees et laissees de cote. Le sens de la colonne des photos
+  est un choix explicite (`--image=refus|accord`), jamais une valeur par defaut. Relancer
+  un import est sans danger : une personne deja inscrite pour la saison est ecartee. Le
+  compte rendu ne nomme personne (`--noms` pour les afficher). Le lecteur de classeurs,
+  sans dependance, refuse archives et XML hostiles.
+- L'adresse e-mail d'un bulletin est facultative hors du formulaire en ligne : une
+  fiche papier ou un fichier repris peut decrire des personnes qui n'en ont pas — dans
+  le fichier de l'association, pres d'un tiers. Elles ne recoivent ni confirmation ni
+  lien d'acces, et le bureau les joint autrement. Obligatoire en ligne, comme avant.
 - Passage d'un adherent consommateur a l'adhesion annuelle depuis l'administration :
   la fiche d'un consommateur de la saison en cours propose « Passer a l'adhesion
   annuelle ». C'est la meme adhesion, sous le meme numero — pas un renouvellement,
@@ -18,6 +37,27 @@ GitHub, par `.github/workflows/publication.yml`.
   moment, le moyen de reglement : l'adhesion est alors validee ; sinon elle repasse en
   attente, l'annuelle n'etant pas gratuite. Un enfant de moins de huit ans, qui ne
   doit rien, reste valide. Le changement figure dans l'historique de la fiche.
+
+### Securite
+
+- Formulaires publics durcis : un jeton horodate et signe, emis a l'affichage de la
+  page, refuse un envoi parti en moins de trois secondes (un robot), falsifie ou reste
+  ouvert plus de six heures ; il s'ajoute au piege a robots, a la protection CSRF et aux
+  plafonds de debit, sans ouvrir de session pour chaque visiteur. Les champs de texte
+  libre refusent aussi les caracteres de controle et les chevrons — de quoi glisser du
+  balisage ou un retour a la ligne dans un courriel, un export ou un tableur —, sans
+  toucher aux accents, apostrophes, tirets ni chiffres.
+- Session de gestion coupee apres 30 minutes d'inactivite : un poste laisse ouvert sur
+  la liste des adhesions ne montre plus de donnees personnelles a qui s'assoit
+  devant. Le cookie de session de PHP ne dit rien de l'inactivite — sans cela, la
+  session ne s'eteignait qu'a la fermeture du navigateur, c'est-a-dire jamais pour un
+  onglet laisse ouvert.
+- Sauvegardes chiffrables en AES-256 (`BACKUP_PASSPHRASE_FILE`) : le dump ne touche
+  jamais le disque en clair, l'archive se relit — dechiffrement compris — avant d'etre
+  gardee, et la restauration d'essai refuse une mauvaise phrase avec un message clair.
+  Sans la variable, rien ne change. Voir `docs/SECURITE-DONNEES.md`, qui dit aussi ce
+  qui n'est pas fait : double authentification, durcissement du serveur, anonymisation
+  automatique.
 
 ## [1.3.0] - 2026-10-18
 
