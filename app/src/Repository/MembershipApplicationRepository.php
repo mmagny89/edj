@@ -338,6 +338,49 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Les adherents a jour d'une saison, pour une feuille d'emargement : un bulletin
+     * valide par personne, sans compte anonymise, classes par nom.
+     *
+     * Les consommateurs et les mineurs ne sont pris que sur demande : ils n'ont en
+     * general pas voix a l'assemblee. Seul le necessaire est lu pour la feuille — nom,
+     * prenom, numero — jamais de coordonnees.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findForAttendance(int $season, bool $withMinors, bool $withConsumers): array
+    {
+        [$from, $to] = self::seasonBounds($season);
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.status = :validated')
+            ->andWhere('a.anonymizedAt IS NULL')
+            ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
+            ->setParameter('validated', MembershipStatus::Validated)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('a.id', 'ASC');
+
+        if (!$withConsumers) {
+            $qb->andWhere('a.membershipType != :consumer')->setParameter('consumer', MembershipType::Consumer);
+        }
+
+        $unique = [];
+        foreach ($qb->getQuery()->getResult() as $application) {
+            if (!$withMinors && $application->isMinor()) {
+                continue;
+            }
+            // Un adherent qui a deux bulletins valides dans la saison (passage de
+            // consommateur a annuel) ne signe qu'une fois.
+            $unique[$application->getMember()?->getId() ?? 'a'.$application->getId()] = $application;
+        }
+
+        $list = array_values($unique);
+        usort($list, static fn (MembershipApplication $x, MembershipApplication $y) => [mb_strtolower((string) $x->getLastName()), mb_strtolower((string) $x->getFirstName())] <=> [mb_strtolower((string) $y->getLastName()), mb_strtolower((string) $y->getFirstName())]);
+
+        return $list;
+    }
+
+    /**
      * Du 1er octobre de l'annee precedente (inclus) au 1er octobre du
      * millesime (exclu) : la saison 2027 va du 1er octobre 2026 au 30
      * septembre 2027.

@@ -10,6 +10,9 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Ajoute
 
+- Feuille d'emargement pour les assemblees generales (ordinaires et extraordinaires), en PDF A4 :
+  adherents annuels a jour de la saison, classes par nom, avec numero, signature et pouvoir. Les mineurs
+  et les consommateurs n'y figurent que sur demande. Aucune coordonnee n'y est imprimee.
 - Import d'une liste d'adherents depuis un fichier Excel, en ligne de commande (`app:memberships:import`) ou depuis l'administration (menu « Import », super-administrateur) : analyse sans rien ecrire, compte rendu, puis confirmation.
   Simulation par defaut : le fichier est lu et compris, le compte rendu dit ce qui sera
   importe, ecarte ou refuse, rien n'est ecrit — pas meme un numero d'adherent.

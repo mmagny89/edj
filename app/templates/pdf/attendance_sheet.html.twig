@@ -1,0 +1,67 @@
+{#- Feuille d'emargement, A4 portrait. Gabarit pour Dompdf seul : pas de Tailwind,
+    des tableaux, rien de positionne. L'en-tete du tableau se repete a chaque page
+    (thead), et une ligne ne se coupe pas entre deux pages. -#}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        @page { margin: 18mm 14mm 16mm 14mm; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #111827; }
+        h1 { font-size: 17px; margin: 0 0 4px 0; }
+        p { margin: 0 0 3px 0; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #6b7280; padding: 0 5px; }
+        th { background: #e5e7eb; text-align: left; font-size: 9px; height: 20px; }
+        tr { page-break-inside: avoid; }
+        td { height: 26px; vertical-align: middle; }
+        .num { width: 62px; font-family: 'DejaVu Sans Mono', monospace; font-size: 9px; }
+        .sign { width: 150px; }
+        .power { width: 120px; }
+        .small { font-size: 9px; color: #374151; }
+        .sum td { border: 0; padding: 12px 0 0 0; height: auto; }
+        .minor { color: #374151; font-size: 8px; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p>Association Envie de Jouer — saison {{ season }}</p>
+    <p>{{ date|date('d/m/Y') }}{% if place %} — {{ place }}{% endif %}</p>
+    <p class="small">Feuille d'émargement : chaque membre à jour de sa cotisation signe en face de son nom.
+        Un membre absent peut donner pouvoir à un autre membre : inscrire son nom dans la dernière colonne.</p>
+
+    <table style="margin-top: 8px;">
+        <thead>
+            <tr>
+                <th class="num">N°</th>
+                <th>Nom et prénom</th>
+                <th class="sign">Signature</th>
+                <th class="power">Pouvoir donné à</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in members %}
+                <tr>
+                    <td class="num">{{ m.memberNumber }}</td>
+                    <td>{{ m.lastName|upper }} {{ m.firstName }}{% if m.minor %} <span class="minor">(mineur)</span>{% endif %}</td>
+                    <td class="sign"></td>
+                    <td class="power"></td>
+                </tr>
+            {% endfor %}
+            {% for i in 1..blankRows %}
+                <tr><td class="num"></td><td></td><td class="sign"></td><td class="power"></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="sum">
+        <tr>
+            <td>Adhérents à jour : <strong>{{ members|length }}</strong></td>
+            <td>Présents : ………</td>
+            <td>Pouvoirs : ………</td>
+            <td>Quorum atteint : ☐ oui ☐ non</td>
+        </tr>
+    </table>
+</body>
+</html>
