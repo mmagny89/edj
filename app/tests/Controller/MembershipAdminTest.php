@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Member;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
@@ -29,12 +30,18 @@ final class MembershipAdminTest extends WebTestCase
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->paperEmail = 'a-'.bin2hex(random_bytes(5)).'@papier.example.test';
         $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
+        // Les adherents nes de ces bulletins : sans cela, ils s'accumulent d'un cas
+        // a l'autre et d'une execution a l'autre, et fausseraient tout comptage.
+        $this->entityManager->createQuery('DELETE FROM '.Member::class)->execute();
         $this->logIn('admin@example.test');
     }
 
     protected function tearDown(): void
     {
         $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
+        // Les adherents nes de ces bulletins : sans cela, ils s'accumulent d'un cas
+        // a l'autre et d'une execution a l'autre, et fausseraient tout comptage.
+        $this->entityManager->createQuery('DELETE FROM '.Member::class)->execute();
         parent::tearDown();
     }
 
@@ -418,6 +425,123 @@ final class MembershipAdminTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
 
         self::assertCount(0, $crawler->filter('#t-parcours'));
+    }
+
+    /**
+     * Un ancien adherent : le bulletin d'une saison passee, valide. C'est a lui
+     * que le bouton « Renouveler » s'adresse.
+     */
+    private function former(?string $email = null): MembershipApplication
+    {
+        return $this->create($email ?? 'ancien-'.bin2hex(random_bytes(4)).'@example.test', validated: true, submittedAt: '-14 months');
+    }
+
+    private function submitRenewal(MembershipApplication $application, array $overrides = []): void
+    {
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+        $form = $crawler->selectButton('Enregistrer le renouvellement')->form();
+        foreach ($overrides as $name => $value) {
+            $form[$name] = $value;
+        }
+        $form['paper_membership[paperConfirmed]']->tick();
+        $form['paper_membership[sendConfirmation]']->untick();
+
+        $this->client->submit($form);
+    }
+
+    public function testTheRenewButtonIsOfferedToAFormerMember(): void
+    {
+        $application = $this->former();
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(1, $crawler->filter(sprintf('a[href$="/admin/adhesions/%d/renouveler"]', $application->getId())));
+    }
+
+    public function testNoRenewButtonOnceTheSeasonIsTaken(): void
+    {
+        $application = $this->former('meme@example.test');
+        $current = $this->create('meme@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$current->getId());
+
+        self::assertCount(0, $crawler->filter('a[href$="/renouveler"]'));
+        self::assertSame($application->getMemberNumber(), $current->getMemberNumber());
+    }
+
+    public function testTheRenewalFormArrivesPrefilledUnderTheSameNumber(): void
+    {
+        $application = $this->former();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', (string) $application->getMemberNumber());
+        $form = $crawler->selectButton('Enregistrer le renouvellement')->form();
+        self::assertSame('Durand', $form['paper_membership[lastName]']->getValue());
+        self::assertSame($application->getEmail(), $form['paper_membership[email]']->getValue());
+    }
+
+    /**
+     * Le coeur de l'action : un nouveau bulletin, en attente, sous le meme
+     * numero — jamais un second adherent.
+     */
+    public function testRenewingKeepsTheNumberAndWaitsForPayment(): void
+    {
+        $application = $this->former();
+        $number = $application->getMemberNumber();
+
+        $this->submitRenewal($application);
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        $all = $this->entityManager->getRepository(MembershipApplication::class)->findBy([], ['id' => 'ASC']);
+
+        self::assertCount(2, $all);
+        self::assertSame($number, $all[1]->getMemberNumber());
+        self::assertTrue($all[1]->isPending());
+        self::assertTrue($all[1]->isPaper(), 'Un renouvellement saisi par le bureau est une fiche papier.');
+        self::assertCount(1, $this->entityManager->getRepository(Member::class)->findAll());
+    }
+
+    public function testASeasonCannotBeRenewedTwice(): void
+    {
+        $application = $this->former();
+        $this->submitRenewal($application);
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        self::assertCount(2, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
+    }
+
+    /**
+     * La date de la fiche peut viser une autre saison que celle d'aujourd'hui :
+     * viser la saison deja prise est refuse a l'enregistrement.
+     */
+    public function testTheChosenDateCannotTargetASeasonAlreadyTaken(): void
+    {
+        $application = $this->former();
+
+        $this->submitRenewal($application, [
+            'paper_membership[submittedAt]' => $application->getSubmittedAt()->format('Y-m-d'),
+        ]);
+
+        self::assertSelectorTextContains('main', 'a déjà une adhésion pour la saison');
+        $this->entityManager->clear();
+        self::assertCount(1, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
+    }
+
+    public function testAnAnonymizedBulletinCannotBeRenewed(): void
+    {
+        $application = $this->former();
+        $application->anonymize();
+        $this->entityManager->flush();
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
     }
 
     public function testEveryBulletinCarriesAMemberNumber(): void

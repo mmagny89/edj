@@ -16,6 +16,7 @@ use App\Repository\UserRepository;
 use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -126,6 +127,84 @@ final class MembershipApplicationController extends AbstractController
         return $this->render('app/membership_new.html.twig', ['form' => $form]);
     }
 
+    /**
+     * Renouvelle l'adhesion d'une personne deja connue, depuis sa fiche : le
+     * formulaire arrive rempli avec son dernier bulletin, sous le meme numero.
+     *
+     * C'est le cas d'un adherent qui renouvelle a une soiree, sur papier ou de
+     * vive voix : le bureau n'a ni a retrouver sa fiche pour tout recopier, ni a
+     * lui donner un second numero. Le bulletin est enregistre comme « fiche
+     * papier », en attente, et se valide ensuite comme les autres.
+     *
+     * Une saison ne se renouvelle qu'une fois : a l'ouverture du formulaire, et
+     * de nouveau a l'enregistrement, la date de la fiche pouvant viser une autre
+     * saison que celle d'aujourd'hui.
+     */
+    #[Route('/{id}/renouveler', name: 'app_membership_renew', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function renew(Request $request, MembershipApplication $application): Response
+    {
+        $member = $application->getMember();
+        if ($application->isAnonymized() || null === $member) {
+            $this->addFlash('error', 'Ce bulletin est anonymisé : il n\'y a plus rien à reprendre pour un renouvellement.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        $season = MembershipSeasons::of(new \DateTimeImmutable());
+        if (null !== $existing = $this->applications->findInSeason($member, $season)) {
+            $this->addFlash('error', sprintf('%s a déjà une adhésion pour la saison %d.', $member->getNumber(), $season));
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $existing->getId()]);
+        }
+
+        // On reprend le bulletin le plus recent de la personne, pas celui de la
+        // fiche d'ou l'on vient : c'est lui qui porte son adresse a jour.
+        $previous = $this->applications->findLatestForMember($member) ?? $application;
+
+        $draft = MembershipApplication::renewalOf($previous)
+            ->enterFromPaper($this->adminId())
+            ->setSubmittedAt(new \DateTimeImmutable('today'))
+            ->setStatutesAccepted(true)
+            ->setRulesAccepted(true)
+            ->setSignaturePlace('Fiche papier')
+            ->setSignatureName('Fiche papier signée');
+
+        $form = $this->createForm(PaperMembershipType::class, $draft);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $chosen = MembershipSeasons::of($draft->getSubmittedAt());
+            if (null !== $this->applications->findInSeason($member, $chosen)) {
+                $form->get('submittedAt')->addError(new FormError(sprintf('%s a déjà une adhésion pour la saison %d.', $member->getNumber(), $chosen)));
+            } else {
+                $draft->setSignatureName(trim($draft->getFirstName().' '.$draft->getLastName()));
+                $this->entityManager->persist($draft);
+                $this->entityManager->flush();
+
+                $sent = (bool) $form->get('sendConfirmation')->getData();
+                if ($sent) {
+                    $this->notifier->confirmToApplicant($draft);
+                }
+
+                $this->addFlash('success', sprintf(
+                    'Adhésion %s renouvelée pour la saison %d%s. Elle est en attente : validez-la une fois la cotisation encaissée.',
+                    $member->getNumber(),
+                    $chosen,
+                    $sent ? ', et le courriel de confirmation est parti' : ' (sans courriel de confirmation)',
+                ));
+
+                return $this->redirectToRoute('app_membership_show', ['id' => $draft->getId()]);
+            }
+        }
+
+        return $this->render('app/membership_new.html.twig', [
+            'form' => $form,
+            'renewal' => $member,
+            'season' => $season,
+            'from' => $application,
+        ]);
+    }
+
     #[Route('/philibert.csv', name: 'app_membership_philibert', methods: ['GET'])]
     public function philibert(): Response
     {
@@ -161,6 +240,8 @@ final class MembershipApplicationController extends AbstractController
             // libre : la fiche dit si ce nom correspond a une adhesion
             // individuelle connue, plutot que de le presenter comme acquis.
             'actors' => $this->actorsOf($application),
+            'renewable' => $this->isRenewable($application),
+            'currentSeason' => MembershipSeasons::of(new \DateTimeImmutable()),
             'parcours' => null !== $application->getMember() ? $this->applications->findAllForMember($application->getMember()) : [],
             'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
                 ? $this->applications->findIndividualByName((string) $application->getPrincipalMemberName())
@@ -354,6 +435,20 @@ final class MembershipApplicationController extends AbstractController
         }
 
         return $actors;
+    }
+
+    /**
+     * Vrai quand la fiche peut ouvrir un renouvellement : la personne est
+     * connue, son bulletin n'est pas anonymise, et elle n'a encore aucun
+     * bulletin — hors annule — pour la saison en cours.
+     */
+    private function isRenewable(MembershipApplication $application): bool
+    {
+        $member = $application->getMember();
+
+        return null !== $member
+            && !$application->isAnonymized()
+            && null === $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
     }
 
     private function refuseStatusChange(MembershipApplication $application, string $reason): Response
