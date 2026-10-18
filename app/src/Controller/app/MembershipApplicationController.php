@@ -4,9 +4,16 @@ namespace App\Controller\app;
 
 use App\Entity\MembershipApplication;
 use App\Entity\User;
+use App\Enum\MembershipStatus;
+use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
 use App\Form\PaperMembershipType;
+use App\Service\MemberDirectory;
+use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
 use App\Repository\MembershipApplicationRepository;
+use App\Repository\UserRepository;
+use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,31 +23,50 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Bulletins d'adhesion : consultation, fiche imprimable, anonymisation et
- * liste Philibert.
+ * Bulletins d'adhesion : consultation, etat (validee, annulee), fiche
+ * imprimable, carte d'adherent, anonymisation et liste Philibert.
  *
- * Donnees personnelles, dont celles de mineurs : reservees au
- * super-administrateur. La regle d'access_control le dit deja ; l'attribut la
- * redit ici, pour qu'un changement de motif dans security.yaml ne suffise pas
- * a ouvrir ces pages.
+ * Ouvert aux contributeurs : le suivi des adhesions est le travail courant du
+ * bureau, pas une prerogative du seul super-administrateur. Seule la gestion
+ * des comptes lui reste reservee. La regle d'access_control le dit deja ;
+ * l'attribut la redit ici, pour qu'un changement de motif dans security.yaml
+ * ne suffise pas a ouvrir ces pages a un anonyme.
  */
 #[Route('/admin/adhesions')]
-#[IsGranted('ROLE_SUPER_ADMIN')]
+#[IsGranted('ROLE_CONTRIBUTOR')]
 final class MembershipApplicationController extends AbstractController
 {
     public function __construct(
         private readonly MembershipApplicationRepository $applications,
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
+        private readonly MemberDirectory $members,
+        private readonly UserRepository $users,
     ) {
     }
 
+    /**
+     * Les filtres passent par l'URL (GET) et non par une session : une liste
+     * filtree se partage alors par son lien — « les impayes de la saison
+     * 2027 » — et un rechargement ne change pas ce qu'on regarde.
+     */
     #[Route('', name: 'app_membership_applications', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = [
+            'q' => trim((string) $request->query->get('q')),
+            'status' => MembershipStatus::tryFrom((string) $request->query->get('etat')),
+            'type' => MembershipType::tryFrom((string) $request->query->get('formule')),
+            'season' => $request->query->getInt('saison') ?: null,
+        ];
+
         return $this->render('app/membership_applications.html.twig', [
-            'applications' => $this->applications->findLatest(),
+            'applications' => $this->applications->findFiltered($filters),
+            'filters' => $filters,
+            'filtered' => '' !== $filters['q'] || null !== $filters['status'] || null !== $filters['type'] || null !== $filters['season'],
+            'seasons' => $this->applications->seasonsWithApplications(),
             'philibertCount' => \count($this->applications->findPhilibertEmails()),
+            'philibertSeason' => MembershipSeasons::of(new \DateTimeImmutable()),
         ]);
     }
 
@@ -78,6 +104,7 @@ final class MembershipApplicationController extends AbstractController
             // que la fiche imprimee ne dise pas « fiche papier signee » seul.
             $application->setSignatureName(trim($application->getFirstName().' '.$application->getLastName()));
 
+            $this->members->attach($application);
             $this->entityManager->persist($application);
             $this->entityManager->flush();
 
@@ -117,7 +144,8 @@ final class MembershipApplicationController extends AbstractController
 
         $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
         $response->headers->set('Content-Disposition', sprintf(
-            'attachment; filename="philibert-%s.csv"',
+            'attachment; filename="philibert-saison-%d-%s.csv"',
+            MembershipSeasons::of(new \DateTimeImmutable()),
             (new \DateTimeImmutable())->format('Y-m-d'),
         ));
 
@@ -127,7 +155,16 @@ final class MembershipApplicationController extends AbstractController
     #[Route('/{id}', name: 'app_membership_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(MembershipApplication $application): Response
     {
-        return $this->render('app/membership_show.html.twig', ['application' => $application]);
+        return $this->render('app/membership_show.html.twig', [
+            'application' => $application,
+            // Le bulletin public laisse saisir l'adherent principal en texte
+            // libre : la fiche dit si ce nom correspond a une adhesion
+            // individuelle connue, plutot que de le presenter comme acquis.
+            'actors' => $this->actorsOf($application),
+            'principal' => MembershipType::Family === $application->getMembershipType() && $application->getPrincipalMemberName()
+                ? $this->applications->findIndividualByName((string) $application->getPrincipalMemberName())
+                : null,
+        ]);
     }
 
     /**
@@ -146,6 +183,92 @@ final class MembershipApplicationController extends AbstractController
         return $this->render('app/membership_sheet.html.twig', ['application' => $application]);
     }
 
+    /**
+     * Valide l'adhesion : la cotisation est encaissee, ou la formule est
+     * gratuite. Le moyen de reglement est obligatoire des que la formule est
+     * payante — l'association doit savoir ce qu'elle a encaisse, et comment.
+     */
+    /**
+     * La carte d'adherent, telle que la personne la telecharge depuis son
+     * espace : le bureau doit pouvoir la regarder avant de la remettre, ou la
+     * reimprimer pour qui n'a pas d'imprimante.
+     *
+     * Affichee dans l'onglet (« inline ») et non telechargee : on la consulte
+     * ici, on ne la collectionne pas. Elle s'ouvre meme si l'adhesion n'est
+     * pas encore validee — aucune saison n'y est alors cochee, ce qui est
+     * exactement ce qu'il faut voir avant d'encaisser.
+     */
+    #[Route('/{id}/carte.pdf', name: 'app_membership_card', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function card(MembershipApplication $application, MembershipCardRenderer $renderer): Response
+    {
+        if ($application->isAnonymized()) {
+            $this->addFlash('error', 'Ce bulletin est anonymisé : il n\'y a plus de carte à montrer.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        $response = new Response($renderer->render($application), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="%s"', $renderer->filename($application)),
+        ]);
+        // Carte nominative : ni le navigateur ni un intermediaire ne la gardent.
+        $response->headers->set('Cache-Control', 'no-store, private');
+
+        return $response;
+    }
+
+    #[Route('/{id}/valider', name: 'app_membership_validate', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function validate(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $method = PaymentMethod::tryFrom((string) $request->request->get('paymentMethod'));
+        if (null === $method && ($application->amountDue() ?? 0) > 0) {
+            return $this->refuseStatusChange($application, 'moyen de règlement manquant');
+        }
+
+        $application->validate($method, $this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', null !== $method
+            ? sprintf('Adhésion validée, cotisation réglée par %s.', mb_lcfirst($method->label()))
+            : sprintf('Adhésion validée : %s.', mb_lcfirst($application->amountDueLabel())));
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    #[Route('/{id}/annuler', name: 'app_membership_cancel', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function cancel(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $application->cancel($this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Adhésion annulée. Le bulletin reste consultable ; pour effacer les données personnelles, anonymisez-le.');
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    #[Route('/{id}/rouvrir', name: 'app_membership_reopen', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function reopen(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $application->reopen($this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Le bulletin est remis en attente.');
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
     #[Route('/{id}/anonymiser', name: 'app_membership_anonymize', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function anonymize(Request $request, MembershipApplication $application): Response
     {
@@ -155,7 +278,10 @@ final class MembershipApplicationController extends AbstractController
             return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
         }
 
-        $application->anonymize();
+        $application->anonymize(adminId: $this->adminId());
+        if ($member = $application->getMember()) {
+            $this->members->forgetIfFullyAnonymized($member);
+        }
         $this->entityManager->flush();
 
         $this->addFlash('success', 'Le bulletin a été anonymisé.');
@@ -191,8 +317,11 @@ final class MembershipApplicationController extends AbstractController
         $count = 0;
         foreach ($this->applications->findBy(['id' => $ids]) as $application) {
             if (!$application->isAnonymized()) {
-                $application->anonymize();
+                $application->anonymize(adminId: $this->adminId());
                 ++$count;
+            }
+            if ($member = $application->getMember()) {
+                $this->members->forgetIfFullyAnonymized($member);
             }
         }
         $this->entityManager->flush();
@@ -200,6 +329,42 @@ final class MembershipApplicationController extends AbstractController
         $this->addFlash('success', sprintf('%d bulletin(s) anonymisé(s).', $count));
 
         return $this->redirectToRoute('app_membership_applications');
+    }
+
+    /**
+     * Les adresses des administrateurs qui ont decide, indexees par
+     * identifiant. L'historique ne garde que l'identifiant : un compte supprime
+     * depuis n'a plus d'entree ici, et la fiche l'ecrit comme tel.
+     *
+     * @return array<int, string>
+     */
+    private function actorsOf(MembershipApplication $application): array
+    {
+        $ids = [];
+        foreach ($application->getHistory() as $event) {
+            if (null !== $event->getActorId()) {
+                $ids[$event->getActorId()] = true;
+            }
+        }
+
+        $actors = [];
+        foreach ([] === $ids ? [] : $this->users->findBy(['id' => array_keys($ids)]) as $user) {
+            $actors[(int) $user->getId()] = (string) $user->getEmail();
+        }
+
+        return $actors;
+    }
+
+    private function refuseStatusChange(MembershipApplication $application, string $reason): Response
+    {
+        $this->addFlash('error', sprintf('Changement d\'état refusé : %s. Réessayez depuis la fiche.', $reason));
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    private function adminId(): ?int
+    {
+        return $this->getUser() instanceof User ? $this->getUser()->getId() : null;
     }
 
     /**

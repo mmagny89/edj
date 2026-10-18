@@ -2,9 +2,15 @@
 
 namespace App\Entity;
 
+use App\Enum\MembershipEventType;
 use App\Enum\MembershipSource;
+use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\MemberDirectory;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -18,8 +24,12 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 // L'index existe depuis la migration initiale (la liste se trie sur la date de
 // depot) ; le declarer ici evite que Doctrine veuille le supprimer.
 #[ORM\Index(name: 'idx_membership_application_submitted_at', columns: ['submitted_at'])]
+#[ORM\Index(name: 'idx_membership_application_member', columns: ['member_id'])]
 class MembershipApplication
 {
+    /** En dessous de cet age, l'adhesion est gratuite. */
+    public const FREE_UNDER_AGE = 8;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -158,9 +168,212 @@ class MembershipApplication
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $anonymizedAt = null;
 
+    /**
+     * L'adherent, au sens de la personne : c'est lui qui porte le numero
+     * EDJ-0001, stable d'une saison a l'autre. Nul uniquement le temps qu'un
+     * bulletin soit rattache (voir MemberDirectory).
+     */
+    #[ORM\ManyToOne(targetEntity: Member::class, inversedBy: 'applications')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
+    private ?Member $member = null;
+
+    #[ORM\Column(length: 20, enumType: MembershipStatus::class, options: ['default' => 'en_attente'])]
+    private MembershipStatus $status = MembershipStatus::Pending;
+
+    /**
+     * Moyen de reglement de la cotisation, renseigne a la validation. Nul pour
+     * une adhesion consommateur, gratuite a l'annee.
+     */
+    #[ORM\Column(length: 20, enumType: PaymentMethod::class, nullable: true)]
+    private ?PaymentMethod $paymentMethod = null;
+
+    /**
+     * Date du dernier changement d'etat, et identifiant de l'administrateur qui
+     * l'a decide. L'association doit pouvoir dire qui a valide un encaissement
+     * ou annule une adhesion.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $statusChangedAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $statusChangedById = null;
+
+    /**
+     * Les decisions du bureau sur ce bulletin, de la plus ancienne a la plus
+     * recente : qui a valide, annule, remis en attente ou anonymise, et quand.
+     *
+     * @var Collection<int, MembershipEvent>
+     */
+    #[ORM\OneToMany(targetEntity: MembershipEvent::class, mappedBy: 'application', cascade: ['persist'])]
+    #[ORM\OrderBy(['occurredAt' => 'ASC', 'id' => 'ASC'])]
+    private Collection $history;
+
     public function __construct()
     {
         $this->submittedAt = new \DateTimeImmutable();
+        $this->history = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, MembershipEvent>
+     */
+    public function getHistory(): Collection
+    {
+        return $this->history;
+    }
+
+    private function record(MembershipEventType $type, ?int $actorId, ?\DateTimeImmutable $at, ?string $detail = null): void
+    {
+        $this->history->add(new MembershipEvent($this, $type, $actorId, $at, $detail));
+    }
+
+    public function getMember(): ?Member
+    {
+        return $this->member;
+    }
+
+    public function setMember(?Member $member): static
+    {
+        $this->member = $member;
+
+        return $this;
+    }
+
+    public function getMemberNumber(): ?string
+    {
+        return $this->member?->getNumber();
+    }
+
+    public function getStatus(): MembershipStatus
+    {
+        return $this->status;
+    }
+
+    public function isValidated(): bool
+    {
+        return MembershipStatus::Validated === $this->status;
+    }
+
+    public function isCancelled(): bool
+    {
+        return MembershipStatus::Cancelled === $this->status;
+    }
+
+    public function isPending(): bool
+    {
+        return MembershipStatus::Pending === $this->status;
+    }
+
+    public function getPaymentMethod(): ?PaymentMethod
+    {
+        return $this->paymentMethod;
+    }
+
+    public function getStatusChangedAt(): ?\DateTimeImmutable
+    {
+        return $this->statusChangedAt;
+    }
+
+    public function getStatusChangedById(): ?int
+    {
+        return $this->statusChangedById;
+    }
+
+    /**
+     * Valide l'adhesion : la cotisation est encaissee, ou il n'y a rien a
+     * encaisser. Le moyen de reglement est obligatoire des qu'un montant est
+     * du — c'est la seule trace de l'encaissement cote site.
+     */
+    public function validate(?PaymentMethod $paymentMethod, ?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        // Le controle porte sur le montant du et non sur la formule : un
+        // enfant de moins de huit ans ne doit rien, quelle que soit la
+        // formule, et exiger un moyen de reglement bloquerait sa validation.
+        if (($this->amountDue() ?? 0) > 0 && null === $paymentMethod) {
+            throw new \LogicException('Une adhesion payante ne se valide pas sans moyen de reglement.');
+        }
+
+        $this->status = MembershipStatus::Validated;
+        $this->paymentMethod = $paymentMethod;
+        $this->record(MembershipEventType::Validated, $adminId, $now, $paymentMethod?->value);
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    /**
+     * Annule l'adhesion. Le moyen de reglement est efface : il ne designerait
+     * plus qu'un encaissement qui n'a pas lieu d'etre, ou qui a ete rembourse.
+     */
+    public function cancel(?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        $this->status = MembershipStatus::Cancelled;
+        $this->paymentMethod = null;
+        $this->record(MembershipEventType::Cancelled, $adminId, $now);
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    /**
+     * Remet le bulletin en attente : rattrape une validation ou une annulation
+     * decidee par erreur.
+     */
+    public function reopen(?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        $this->status = MembershipStatus::Pending;
+        $this->paymentMethod = null;
+        $this->record(MembershipEventType::Reopened, $adminId, $now);
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    private function recordStatusChange(?int $adminId, ?\DateTimeImmutable $now): static
+    {
+        $this->statusChangedAt = $now ?? new \DateTimeImmutable();
+        $this->statusChangedById = $adminId;
+
+        return $this;
+    }
+
+    /**
+     * Age de l'adherent au depot du bulletin. C'est la date qui compte pour la
+     * cotisation : un enfant qui adhere a sept ans ne devient pas redevable le
+     * jour de ses huit ans.
+     */
+    public function ageAtSubmission(): ?int
+    {
+        return $this->birthDate?->diff($this->submittedAt)->y;
+    }
+
+    /**
+     * Ce que doit la personne, en euros. Nul quand il n'y a rien a encaisser.
+     *
+     * Deux regles se superposent : le tarif de la formule, et la gratuite des
+     * moins de huit ans. C'est ici et non sur la formule que le montant se
+     * calcule, parce qu'il depend de l'adherent autant que de ce qu'il a
+     * choisi.
+     */
+    public function amountDue(): ?int
+    {
+        if (null === $this->membershipType) {
+            return null;
+        }
+
+        $age = $this->ageAtSubmission();
+
+        return null !== $age && $age < self::FREE_UNDER_AGE ? 0 : $this->membershipType->amountDue();
+    }
+
+    public function amountDueLabel(): string
+    {
+        $amount = $this->amountDue();
+
+        if (0 === $amount) {
+            return sprintf('0 € (moins de %d ans)', self::FREE_UNDER_AGE);
+        }
+
+        return null !== $amount && $amount > 0
+            ? $amount.' €'
+            : (string) $this->membershipType?->amountDueLabel();
     }
 
     public function isMinor(?\DateTimeImmutable $reference = null): bool
@@ -180,14 +393,35 @@ class MembershipApplication
     #[Assert\Callback]
     public function validateConditionalFields(ExecutionContextInterface $context): void
     {
-        if (MembershipType::Family === $this->membershipType && !$this->principalMemberName) {
-            $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
-                ->atPath('principalMemberName')
-                ->addViolation();
+        if (MembershipType::Family === $this->membershipType) {
+            if (!$this->principalMemberName) {
+                $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
+                    ->atPath('principalMemberName')
+                    ->addViolation();
+            } elseif ($this->designatesSelfAsPrincipal()) {
+                // L'adhesion famille a 5 € se greffe sur une adhesion
+                // individuelle a 10 € deja prise par quelqu'un d'autre du
+                // foyer. Se designer soi-meme, c'est declarer une famille d'une
+                // seule personne : l'association encaisserait 5 € la ou elle
+                // doit en encaisser 10.
+                $context->buildViolation("L'adhérent principal est la personne de votre foyer qui a déjà pris l'adhésion individuelle à 10 € : ce ne peut pas être vous.")
+                    ->atPath('principalMemberName')
+                    ->addViolation();
+            }
         }
 
         if (!$this->isMinor()) {
             return;
+        }
+
+        // Un mineur n'adhere jamais pour son propre compte : il se rattache a
+        // l'adhesion individuelle d'un adulte de son foyer, par la formule
+        // famille. L'adhesion individuelle engage son titulaire aupres de
+        // l'association, ce qu'un mineur ne peut pas faire seul.
+        if (MembershipType::Individual === $this->membershipType) {
+            $context->buildViolation("Un mineur ne peut pas prendre l'adhésion individuelle : choisissez l'adhésion famille, rattachée à l'adulte de votre foyer qui a déjà adhéré.")
+                ->atPath('membershipType')
+                ->addViolation();
         }
 
         foreach ([
@@ -199,6 +433,23 @@ class MembershipApplication
                 $context->buildViolation($message)->atPath($field)->addViolation();
             }
         }
+    }
+
+    /**
+     * Vrai quand le nom saisi comme adherent principal est celui du titulaire
+     * du bulletin, a la casse, aux accents et aux traits d'union pres, et quel
+     * que soit l'ordre prenom / nom.
+     */
+    public function designatesSelfAsPrincipal(): bool
+    {
+        if (!$this->principalMemberName) {
+            return false;
+        }
+
+        $principal = MemberDirectory::normalize($this->principalMemberName);
+        $parts = [MemberDirectory::normalize((string) $this->firstName), MemberDirectory::normalize((string) $this->lastName)];
+
+        return \in_array($principal, [implode(' ', $parts), implode(' ', array_reverse($parts))], true);
     }
 
     public function getId(): ?int
@@ -462,7 +713,7 @@ class MembershipApplication
      * Idempotente : anonymiser deux fois ne change rien, et conserve la date
      * de la premiere anonymisation.
      */
-    public function anonymize(?\DateTimeImmutable $now = null): static
+    public function anonymize(?\DateTimeImmutable $now = null, ?int $adminId = null): static
     {
         if ($this->isAnonymized()) {
             return $this;
@@ -483,6 +734,7 @@ class MembershipApplication
         $this->signaturePlace = '—';
         $this->signatureName = '—';
         $this->anonymizedAt = $now ?? new \DateTimeImmutable();
+        $this->record(MembershipEventType::Anonymized, $adminId, $this->anonymizedAt);
 
         return $this;
     }

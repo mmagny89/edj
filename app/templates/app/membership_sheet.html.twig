@@ -9,7 +9,7 @@
 {% block body %}
     <div class="mx-auto max-w-3xl px-4 py-6 print:max-w-none print:p-0">
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden" data-controller="print">
-            <a href="{{ path('app_membership_show', {id: application.id}) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+            <a href="{{ path('app_membership_show', {id: application.id}) }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
                 {{ ui.icon('arrow-left', 'size-4') }} Retour au bulletin
             </a>
             <button type="button" class="btn btn-primary" data-action="print#now">{{ ui.icon('printer') }} Imprimer</button>

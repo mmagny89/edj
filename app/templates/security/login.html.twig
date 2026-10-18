@@ -1,6 +1,7 @@
 {% extends 'app/shell.html.twig' %}
 
 {% import 'app/_icons.html.twig' as ui %}
+{% import 'app/_password.html.twig' as pw %}
 
 {% block title %}Connexion - Envie de Jouer{% endblock %}
 
@@ -32,9 +33,13 @@
 
                     <div>
                         <label for="inputPassword" class="mb-1.5 block text-sm font-semibold text-slate-800">Mot de passe</label>
-                        <input type="password" name="_password" id="inputPassword"
-                               class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand"
-                               autocomplete="current-password" required>
+                        <div class="relative" data-controller="password-toggle">
+                            <input type="password" name="_password" id="inputPassword"
+                                   class="block min-h-11 w-full rounded-lg border border-slate-300 py-2 pl-3 pr-12 text-base focus:border-brand"
+                                   autocomplete="current-password" required
+                                   data-password-toggle-target="input">
+                            {{ pw.toggle() }}
+                        </div>
                     </div>
 
                     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
@@ -44,7 +49,7 @@
             </div>
 
             <p class="mt-6 text-center text-sm">
-                <a href="{{ path('site_index') }}" class="inline-flex items-center gap-1.5 font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">{{ ui.icon('arrow-left', 'size-4') }} Retour au site</a>
+                <a href="{{ path('site_index') }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">{{ ui.icon('arrow-left', 'size-4') }} Retour au site</a>
             </p>
         </div>
     </main>

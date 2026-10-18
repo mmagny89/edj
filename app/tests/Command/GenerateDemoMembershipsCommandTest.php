@@ -3,9 +3,13 @@
 namespace App\Tests\Command;
 
 use App\Command\GenerateDemoMembershipsCommand;
+use App\Entity\Member;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
+use App\Repository\MemberRepository;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\MemberDirectory;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -27,9 +31,17 @@ final class GenerateDemoMembershipsCommandTest extends TestCase
             },
         );
 
+        // L'annuaire renvoie toujours le meme adherent : la commande ne
+        // persiste alors aucun Member, et $persisted ne contient que des
+        // bulletins — ce que ces tests comptent.
+        $memberRepository = $this->createStub(MemberRepository::class);
+        $memberRepository->method('findOneByIdentityKey')->willReturn(new Member('EDJ-0001'));
+
         $command = new GenerateDemoMembershipsCommand(
             $entityManager,
             $this->createStub(MembershipApplicationRepository::class),
+            $memberRepository,
+            new MemberDirectory($memberRepository, $entityManager, $this->createStub(Connection::class)),
             $environment,
         );
 

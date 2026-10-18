@@ -25,6 +25,7 @@ final class MembershipNotifier
         private readonly MailerInterface $mailer,
         private readonly Environment $twig,
         private readonly RateLimiterFactoryInterface $membershipConfirmationEmailLimiter,
+        private readonly RateLimiterFactoryInterface $memberAccessEmailLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
         #[Autowire('%app.mailer_from%')]
@@ -90,6 +91,47 @@ final class MembershipNotifier
             ->subject('Bienvenue à Envie de Jouer : votre bulletin est bien reçu')
             ->text($this->twig->render('emails/membership_confirmation.txt.twig', $context))
             ->html($this->twig->render('emails/membership_confirmation.html.twig', $context));
+
+        $this->send($email);
+    }
+
+    /**
+     * Lien d'acces a l'espace adherent. Il part a la seule adresse du
+     * bulletin — jamais a une adresse saisie dans le formulaire : c'est ce qui
+     * fait tenir l'authentification.
+     *
+     * Le responsable legal d'un mineur le recoit aussi : c'est lui qui a
+     * engage l'enfant, et souvent lui qui releve les courriels.
+     */
+    public function sendAccessLink(MembershipApplication $application, string $url): void
+    {
+        // Plafond propre a ce courriel, par destinataire. Celui des
+        // confirmations d'adhesion ne convenait pas : trois par jour, c'est
+        // assez pour un accuse de reception, trop peu pour qui redemande son
+        // lien apres avoir perdu le premier.
+        $key = mb_strtolower((string) $application->getEmail());
+        if (!$this->memberAccessEmailLimiter->create($key)->consume()->isAccepted()) {
+            return;
+        }
+
+        $recipients = [new Address((string) $application->getEmail())];
+        if ($application->isMinor() && $application->getGuardianEmail()) {
+            $recipients[] = new Address($application->getGuardianEmail());
+        }
+
+        $context = [
+            'application' => $application,
+            'url' => $url,
+            'lifetime' => '30 minutes',
+        ];
+
+        $email = (new Email())
+            ->from(new Address($this->mailerFrom, 'Envie de Jouer'))
+            ->to(...$recipients)
+            ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
+            ->subject('Votre fiche d\'adhérent Envie de Jouer')
+            ->text($this->twig->render('emails/member_access_link.txt.twig', $context))
+            ->html($this->twig->render('emails/member_access_link.html.twig', $context));
 
         $this->send($email);
     }

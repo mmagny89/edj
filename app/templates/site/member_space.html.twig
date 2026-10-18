@@ -1,0 +1,61 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Ma fiche d'adhérent - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Bonjour {{ application.firstName }}</h1>
+            <p>
+                Votre numéro d'adhérent est <strong class="member-number">{{ application.memberNumber }}</strong>.
+                Gardez-le : c'est lui qui vous redonne accès à cette page.
+            </p>
+        </div>
+
+        <div class="legal-block member-panel">
+            <h3>Votre adhésion</h3>
+            <p class="member-status member-status--{{ application.status.value }}">{{ application.status.label }}</p>
+            <ul>
+                <li><strong>Formule :</strong> {{ application.membershipType.label }}</li>
+                <li><strong>Déposée le :</strong> {{ application.submittedAt|date('d/m/Y') }}</li>
+                {% if application.validated %}
+                    <li><strong>Validée le :</strong> {{ application.statusChangedAt|date('d/m/Y') }}{% if application.paymentMethod %}, réglée par {{ application.paymentMethod.label|lower }}{% endif %}</li>
+                {% endif %}
+                <li><strong>Droit à l'image :</strong> {{ application.imageRightsRefused ? 'refusé' : 'accepté' }}</li>
+                <li><strong>Communication de votre e-mail à Philibert :</strong> {{ application.philibertConsent ? 'autorisée' : 'refusée' }}</li>
+            </ul>
+            <p>
+                Une erreur, un changement d'adresse ? Écrivez-nous à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a> :
+                cette page se consulte, elle ne se modifie pas.
+            </p>
+        </div>
+
+        <div class="legal-block member-panel">
+            <h3>Votre carte d'adhérent</h3>
+            {% if application.validated and cardUrl %}
+                <p>
+                    Votre carte au format PDF, recto et verso, à garder dans votre téléphone ou à
+                    imprimer. Elle porte votre numéro et les saisons pour lesquelles vous avez adhéré.
+                </p>
+                <div class="form-actions">
+                    <a href="{{ cardUrl }}" class="button button--primary" download>Télécharger ma carte</a>
+                </div>
+            {% elseif application.cancelled %}
+                <p>Cette adhésion a été annulée : aucune carte ne lui correspond.</p>
+            {% else %}
+                <p>
+                    Votre carte sera disponible ici dès que l'association aura validé votre adhésion
+                    et encaissé votre cotisation.
+                </p>
+            {% endif %}
+        </div>
+
+        <p class="form-privacy">
+            Ce lien expire trente minutes après son envoi. Passé ce délai,
+            <a href="{{ path('member_access_request') }}">redemandez-en un</a> avec votre numéro.
+        </p>
+    </main>
+{% endblock %}

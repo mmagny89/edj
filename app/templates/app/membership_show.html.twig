@@ -14,7 +14,7 @@
 {% block content %}
     {% import _self as f %}
 
-    <a href="{{ path('app_membership_applications') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+    <a href="{{ path('app_membership_applications') }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
         {{ ui.icon('arrow-left', 'size-4') }} Retour aux adhésions
     </a>
 
@@ -23,7 +23,12 @@
             <h1 class="text-3xl font-bold text-ink">
                 {% if application.anonymized %}Bulletin anonymisé{% else %}{{ application.firstName }} {{ application.lastName }}{% endif %}
             </h1>
+            {% if application.memberNumber %}
+                <p class="mt-1 font-mono text-lg font-bold tracking-wider text-brand">{{ application.memberNumber }}</p>
+            {% endif %}
             <p class="mt-1 text-slate-600">
+                <span class="badge mr-1 border {{ application.status.badgeClass }}">{{ application.status.label }}</span>
+                {% if application.paymentMethod %}<span class="badge mr-1 bg-slate-100 text-slate-700">{{ application.paymentMethod.label }}</span>{% endif %}
                 {% if application.paper %}
                     <span class="badge mr-1 bg-amber-100 text-amber-900">Fiche papier</span> Remise le {{ application.submittedAt|date('d/m/Y') }}
                 {% else %}
@@ -37,6 +42,9 @@
             <div class="flex flex-wrap gap-3">
                 <a href="{{ path('app_membership_sheet', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
                     {{ ui.icon('printer') }} Imprimer la fiche<span class="sr-only"> (nouvel onglet)</span>
+                </a>
+                <a href="{{ path('app_membership_card', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
+                    {{ ui.icon('eye') }} Voir la carte<span class="sr-only"> d'adhérent, au format PDF (nouvel onglet)</span>
                 </a>
                 <form method="post" action="{{ path('app_membership_anonymize', {id: application.id}) }}"
                       data-controller="confirm"
@@ -55,6 +63,61 @@
             seuls la formule, les autorisations, la date de dépôt et l'année de naissance sont conservées.
         </div>
     {% endif %}
+
+    <section class="card mt-8 p-6" aria-labelledby="t-etat">
+        <h2 id="t-etat" class="text-lg font-bold text-ink">État de l'adhésion</h2>
+        <p class="mt-2 text-sm text-slate-600">
+            {% if application.validated %}
+                Validée le {{ application.statusChangedAt|date('d/m/Y') }}{% if application.paymentMethod %}, réglée par {{ application.paymentMethod.label|lower }}{% else %} (formule gratuite à l'année){% endif %}.
+            {% elseif application.cancelled %}
+                Annulée le {{ application.statusChangedAt|date('d/m/Y') }}. Le bulletin reste consultable.
+            {% else %}
+                En attente :
+                {% if application.amountDue %}
+                    <strong>{{ application.amountDueLabel }}</strong> restent à encaisser.
+                {% else %}
+                    {{ application.amountDueLabel|lower }}, il n'y a rien à encaisser.
+                {% endif %}
+            {% endif %}
+        </p>
+
+        <div class="mt-5 flex flex-wrap items-end gap-3">
+            {% if not application.validated %}
+                <form method="post" action="{{ path('app_membership_validate', {id: application.id}) }}" class="flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    {% if application.amountDue %}
+                        <div>
+                            <label for="moyen-reglement" class="mb-1.5 block text-sm font-semibold text-slate-800">Réglée par</label>
+                            <select name="paymentMethod" id="moyen-reglement" required
+                                    class="block min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                                {% for method in enum_cases('App\\Enum\\PaymentMethod') %}
+                                    <option value="{{ method.value }}" {{ application.paymentMethod == method ? 'selected' }}>{{ method.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Valider l'adhésion</button>
+                </form>
+            {% endif %}
+
+            {% if not application.cancelled %}
+                <form method="post" action="{{ path('app_membership_cancel', {id: application.id}) }}"
+                      data-controller="confirm"
+                      data-confirm-message-value="Annuler cette adhésion ? Le bulletin reste consultable, mais l'adhésion ne compte plus."
+                      data-action="submit->confirm#ask">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    <button type="submit" class="btn btn-danger">{{ ui.icon('x') }} Annuler l'adhésion</button>
+                </form>
+            {% endif %}
+
+            {% if not application.pending %}
+                <form method="post" action="{{ path('app_membership_reopen', {id: application.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    <button type="submit" class="btn btn-secondary">{{ ui.icon('arrow-left') }} Remettre en attente</button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
         {% if not application.anonymized %}
@@ -79,9 +142,25 @@
             <h2 id="t-adhesion" class="text-lg font-bold text-ink">Adhésion</h2>
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
-                {{ f.row('Tarif', application.membershipType.priceLabel) }}
-                {% if not application.anonymized %}
-                    {{ f.row('Adhérent principal', application.principalMemberName) }}
+                {{ f.row('Montant dû', application.amountDueLabel) }}
+                {% if not application.anonymized and application.principalMemberName %}
+                    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-semibold text-slate-600">Adhérent principal</dt>
+                        <dd class="text-slate-900 sm:col-span-2">
+                            {{ application.principalMemberName }}
+                            {# Le bulletin public laisse saisir ce nom en texte libre : la
+                               fiche dit s'il correspond a une adhesion individuelle connue,
+                               plutot que de le presenter comme acquis. #}
+                            {% if principal %}
+                                <a href="{{ path('app_membership_show', {id: principal.id}) }}"
+                                   class="badge ml-1 border border-emerald-300 bg-emerald-50 text-emerald-900 underline underline-offset-2">
+                                    {{ principal.memberNumber }}
+                                </a>
+                            {% else %}
+                                <span class="badge ml-1 border border-amber-300 bg-amber-50 text-amber-900">aucune adhésion individuelle à ce nom</span>
+                            {% endif %}
+                        </dd>
+                    </div>
                 {% endif %}
             </dl>
 
@@ -133,4 +212,29 @@
             {% endif %}
         </section>
     </div>
+
+    {# Historique : discret a dessein. Il repond a « qui a fait quoi, et
+       quand » quand on le cherche, sans disputer la place aux informations
+       de l'adhesion. Il ne porte aucune donnee de l'adherent : il survit donc
+       a l'anonymisation du bulletin qu'il raconte. #}
+    {% if application.history is not empty %}
+        <section class="mt-8 border-t border-slate-200 pt-4" aria-labelledby="t-historique">
+            <h2 id="t-historique" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Historique</h2>
+            <ol class="mt-2 space-y-1 text-xs text-slate-500">
+                {% for event in application.history %}
+                    <li>
+                        <time datetime="{{ event.occurredAt|date('Y-m-d\\TH:i') }}">{{ event.occurredAt|date('d/m/Y à H:i') }}</time>
+                        — {{ event.type.label }}{% if event.detail %} ({{ event.detail }}){% endif %},
+                        {% if event.actorId is null %}
+                            auteur inconnu
+                        {% elseif actors[event.actorId] is defined %}
+                            par {{ actors[event.actorId] }}
+                        {% else %}
+                            par un compte supprimé
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+    {% endif %}
 {% endblock %}

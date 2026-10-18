@@ -14,14 +14,43 @@ framework:
             policy: 'sliding_window'
             limit: 40
             interval: '1 hour'
-        # Courriel de confirmation : une adresse ne recoit que trois messages par
-        # jour. Le plafond par IP ci-dessus borne un expediteur ; celui-ci borne
-        # un destinataire, que l'on pourrait sinon inonder depuis des IP
-        # differentes en saisissant son adresse dans le bulletin.
+        # Courriel de confirmation, par destinataire. Le plafond par IP
+        # ci-dessus borne un expediteur ; celui-ci borne la personne que l'on
+        # pourrait inonder depuis des IP differentes en saisissant son adresse
+        # dans le bulletin.
+        #
+        # Une meme adresse sert legitimement a plusieurs bulletins : une
+        # adhesion = un bulletin, et un foyer partage souvent une seule boite —
+        # les parents saisissent la leur pour chacun de leurs enfants. Le
+        # plafond est donc dimensionne sur un grand foyer, pas au plus juste :
+        # a trois par jour, le quatrieme bulletin d'une famille ne recevait
+        # aucune confirmation, en silence.
         membership_confirmation_email:
             policy: 'sliding_window'
-            limit: 3
+            limit: 12
             interval: '1 day'
+        # Demande d'acces a l'espace adherent. Le formulaire envoie un courriel
+        # a chaque numero connu : sans plafond, il permet d'ecrire en rafale a
+        # tous les adherents, un numero apres l'autre. Dix demandes par heure et
+        # par adresse IP laissent largement la place a qui cherche son numero.
+        member_access_request:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'
+        # Second plafond, par destinataire : celui ci-dessus borne un
+        # expediteur, celui-ci borne la personne que l'on pourrait inonder
+        # depuis des adresses IP differentes. Distinct du plafond des
+        # confirmations d'adhesion, qui est journalier : redemander son lien
+        # quatre fois dans la journee est le fait d'une personne qui a perdu le
+        # premier, pas d'un abus.
+        #
+        # Meme raison qu'au-dessus pour la valeur : une boite familiale recoit
+        # le lien de chacun de ses adherents, et personne ne doit rester a la
+        # porte parce que son frere a demande le sien avant lui.
+        member_access_email:
+            policy: 'sliding_window'
+            limit: 12
+            interval: '1 hour'
 
 # Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
 # (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
@@ -34,3 +63,15 @@ when@test:
                 policy: 'sliding_window'
                 limit: 100000
                 interval: '1 hour'
+            member_access_request:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
+            member_access_email:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
+            membership_confirmation_email:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 day'

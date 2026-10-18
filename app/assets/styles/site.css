@@ -1121,6 +1121,36 @@ h1 {
     }
 }
 
+/* En-tete sur les plus petits telephones. A 320 px, la marque et le bouton de
+   menu ne tiennent pas cote a cote : .brand porte min-width: max-content, donc
+   refuse de se reduire, et la page debordait de 14 px — un debordement
+   horizontal sur toutes les pages du site, celui que le point 12 des
+   conventions fait mesurer. On libere la marque et on reduit le bouton a son
+   icone, son libelle restant lisible par un lecteur d'ecran. */
+@media (max-width: 420px) {
+    .brand {
+        min-width: 0;
+    }
+
+    .brand__mascot {
+        width: 44px;
+        height: 44px;
+    }
+
+    .brand strong {
+        font-size: 1.25rem;
+    }
+
+    .menu-toggle span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
 @media (max-width: 680px) {
     .stats-grid,
     .partners-list {
@@ -2041,4 +2071,48 @@ html[data-motion="reduce"] *::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Espace adherent
+   Consultable par lien signe, depuis un courriel : souvent ouvert sur un
+   telephone, d'ou des panneaux qui s'empilent plutot qu'une grille.
+   --------------------------------------------------------------------------- */
+
+.member-panel {
+    margin-top: clamp(18px, 3vw, 28px);
+}
+
+.member-number {
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    letter-spacing: 0.08em;
+}
+
+/* Pastille d'etat : le mot seul ne suffit pas a distinguer « validée » de
+   « annulée » d'un coup d'oeil, et la couleur seule ne suffit jamais — les
+   deux sont donc portes ensemble, texte compris. */
+.member-status {
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 4px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.member-status--validee {
+    border-color: var(--green);
+    background: #dcfce7;
+    color: #14532d;
+}
+
+.member-status--annulee {
+    background: #e9ebef;
+    color: #2b3040;
+}
+
+.member-status--en_attente {
+    border-color: #a16207;
+    background: #fef3c7;
+    color: #713f12;
 }

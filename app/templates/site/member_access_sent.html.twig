@@ -1,0 +1,27 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Lien envoyé - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Lien envoyé</h1>
+            {# Message volontairement identique que le numero existe ou non :
+               sinon, le formulaire dirait qui est adherent et qui ne l'est pas. #}
+            <p>
+                Si ce numéro correspond bien à une adhésion, un lien vient de partir à l'adresse
+                e-mail du bulletin. Il reste valable trente minutes.
+            </p>
+            <p>
+                Rien n'arrive ? Vérifiez vos indésirables, puis
+                <a href="{{ path('member_access_request') }}">redemandez un lien</a>.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

@@ -8,6 +8,71 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- Numero d'adherent unique et stable, de la forme `EDJ-0001`. Il appartient a
+  la personne et non au bulletin : une readhesion la saison suivante garde le
+  meme numero, le rapprochement se faisant sur le nom, le prenom et la date de
+  naissance normalises. Il figure sur la fiche d'administration, dans la liste
+  et dans le courriel de confirmation.
+- Suivi de l'etat d'une adhesion : en attente, validee ou annulee, avec le
+  moyen de reglement de la cotisation (virement, especes, cheque) et
+  l'administrateur qui l'a decide. Une adhesion annulee reste consultable ;
+  c'est l'anonymisation, distincte, qui efface les donnees personnelles.
+- Espace adherent, sans compte ni mot de passe : l'adherent saisit son numero
+  sur `/adhesion/ma-fiche`, recoit a l'adresse de son bulletin un lien signe
+  valable trente minutes, et consulte sa fiche. Aucune autre voie n'y mene, et
+  la reponse est la meme qu'un numero existe ou non.
+- Carte d'adherent dematerialisee, en PDF de deux pages au format d'une carte
+  bancaire : recto reprenant le logo de l'association, verso avec le nom, le
+  numero et les huit saisons. Telechargeable depuis l'espace adherent une fois
+  l'adhesion validee.
+- Tampons de saison, configures par le super-administrateur dans
+  « Saisons » : un symbole (etoile, couronne, coeur) et une couleur (orange ou
+  bleu) apposes sur la carte en face de chaque annee reglee, de quoi
+  reconnaitre une carte a jour a l'entree d'un evenement. Les quatre premieres
+  saisons sont posees d'apres les cartes papier en circulation (2024 etoile
+  orange, 2025 couronne bleue, 2026 coeur orange, 2027 etoile bleue) ; les
+  suivantes se saisissent, la rotation n'etant qu'une proposition.
+- Visualisation de la carte d'un adherent depuis l'administration, sur sa
+  fiche : la carte s'ouvre dans un onglet, meme avant validation, pour que le
+  bureau la verifie ou la reimprime.
+- Un oeil d'affichage sur tous les champs mot de passe (connexion et changement
+  de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
+  reste un champ mot de passe ordinaire.
+
+### Modifie
+
+- Le suivi des adhesions passe du super-administrateur au contributeur : c'est
+  le travail courant du bureau. Les comptes d'administration restent reserves
+  au super-administrateur, qui seul en cree, bloque ou promeut.
+- L'image PHP installe l'extension `gd`, exigee par la generation des cartes.
+
+### Corrige
+
+- La liste des adhesions etait un tableau de sept colonnes, illisible sur un
+  telephone : elle est doublee de cartes, une par bulletin, affichees seules
+  en dessous de 768 px. Les cases a cocher et l'anonymisation en masse
+  restent une action de bureau, sur le tableau — un champ duplique aurait
+  envoye chaque identifiant deux fois.
+- Cibles tactiles sous la taille minimale : les cases a cocher de la liste des
+  adhesions passent de 20 a 24 px, et les liens de retour des pages
+  d'administration et de connexion de 20 a 44 px de haut.
+- Debordement horizontal de l'en-tete du site en dessous de 420 px : la marque
+  et le bouton de menu ne tenaient pas cote a cote, et toutes les pages
+  defilaient lateralement.
+- Le conteneur `worker` ne se voyait injecter ni `MAILER_FROM`, ni
+  `SITE_INDEXABLE`, ni `MEMBERS_WHATSAPP_URL` : comme c'est lui qui rend et
+  envoie les courriels, chaque envoi echouait sur « Environment variable not
+  found », etait rejoue trois fois puis abandonne. Aucun courriel ne partait,
+  le conteneur restait demarre et rien ne le signalait.
+- Une adhesion famille annoncait 10 € a regler sur la fiche d'administration et
+  dans le courriel de confirmation, en reprenant le tarif du foyer (« 10 € par
+  an, puis 5 € par personne supplementaire »). Le montant du est desormais
+  celui de la personne : 5 € pour une adhesion famille, 10 € pour une adhesion
+  individuelle, rien a l'annee pour la formule consommateur. Le tarif complet
+  de la formule reste affiche a part.
+
 ### Securite
 
 - Dependances de construction du front mises a jour (Webpack Encore 6,

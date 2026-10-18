@@ -15,12 +15,71 @@
         <a href="{{ path('app_membership_philibert') }}" class="btn btn-secondary">
             {{ ui.icon('download') }} Liste Philibert
             <span class="badge bg-blue-100 text-blue-900">{{ philibertCount }}</span>
-            <span class="sr-only">adresse(s) autorisée(s), au format CSV</span>
+            <span class="sr-only">adresse(s) autorisée(s) d'adhérents à jour pour la saison {{ philibertSeason }}, au format CSV</span>
         </a>
         </div>
     </div>
 
-    <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-8"
+
+    {# Filtres en GET : une liste filtree se partage par son lien — « les
+       impayes de la saison 2027 » — et un rechargement ne change pas ce qu'on
+       regarde. Pas de JavaScript : le bouton suffit. #}
+    <form method="get" action="{{ path('app_membership_applications') }}" class="card mt-8 p-5" role="search" aria-labelledby="t-filtres">
+        <h2 id="t-filtres" class="text-base font-bold text-ink">Filtrer</h2>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="sm:col-span-2 lg:col-span-1">
+                <label for="f-q" class="mb-1.5 block text-sm font-semibold text-slate-800">Nom, e-mail ou numéro</label>
+                <input type="search" name="q" id="f-q" value="{{ filters.q }}"
+                       class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand"
+                       placeholder="Durand, EDJ-0012…" aria-describedby="f-q-aide">
+                <p id="f-q-aide" class="mt-1.5 text-sm text-slate-600">
+                    Cherche aussi dans l'adhérent principal : le nom d'un parent remonte tout le foyer.
+                </p>
+            </div>
+
+            <div>
+                <label for="f-etat" class="mb-1.5 block text-sm font-semibold text-slate-800">État</label>
+                <select name="etat" id="f-etat" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                    <option value="">Tous</option>
+                    {% for status in enum_cases('App\\Enum\\MembershipStatus') %}
+                        <option value="{{ status.value }}" {{ filters.status == status ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="f-formule" class="mb-1.5 block text-sm font-semibold text-slate-800">Formule</label>
+                <select name="formule" id="f-formule" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                    <option value="">Toutes</option>
+                    {% for type in enum_cases('App\\Enum\\MembershipType') %}
+                        <option value="{{ type.value }}" {{ filters.type == type ? 'selected' }}>{{ type.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="f-saison" class="mb-1.5 block text-sm font-semibold text-slate-800">Saison</label>
+                <select name="saison" id="f-saison" class="block min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand"
+                        aria-describedby="f-saison-aide">
+                    <option value="">Toutes</option>
+                    {% for season in seasons %}
+                        <option value="{{ season }}" {{ filters.season == season ? 'selected' }}>{{ season }}</option>
+                    {% endfor %}
+                </select>
+                <p id="f-saison-aide" class="mt-1.5 text-sm text-slate-600">Du 1<sup>er</sup> octobre au 30 septembre.</p>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primary">{{ ui.icon('eye') }} Filtrer</button>
+            {% if filtered %}
+                <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('x') }} Tout afficher</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <form method="post" action="{{ path('app_membership_anonymize_many') }}" class="card mt-6"
           data-controller="select-all confirm"
           data-confirm-message-value="Anonymiser les bulletins cochés ? Les noms et coordonnées seront effacés définitivement."
           data-action="submit->confirm#ask">
@@ -29,9 +88,13 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <h2 class="text-lg font-bold text-ink">
                 Bulletins <span class="font-medium text-slate-500">{{ applications|length }}</span>
+                {% if filtered %}<span class="badge ml-1 bg-blue-100 text-blue-900">filtrés</span>{% endif %}
             </h2>
+            {# Cache sous md, comme les cases a cocher du tableau : l'anonymisation
+               en masse reste une action de bureau. Dupliquer les cases dans les
+               cartes enverrait chaque identifiant deux fois. #}
             {% if applications is not empty %}
-                <button type="submit" class="btn btn-danger" data-select-all-target="action" disabled>
+                <button type="submit" class="btn btn-danger hidden md:inline-flex" data-select-all-target="action" disabled>
                     {{ ui.icon('eye-slash') }} Anonymiser la sélection
                     (<span data-select-all-target="count">0</span>)
                 </button>
@@ -39,21 +102,27 @@
         </div>
 
         {% if applications is empty %}
-            <p class="px-5 py-8 text-slate-600">Aucun bulletin déposé pour le moment.</p>
+            <p class="px-5 py-8 text-slate-600">
+                {% if filtered %}
+                    Aucun bulletin ne correspond à ces filtres.
+                {% else %}
+                    Aucun bulletin déposé pour le moment.
+                {% endif %}
+            </p>
         {% else %}
-            <div class="overflow-x-auto">
+            <div class="relative hidden overflow-x-auto md:block">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
                         <tr>
                             <th scope="col" class="w-12 px-5 py-3">
-                                <input type="checkbox" class="size-5 rounded border-slate-300 text-brand" aria-label="Tout sélectionner"
+                                <input type="checkbox" class="size-6 rounded border-slate-300 text-brand" aria-label="Tout sélectionner"
                                        data-select-all-target="master" data-action="select-all#toggleAll">
                             </th>
                             <th scope="col" class="px-3 py-3 font-semibold">Déposé le</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Adhérent</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Contact</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Formule</th>
-                            <th scope="col" class="px-3 py-3 font-semibold">Autorisations</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">État et autorisations</th>
                             <th scope="col" class="px-5 py-3 text-right font-semibold">Fiche</th>
                         </tr>
                     </thead>
@@ -63,7 +132,7 @@
                                 <td class="px-5 py-3 align-top">
                                     {% if not application.anonymized %}
                                         <input type="checkbox" name="ids[]" value="{{ application.id }}"
-                                               class="size-5 rounded border-slate-300 text-brand"
+                                               class="size-6 rounded border-slate-300 text-brand"
                                                aria-label="Sélectionner {{ application.firstName }} {{ application.lastName }}"
                                                data-select-all-target="item" data-action="select-all#refresh">
                                     {% endif %}
@@ -79,6 +148,9 @@
                                 </td>
 
                                 <td class="px-3 py-3 align-top">
+                                    {% if application.memberNumber %}
+                                        <div class="font-mono text-xs font-bold tracking-wider text-brand">{{ application.memberNumber }}</div>
+                                    {% endif %}
                                     {% if application.anonymized %}
                                         <span class="badge bg-slate-200 text-slate-700">Anonymisé</span>
                                         <div class="mt-1 text-xs">le {{ application.anonymizedAt|date('d/m/Y') }}</div>
@@ -106,6 +178,9 @@
                                    a l'image doit se voir sans avoir a lire la ligne. #}
                                 <td class="px-3 py-3 align-top">
                                     <div class="flex flex-col items-start gap-1">
+                                        <span class="badge border {{ application.status.badgeClass }}">
+                                            {{ application.status.label }}{% if application.paymentMethod %} · {{ application.paymentMethod.label|lower }}{% endif %}
+                                        </span>
                                         {% if application.imageRightsRefused %}
                                             <span class="badge bg-red-100 text-red-900">Photos refusées</span>
                                         {% else %}
@@ -127,6 +202,91 @@
                     </tbody>
                 </table>
             </div>
+
+            {# Sept colonnes sont illisibles a 390 px (conventions, point 10) :
+               la meme liste en cartes, une par bulletin. Un seul des deux est
+               affiche, l'autre est en display:none donc absent des lecteurs
+               d'ecran. Aucune case a cocher ici : un champ duplique enverrait
+               son identifiant deux fois. #}
+            <ul class="divide-y divide-slate-100 md:hidden">
+                {% for application in applications %}
+                    <li>
+                        <article class="px-5 py-4 {{ application.anonymized ? 'bg-slate-50/60 text-slate-500' }}">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                    {% if application.memberNumber %}
+                                        <p class="font-mono text-xs font-bold tracking-wider text-brand">{{ application.memberNumber }}</p>
+                                    {% endif %}
+                                    <h3 class="font-semibold {{ application.anonymized ? '' : 'text-slate-800' }}">
+                                        {% if application.anonymized %}Bulletin anonymisé{% else %}{{ application.firstName }} {{ application.lastName }}{% endif %}
+                                    </h3>
+                                </div>
+                                <span class="badge border {{ application.status.badgeClass }}">
+                                    {{ application.status.label }}{% if application.paymentMethod %} · {{ application.paymentMethod.label|lower }}{% endif %}
+                                </span>
+                            </div>
+
+                            <dl class="mt-3 grid gap-x-4 gap-y-2 text-sm">
+                                <div class="flex flex-wrap gap-x-2">
+                                    <dt class="font-semibold text-slate-600">Déposé le</dt>
+                                    <dd>
+                                        {{ application.submittedAt|date('d/m/Y') }}
+                                        {%- if application.paper %} <span class="badge bg-amber-100 text-amber-900">Fiche papier</span>
+                                        {%- else %} à {{ application.submittedAt|date('H:i') }}{% endif %}
+                                    </dd>
+                                </div>
+
+                                {% if application.anonymized %}
+                                    <div class="flex flex-wrap gap-x-2">
+                                        <dt class="font-semibold text-slate-600">Anonymisé le</dt>
+                                        <dd>{{ application.anonymizedAt|date('d/m/Y') }}</dd>
+                                    </div>
+                                {% else %}
+                                    <div class="flex flex-wrap gap-x-2">
+                                        <dt class="font-semibold text-slate-600">Né(e) le</dt>
+                                        <dd>
+                                            {{ application.birthDate|date('d/m/Y') }}
+                                            {%- if application.isMinor %} <span class="badge bg-amber-100 text-amber-900">mineur</span>{% endif %}
+                                        </dd>
+                                    </div>
+                                    <div class="flex flex-wrap gap-x-2">
+                                        <dt class="font-semibold text-slate-600">Contact</dt>
+                                        <dd>
+                                            <a class="inline-flex min-h-11 items-center break-all py-2 font-semibold text-brand underline underline-offset-2 hover:text-brand-dark" href="mailto:{{ application.email }}">{{ application.email }}</a>
+                                            {% if application.phone %}<span class="block text-slate-600">{{ application.phone }}</span>{% endif %}
+                                        </dd>
+                                    </div>
+                                {% endif %}
+
+                                <div class="flex flex-wrap gap-x-2">
+                                    <dt class="font-semibold text-slate-600">Formule</dt>
+                                    <dd>{{ application.membershipType.label }}</dd>
+                                </div>
+
+                                <div class="flex flex-wrap gap-x-2">
+                                    <dt class="font-semibold text-slate-600">Autorisations</dt>
+                                    <dd class="flex flex-wrap gap-1">
+                                        {% if application.imageRightsRefused %}
+                                            <span class="badge bg-red-100 text-red-900">Photos refusées</span>
+                                        {% else %}
+                                            <span class="badge bg-green-100 text-green-900">Photos acceptées</span>
+                                        {% endif %}
+                                        {% if application.philibertConsent %}
+                                            <span class="badge bg-blue-100 text-blue-900">Philibert</span>
+                                        {% endif %}
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            <p class="mt-3">
+                                <a href="{{ path('app_membership_show', {id: application.id}) }}" class="btn btn-secondary">
+                                    {{ ui.icon('eye') }} Voir<span class="sr-only"> le bulletin {{ application.anonymized ? 'anonymisé' : application.firstName ~ ' ' ~ application.lastName }}</span>
+                                </a>
+                            </p>
+                        </article>
+                    </li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </form>
 {% endblock %}

@@ -4,7 +4,10 @@ namespace App\Command;
 
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
+use App\Repository\MemberRepository;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\MemberDirectory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -41,6 +44,8 @@ final class GenerateDemoMembershipsCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipApplicationRepository $applications,
+        private readonly MemberRepository $memberRepository,
+        private readonly MemberDirectory $members,
         #[Autowire('%kernel.environment%')]
         private readonly string $environment,
     ) {
@@ -66,7 +71,10 @@ final class GenerateDemoMembershipsCommand extends Command
 
         if ($input->getOption('purge')) {
             $deleted = $this->applications->deleteDemo(self::DEMO_DOMAIN);
-            $io->success(sprintf('%d bulletin(s) fictif(s) supprimé(s).', $deleted));
+            // Les adherents que ces bulletins faisaient naitre ne designent
+            // plus rien : les laisser consommerait des numeros pour toujours.
+            $orphans = $this->memberRepository->deleteOrphans();
+            $io->success(sprintf('%d bulletin(s) fictif(s) supprimé(s), et %d adhérent(s) devenu(s) orphelin(s).', $deleted, $orphans));
 
             return Command::SUCCESS;
         }
@@ -86,6 +94,7 @@ final class GenerateDemoMembershipsCommand extends Command
             // autorisations qui varient : la liste montre tous les cas.
             $application = $this->build($i, $types[$i % \count($types)], 0 === $i % 4);
             $minors += $application->isMinor() ? 1 : 0;
+            $this->members->attach($application);
             $this->entityManager->persist($application);
         }
 
@@ -106,6 +115,14 @@ final class GenerateDemoMembershipsCommand extends Command
         // Un mineur a entre 8 et 15 ans ; un majeur, entre 20 et 70.
         $age = $minor ? 8 + ($index % 8) : 20 + (($index * 11) % 51);
 
+        // Un mineur ne prend jamais l'adhesion individuelle : il se rattache a
+        // celle d'un adulte de son foyer (voir MembershipApplication). Des
+        // donnees de demonstration qui l'enfreignent donneraient a lire dans
+        // l'administration un cas que le bulletin refuse.
+        if ($minor && MembershipType::Individual === $type) {
+            $type = MembershipType::Family;
+        }
+
         $application = (new MembershipApplication())
             ->setLastName($lastName)
             ->setFirstName($firstName)
@@ -124,8 +141,25 @@ final class GenerateDemoMembershipsCommand extends Command
             ->setSignatureName($fullName);
 
         if (MembershipType::Family === $type) {
-            $application->setPrincipalMemberName($fullName);
+            // Jamais son propre nom : une adhesion famille se greffe sur
+            // l'adhesion individuelle d'une autre personne du foyer. C'est
+            // precisement ce que le bulletin refuse desormais, et des donnees
+            // de demonstration qui l'enfreignent donnent a lire dans
+            // l'administration un cas qui ne peut plus se produire.
+            $principal = self::FIRST_NAMES[(($index + 3) * 7) % \count(self::FIRST_NAMES)].' '.$lastName;
+            $application->setPrincipalMemberName($principal);
         }
+
+        // Les quatre etats possibles tournent, pour que la liste montre une
+        // adhesion en attente, deux validees aux reglements differents et une
+        // annulee.
+        $owes = ($application->amountDue() ?? 0) > 0;
+        match ($index % 4) {
+            1 => $application->validate($owes ? PaymentMethod::Cheque : null, null),
+            2 => $application->validate($owes ? PaymentMethod::Transfer : null, null),
+            3 => $application->cancel(null),
+            default => null,
+        };
 
         if ($minor) {
             $application

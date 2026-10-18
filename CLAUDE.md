@@ -45,6 +45,17 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   `worker` (consommateur Messenger). Les courriels passent par le transport
   `async` et les taches recurrentes par `App\Schedule` : sans le worker, rien
   ne part et aucune tache ne tourne — et aucune erreur ne le signale.
+- Un adherent (`App\Entity\Member`) est une personne, un bulletin
+  (`MembershipApplication`) un acte d'adhesion : le numero `EDJ-0001` vit sur
+  le premier et survit aux readhesions. Le rapprochement passe par
+  `MemberDirectory`, le rang par la sequence PostgreSQL `member_number_seq`
+  (exclue de Doctrine par `schema_filter` dans `doctrine.yaml`).
+- L'espace adherent (`/adhesion/ma-fiche`) n'a ni compte ni mot de passe : un
+  lien signe par `UriSigner`, expirant en trente minutes, part a l'adresse du
+  bulletin. Toute reponse a une demande est identique, numero connu ou non.
+- La carte d'adherent est un PDF produit par Dompdf, qui exige `ext-gd` dans
+  l'image. Son gabarit (`templates/pdf/`) n'accepte ni flex, ni grid, ni
+  positionnement absolu : flux normal et tableaux seulement.
 - `RUN_MIGRATIONS` vaut 1 en dev et recette, 0 en production, ou la migration
   est une etape explicite du deploiement.
 - Les conteneurs, reseaux et volumes portent le suffixe `${ENV}` :

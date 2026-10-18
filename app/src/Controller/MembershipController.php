@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\MembershipApplication;
 use App\Form\MembershipApplicationType;
+use App\Service\MemberDirectory;
 use App\Service\MembershipNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,6 +18,7 @@ final class MembershipController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
+        private readonly MemberDirectory $members,
         private readonly RateLimiterFactoryInterface $membershipApplicationLimiter,
     ) {
     }
@@ -37,6 +39,10 @@ final class MembershipController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Le numero d'adherent est attribue avant l'enregistrement : le
+            // courriel d'accuse de reception le porte, et c'est lui qui ouvre
+            // ensuite l'acces a la fiche et a la carte.
+            $this->members->attach($application);
             $this->entityManager->persist($application);
             $this->entityManager->flush();
 

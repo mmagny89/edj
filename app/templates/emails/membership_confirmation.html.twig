@@ -16,9 +16,22 @@
             </p>
 
             <h2 style="margin:24px 0 8px;font-size:16px;color:#171922;">Votre adhésion</h2>
+            {% if application.memberNumber %}
+                <p style="margin:0 0 12px;padding:10px 14px;background:#f1f5f9;border-radius:8px;">
+                    Votre numéro d'adhérent :
+                    <strong style="font-size:17px;letter-spacing:1px;">{{ application.memberNumber }}</strong><br>
+                    <span style="font-size:13px;color:#475569;">
+                        Conservez-le : il vous donne accès à votre fiche et à votre carte sur
+                        <a href="{{ url('member_access_request') }}">{{ url('member_access_request') }}</a>.
+                    </span>
+                </p>
+            {% endif %}
+            {# Le montant du, pas le tarif de la formule : « 10 € par an, puis
+               5 € par personne supplementaire » se lisait comme 10 € sur une
+               adhesion famille, alors que la personne ne doit que 5 €. #}
             <p style="margin:0;">
                 <strong>{{ application.membershipType.label }}</strong><br>
-                {{ application.membershipType.priceLabel }}
+                À régler : <strong>{{ application.amountDueLabel }}</strong>
             </p>
             <p style="margin:12px 0 0;">
                 Le règlement se fait sur place, lors d'une de nos soirées. La saison associative
