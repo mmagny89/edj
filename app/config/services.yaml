@@ -59,6 +59,9 @@ parameters:
     app.form_guard.min_seconds: 3
     app.form_guard.max_seconds: 21600
 
+    # Inactivite au-dela de laquelle une session de gestion est coupee (30 minutes).
+    app.session.idle_seconds: 1800
+
 services:
     _defaults:
         autowire: true

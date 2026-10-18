@@ -28,6 +28,17 @@ GitHub, par `.github/workflows/publication.yml`.
   libre refusent aussi les caracteres de controle et les chevrons — de quoi glisser du
   balisage ou un retour a la ligne dans un courriel, un export ou un tableur —, sans
   toucher aux accents, apostrophes, tirets ni chiffres.
+- Session de gestion coupee apres 30 minutes d'inactivite : un poste laisse ouvert sur
+  la liste des adhesions ne montre plus de donnees personnelles a qui s'assoit
+  devant. Le cookie de session de PHP ne dit rien de l'inactivite — sans cela, la
+  session ne s'eteignait qu'a la fermeture du navigateur, c'est-a-dire jamais pour un
+  onglet laisse ouvert.
+- Sauvegardes chiffrables en AES-256 (`BACKUP_PASSPHRASE_FILE`) : le dump ne touche
+  jamais le disque en clair, l'archive se relit — dechiffrement compris — avant d'etre
+  gardee, et la restauration d'essai refuse une mauvaise phrase avec un message clair.
+  Sans la variable, rien ne change. Voir `docs/SECURITE-DONNEES.md`, qui dit aussi ce
+  qui n'est pas fait : double authentification, durcissement du serveur, anonymisation
+  automatique.
 
 ## [1.3.0] - 2026-10-18
 
