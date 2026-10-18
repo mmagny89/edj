@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Member;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
@@ -29,12 +30,18 @@ final class MembershipAdminTest extends WebTestCase
         $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $this->paperEmail = 'a-'.bin2hex(random_bytes(5)).'@papier.example.test';
         $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
+        // Les adherents nes de ces bulletins : sans cela, ils s'accumulent d'un cas
+        // a l'autre et d'une execution a l'autre, et fausseraient tout comptage.
+        $this->entityManager->createQuery('DELETE FROM '.Member::class)->execute();
         $this->logIn('admin@example.test');
     }
 
     protected function tearDown(): void
     {
         $this->entityManager->createQuery('DELETE FROM '.MembershipApplication::class)->execute();
+        // Les adherents nes de ces bulletins : sans cela, ils s'accumulent d'un cas
+        // a l'autre et d'une execution a l'autre, et fausseraient tout comptage.
+        $this->entityManager->createQuery('DELETE FROM '.Member::class)->execute();
         parent::tearDown();
     }
 
@@ -44,7 +51,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->loginUser($provider->loadUserByIdentifier($identifier));
     }
 
-    private function create(string $email, bool $philibert = false, string $first = 'Camille', bool $validated = false, ?string $submittedAt = null): MembershipApplication
+    private function create(string $email, bool $philibert = false, string $first = 'Camille', bool $validated = false, ?string $submittedAt = null, MembershipType $type = MembershipType::Individual): MembershipApplication
     {
         $application = (new MembershipApplication())
             ->setLastName('Durand')
@@ -53,7 +60,7 @@ final class MembershipAdminTest extends WebTestCase
             ->setPostalCode('89300')
             ->setCity('Joigny')
             ->setEmail($email)
-            ->setMembershipType(MembershipType::Individual)
+            ->setMembershipType($type)
             ->setPhilibertConsent($philibert)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($first.' Durand');
@@ -166,7 +173,7 @@ final class MembershipAdminTest extends WebTestCase
     }
 
     /**
-     * La liste part chez un tiers : elle ne nomme que des adherents a jour.
+     * La liste part chez un tiers : elle ne nomme que des adherents actifs.
      * Chaque ligne ci-dessous est une raison d'etre exclu, sauf la premiere.
      */
     public function testPhilibertListHoldsOnlyConsentingNonAnonymizedAddresses(): void
@@ -177,7 +184,11 @@ final class MembershipAdminTest extends WebTestCase
         $this->create('OUI@Example.test', philibert: true, first: 'Doublon', validated: true);
         $this->entityManager->flush();
 
-        self::assertSame(['email', 'oui@example.test'], $this->philibertLines());
+        $lines = $this->philibertLines();
+
+        self::assertSame('email;date_adhesion', $lines[0]);
+        self::assertCount(2, $lines);
+        self::assertSame('oui@example.test;'.date('Y-m-d'), $lines[1]);
         self::assertStringContainsString('text/csv', (string) $this->client->getResponse()->headers->get('Content-Type'));
         self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
     }
@@ -186,7 +197,7 @@ final class MembershipAdminTest extends WebTestCase
     {
         $this->create('attente@example.test', philibert: true);
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
     }
 
     public function testPhilibertListExcludesACancelledApplication(): void
@@ -194,7 +205,7 @@ final class MembershipAdminTest extends WebTestCase
         $this->create('annulee@example.test', philibert: true, validated: true)->cancel(null);
         $this->entityManager->flush();
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
     }
 
     /**
@@ -206,19 +217,37 @@ final class MembershipAdminTest extends WebTestCase
     {
         $this->create('ancien@example.test', philibert: true, validated: true, submittedAt: '-2 years');
 
-        self::assertSame(['email'], $this->philibertLines());
+        self::assertSame(['email;date_adhesion'], $this->philibertLines());
+    }
+
+    /**
+     * La formule consommateur, gratuite a l'annee, n'ouvre pas droit a
+     * l'avantage : meme validee, meme autorisee, elle n'est pas dans la liste.
+     */
+    public function testPhilibertListExcludesConsumers(): void
+    {
+        $this->create('conso@example.test', philibert: true, validated: true, type: MembershipType::Consumer);
+        $this->create('annuel@example.test', philibert: true, validated: true);
+
+        $lines = $this->philibertLines();
+
+        self::assertCount(2, $lines);
+        self::assertStringStartsWith('annuel@example.test;', $lines[1]);
     }
 
     /**
      * Un foyer qui a plusieurs bulletins valides sur une meme adresse ne la
-     * recoit qu'une fois, quelle que soit la casse.
+     * recoit qu'une fois, quelle que soit la casse, avec sa premiere date.
      */
     public function testPhilibertListHasNoDuplicate(): void
     {
         $this->create('foyer@example.test', philibert: true, validated: true);
         $this->create('FOYER@example.test', philibert: true, first: 'Alice', validated: true);
 
-        self::assertSame(['email', 'foyer@example.test'], $this->philibertLines());
+        $lines = $this->philibertLines();
+
+        self::assertCount(2, $lines);
+        self::assertStringStartsWith('foyer@example.test;', $lines[1]);
     }
 
     /**
@@ -239,7 +268,8 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->request('GET', '/admin/adhesions/philibert.csv');
         $content = (string) $this->client->getInternalResponse()->getContent();
 
-        // L'autorisation donnee porte sur l'adresse e-mail seule.
+        // L'autorisation porte sur l'adresse e-mail, a laquelle s'ajoute la date
+        // d'adhesion : ni nom, ni telephone.
         self::assertStringNotContainsString('Camille', $content);
         self::assertStringNotContainsString('Durand', $content);
     }
@@ -390,6 +420,233 @@ final class MembershipAdminTest extends WebTestCase
             'Adhésion famille annuelle — 5 € par personne supplémentaire',
             $crawler->filter('main')->text(),
         );
+    }
+
+    /**
+     * La fiche montre le parcours de la personne : tous ses bulletins, saison
+     * apres saison, avec un lien vers chacun. C'est ce qui dit, devant un
+     * renouvellement, depuis quand elle adhere.
+     */
+    public function testTheSheetListsEveryBulletinOfThePerson(): void
+    {
+        $old = $this->create('camille@example.test', validated: true, submittedAt: '2024-11-05');
+        $new = $this->create('camille@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$new->getId());
+
+        self::assertResponseIsSuccessful();
+        $section = $crawler->filter('#t-parcours')->ancestors()->first();
+        self::assertStringContainsString('2025', $section->text(), 'Un depot de novembre 2024 vaut pour la saison 2025.');
+        self::assertStringContainsString('cette fiche', $section->text());
+        self::assertCount(1, $section->filter(sprintf('a[href$="/admin/adhesions/%d"]', $old->getId())));
+    }
+
+    public function testASingleBulletinHasNoPathSection(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(0, $crawler->filter('#t-parcours'));
+    }
+
+    /**
+     * Un ancien adherent : le bulletin d'une saison passee, valide. C'est a lui
+     * que le bouton « Renouveler » s'adresse.
+     */
+    private function former(?string $email = null): MembershipApplication
+    {
+        return $this->create($email ?? 'ancien-'.bin2hex(random_bytes(4)).'@example.test', validated: true, submittedAt: '-14 months');
+    }
+
+    private function submitRenewal(MembershipApplication $application, array $overrides = []): void
+    {
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+        $form = $crawler->selectButton('Enregistrer le renouvellement')->form();
+        foreach ($overrides as $name => $value) {
+            $form[$name] = $value;
+        }
+        $form['paper_membership[paperConfirmed]']->tick();
+        $form['paper_membership[sendConfirmation]']->untick();
+
+        $this->client->submit($form);
+    }
+
+    public function testTheRenewButtonIsOfferedToAFormerMember(): void
+    {
+        $application = $this->former();
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(1, $crawler->filter(sprintf('a[href$="/admin/adhesions/%d/renouveler"]', $application->getId())));
+    }
+
+    public function testNoRenewButtonOnceTheSeasonIsTaken(): void
+    {
+        $application = $this->former('meme@example.test');
+        $current = $this->create('meme@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$current->getId());
+
+        self::assertCount(0, $crawler->filter('a[href$="/renouveler"]'));
+        self::assertSame($application->getMemberNumber(), $current->getMemberNumber());
+    }
+
+    public function testTheRenewalFormArrivesPrefilledUnderTheSameNumber(): void
+    {
+        $application = $this->former();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', (string) $application->getMemberNumber());
+        $form = $crawler->selectButton('Enregistrer le renouvellement')->form();
+        self::assertSame('Durand', $form['paper_membership[lastName]']->getValue());
+        self::assertSame($application->getEmail(), $form['paper_membership[email]']->getValue());
+    }
+
+    /**
+     * Le coeur de l'action : un nouveau bulletin, en attente, sous le meme
+     * numero — jamais un second adherent.
+     */
+    public function testRenewingKeepsTheNumberAndWaitsForPayment(): void
+    {
+        $application = $this->former();
+        $number = $application->getMemberNumber();
+
+        $this->submitRenewal($application);
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        $all = $this->entityManager->getRepository(MembershipApplication::class)->findBy([], ['id' => 'ASC']);
+
+        self::assertCount(2, $all);
+        self::assertSame($number, $all[1]->getMemberNumber());
+        self::assertTrue($all[1]->isPending());
+        self::assertTrue($all[1]->isPaper(), 'Un renouvellement saisi par le bureau est une fiche papier.');
+        self::assertCount(1, $this->entityManager->getRepository(Member::class)->findAll());
+    }
+
+    public function testASeasonCannotBeRenewedTwice(): void
+    {
+        $application = $this->former();
+        $this->submitRenewal($application);
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        self::assertCount(2, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
+    }
+
+    /**
+     * La date de la fiche peut viser une autre saison que celle d'aujourd'hui :
+     * viser la saison deja prise est refuse a l'enregistrement.
+     */
+    public function testTheChosenDateCannotTargetASeasonAlreadyTaken(): void
+    {
+        $application = $this->former();
+
+        $this->submitRenewal($application, [
+            'paper_membership[submittedAt]' => $application->getSubmittedAt()->format('Y-m-d'),
+        ]);
+
+        self::assertSelectorTextContains('main', 'a déjà une adhésion pour la saison');
+        $this->entityManager->clear();
+        self::assertCount(1, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
+    }
+
+    public function testAnAnonymizedBulletinCannotBeRenewed(): void
+    {
+        $application = $this->former();
+        $application->anonymize();
+        $this->entityManager->flush();
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/renouveler', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
+    /**
+     * L'export de la liste : exactement ce qu'on voit, avec toutes les
+     * informations d'un bulletin.
+     *
+     * @return list<array<string, string>>
+     */
+    private function exportRows(string $query = ''): array
+    {
+        $this->client->request('GET', '/admin/adhesions/export.csv'.$query);
+        self::assertResponseIsSuccessful();
+
+        $lines = array_values(array_filter(explode("\n", ltrim((string) $this->client->getInternalResponse()->getContent(), "\xEF\xBB\xBF"))));
+        $header = str_getcsv(array_shift($lines), ';', '"', '');
+
+        return array_map(static fn (string $line) => array_combine($header, str_getcsv($line, ';', '"', '')), $lines);
+    }
+
+    public function testTheExportCarriesEveryInformation(): void
+    {
+        $this->create('camille@example.test', philibert: true, validated: true);
+
+        $rows = $this->exportRows();
+
+        self::assertCount(1, $rows);
+        self::assertSame('Durand', $rows[0]['nom']);
+        self::assertSame('Camille', $rows[0]['prenom']);
+        self::assertSame('camille@example.test', $rows[0]['email']);
+        self::assertSame('Joigny', $rows[0]['ville']);
+        self::assertSame('Validée', $rows[0]['etat']);
+        self::assertSame('Chèque', $rows[0]['moyen_reglement']);
+        self::assertSame('oui', $rows[0]['philibert']);
+        self::assertSame('10', $rows[0]['montant_du']);
+        self::assertMatchesRegularExpression('/^EDJ-\d+$/', $rows[0]['numero']);
+        self::assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+    }
+
+    /**
+     * Les memes filtres que la liste, lus dans la meme URL : l'export est ce
+     * qu'on voit. Par defaut, la saison en cours.
+     */
+    public function testTheExportFollowsTheFiltersAndDefaultsToTheCurrentSeason(): void
+    {
+        $this->create('courant@example.test', validated: true);
+        $this->create('ancien@example.test', validated: true, submittedAt: '-3 years', first: 'Ancien');
+
+        self::assertCount(1, $this->exportRows(), 'Sans filtre de saison : la saison en cours.');
+        self::assertCount(2, $this->exportRows('?saison=toutes'));
+    }
+
+    public function testTheExportKeepsOnlyWhatTheFiltersKeep(): void
+    {
+        $this->create('cheque@example.test', validated: true);
+        $this->create('attente@example.test', first: 'Attente');
+
+        $rows = $this->exportRows('?etat=en_attente');
+
+        self::assertCount(1, $rows);
+        self::assertSame('attente@example.test', $rows[0]['email']);
+    }
+
+    /**
+     * Une cellule qui commence par = + - @ est lue comme une formule par un
+     * tableur : le fichier sort d'ici pour etre ouvert ailleurs.
+     */
+    public function testTheExportNeutralizesSpreadsheetFormulas(): void
+    {
+        $application = $this->create('camille@example.test', validated: true, first: '=HYPERLINK("http://mal.example")');
+
+        $rows = $this->exportRows();
+
+        self::assertStringStartsWith("'", $rows[0]['prenom']);
+    }
+
+    public function testAContributorCanExport(): void
+    {
+        $this->logIn('contributeur@example.test');
+
+        $this->client->request('GET', '/admin/adhesions/export.csv');
+
+        self::assertResponseIsSuccessful();
     }
 
     public function testEveryBulletinCarriesAMemberNumber(): void

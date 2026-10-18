@@ -1,0 +1,53 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block description %}Renouvelez votre adhésion à Envie de Jouer avec votre numéro d'adhérent.{% endblock %}
+{% block title %}Renouveler mon adhésion - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        {% include 'site/_membership_choice.html.twig' with {active: 'renewal'} only %}
+
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Renouveler mon adhésion</h1>
+            <p>
+                Saisissez votre numéro d'adhérent : nous vous envoyons un lien à l'adresse e-mail
+                de votre dernier bulletin. Ce lien ouvre un formulaire déjà rempli, à relire et à
+                signer. Pas de compte, pas de mot de passe.
+            </p>
+        </div>
+
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    La demande n'a pas pu être envoyée : vérifiez le numéro saisi.
+                </p>
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Votre numéro</legend>
+                <div class="form-grid">
+                    {{ form_row(form.number) }}
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary">Recevoir mon lien</button>
+                <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+            </div>
+        {{ form_end(form) }}
+
+        <p class="form-privacy">
+            Vous n'avez pas de numéro, ou vous ne le retrouvez pas ? Faites une
+            <a href="{{ path('membership_form') }}">nouvelle adhésion</a>, ou écrivez-nous à
+            <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a> : nous
+            retrouverons votre fiche.
+        </p>
+    </main>
+{% endblock %}

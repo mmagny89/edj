@@ -41,6 +41,73 @@ GitHub, par `.github/workflows/publication.yml`.
   de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
   reste un champ mot de passe ordinaire.
 
+- Tableau de bord a graphiques, pour la saison choisie : un chiffre en vedette
+  (adherents a l'annee, compare a la saison precedente), les chiffres cles, puis
+  six graphiques — adherents par saison (nouveaux, renouvellements,
+  consommateurs ; cliquer une saison l'ouvre), cumul mois par mois contre la saison
+  precedente, ages, origine geographique, formules et moyens de reglement — et les
+  autorisations en jauges. Au survol ou au clavier, une infobulle donne les valeurs ;
+  chaque graphique a sa vue en tableau, qui porte les memes nombres. Sans
+  bibliotheque ni ressource externe : des SVG dessines cote serveur, sans style en
+  ligne.
+- Export de la liste des adhesions, filtree ou non, en CSV avec toutes les
+  informations d'un bulletin : numero, saison, etat, moyen de reglement, montant
+  du, identite, coordonnees, responsable legal, autorisations. Il suit les
+  filtres de la liste, sans sa limite d'affichage, et chaque export est
+  journalise (qui, combien de lignes) : le fichier sort du site avec des
+  donnees personnelles, dont celles de mineurs.
+- Trois filtres de plus sur la liste des adhesions : case Philibert, droit a
+  l'image (photos refusees ou autorisees) et moyen de reglement (virement,
+  especes, cheque, ou aucun). La liste s'ouvre desormais sur la saison en
+  cours ; « Toutes les saisons » est un choix explicite.
+- Renouvellement d'adhesion depuis le site : la page « Bulletin d'adhesion »
+  propose de faire une nouvelle adhesion ou de renouveler la sienne. Pour
+  renouveler, on saisit son numero d'adherent ; un lien signe, valable deux
+  heures, part a l'adresse du dernier bulletin et ouvre le formulaire deja
+  rempli, a relire et a signer de nouveau. Le renouvellement est un nouveau
+  bulletin, en attente, rattache au meme numero — jamais un second adherent — et
+  ne peut etre depose qu'une fois par saison. Le numero etant devinable, la
+  reponse est la meme qu'il existe ou non.
+- Renouvellement depuis l'administration : la fiche d'un ancien adherent propose
+  « Renouveler pour la saison ... ». Le formulaire arrive rempli avec son dernier
+  bulletin, et l'adhesion est enregistree sous le meme numero, comme fiche
+  papier, en attente de la cotisation. Une saison ne se renouvelle qu'une fois —
+  a l'ouverture du formulaire comme a l'enregistrement, la date de la fiche
+  pouvant viser une autre saison —, et un bulletin anonymise ne peut pas etre
+  repris.
+- La fiche d'une adhesion montre le parcours de la personne : tous ses bulletins,
+  saison apres saison, avec leur etat, leur formule et un lien vers chacun. Elle
+  repond, devant un renouvellement, a « depuis quand adhere-t-elle ? ».
+- Historique des decisions sur chaque adhesion — validation (avec le moyen de
+  reglement), annulation, remise en attente, anonymisation : qui et quand,
+  affiche discretement en bas de la fiche. Il ne garde aucune donnee de
+  l'adherent et survit donc a l'anonymisation. Les bulletins existants
+  conservent leur dernier changement d'etat ; les etapes intermediaires, qui
+  n'avaient laisse aucune trace, ne peuvent pas etre retrouvees.
+- Chiffres de la saison sur le tableau de bord, avec choix de la saison :
+  adherents a l'annee, consommateurs, mineurs, age moyen, renouvellements et
+  nouveaux, bulletins en attente et annules, repartition entre Joigny, le reste
+  de la communaute de communes du Jovinien et le hors-territoire, et les deux
+  autorisations. Tout se compte sur les adhesions **validees** : un bulletin
+  depose mais non encaisse n'est pas une adhesion. Les communes de la
+  communaute de communes sont un parametre (`app.territory.*`) : la source
+  officielle n'en publie que 17 sur 19, les deux manquantes restent a ajouter.
+- Filtres sur la liste des adhesions : recherche par nom, adresse e-mail ou
+  numero — l'adherent principal est inclus, de sorte que le nom d'un parent
+  remonte tout le foyer —, puis etat, formule et saison, combinables. Ils
+  passent par l'URL : une liste filtree se partage par son lien.
+- Le detail d'un bulletin famille dit si l'adherent principal saisi correspond
+  a une adhesion individuelle connue, et renvoie vers elle.
+- Anciens adherents fictifs pour le developpement : `app:memberships:demo
+  --former=40` cree des personnes avec leur historique sur les saisons passees,
+  sous un meme numero d'adherent, dans quatre situations face a la saison en
+  cours — a renouveler, perdu de vue, deja renouvele, renouvellement depose mais
+  non paye. Aucune donnee reelle : adresses en `@example.test`, retirees par
+  `--purge`.
+- Philibert rejoint la liste des partenaires, avec son logo (l'icone de marque,
+  recuperee sur son site : la page d'accueil n'en portait alors qu'une variante
+  saisonniere, qu'il ne fallait pas figer).
+
 ### Modifie
 
 - Le suivi des adhesions passe du super-administrateur au contributeur : c'est
@@ -50,6 +117,67 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- La couleur des tampons de saison, dans l'administration, reposait sur un style
+  en ligne que la politique de contenu refuse : en production, le symbole aurait
+  perdu sa couleur sans la moindre erreur. Elle passe par une classe.
+- Dans la liste des adhesions, la colonne « Etat et autorisations » ne montre plus
+  que l'etat : le moyen de reglement et les autorisations se lisent sur la fiche, et
+  se filtrent.
+- L'export Philibert ne contient plus que les adherents actifs de la saison en
+  cours, **hors consommateurs** — la formule gratuite a l'annee n'ouvre pas droit
+  a l'avantage —, avec leur date d'adhesion (`email;date_adhesion`). Le bouton le
+  dit : « Liste Philibert · adherents actifs 2027 ».
+- La formule consommateur ne permet plus de cocher la communication a
+  Philibert : la case se desactive sur le bulletin public, avec la raison, et le
+  serveur le refuse aussi.
+- L'export pour Philibert listait toute adresse autorisee, adhesion validee ou
+  non, de toute saison. Il ne contient desormais que les adresses d'adherents
+  dont l'adhesion est **validee pour la saison en cours**, sans doublon : la
+  liste part chez un tiers et ne doit nommer que des adherents a jour.
+- Un foyer qui partage une seule adresse e-mail — le cas courant, les parents
+  saisissant la leur pour chacun de leurs enfants — perdait des courriels : a
+  partir du quatrieme bulletin de la journee, la confirmation n'etait plus
+  envoyee, sans que rien ne le signale. Les plafonds par destinataire sont
+  desormais dimensionnes sur un grand foyer. Rien n'a jamais empeche de deposer
+  plusieurs bulletins avec la meme adresse : c'est seulement l'envoi qui etait
+  bride.
+- Le montant du ne tenait pas compte de l'age : un enfant de moins de huit ans
+  ne doit rien, quelle que soit la formule. Le montant se calcule desormais sur
+  le bulletin — formule et age au depot — et non sur la seule formule, et une
+  adhesion gratuite se valide sans moyen de reglement. Le detail d'une adhesion
+  n'affiche plus le tarif de la formule, qui decrivait le foyer entier.
+- Le bulletin acceptait qu'un adherent famille se designe lui-meme comme
+  adherent principal : l'association encaissait 5 € la ou elle doit en
+  encaisser 10. La formule famille se greffe sur l'adhesion individuelle d'une
+  autre personne du foyer, et le bulletin le verifie.
+- Le bulletin acceptait qu'un mineur prenne l'adhesion individuelle. Un mineur
+  se rattache desormais obligatoirement a l'adhesion d'un adulte de son foyer,
+  par la formule famille.
+- Le bulletin d'adhesion n'affiche la zone « Responsable legal » que pour un
+  adherent de moins de 18 ans : elle apparait des qu'une date de naissance de
+  mineur est saisie, et reste visible sans JavaScript.
+- Un lien pose dans un bloc de texte s'affichait en bleu souligne sur son
+  bouton rouge (« Telecharger ma carte »), la regle des liens de texte l'emportant
+  sur celle du bouton.
+- L'introduction et la note de bas de page de l'espace adherent sont posees sur
+  un panneau : le texte nu sur le quadrillage du fond se lisait mal.
+- Sur telephone, l'encart jaune du calendrier recouvrait le titre « Les
+  prochaines dates ». Le decor passe derriere le contenu et se reduit.
+- Les filtres du calendrier passent sur deux colonnes de 48 px de haut sur
+  telephone, annoncent leur groupe par une etiquette visible, et marquent le
+  filtre actif d'une coche en plus de la couleur.
+- Les grands titres (« Lien envoye », « jeux ») mordaient sur le texte qui les
+  suit : leurs descendantes touchaient la ligne suivante. L'espace est elargi.
+- Les documents a lire avant d'adherer (statuts, reglement, annexes) sont trois
+  petits boutons cote a cote, qui passent a la ligne quand la place manque, au
+  lieu de trois cartes.
+- Deux bulletins d'un meme foyer deposes dans la meme seconde pouvaient
+  changer la graphie de l'adresse retenue dans l'export Philibert d'une
+  execution a l'autre. L'ordre est desormais departage par l'ordre de depot.
+- A 320 px de large, la page d'accueil debordait de 5 px sur la droite :
+  l'adresse e-mail du bouton de contact, d'un seul tenant, etait plus large que
+  la colonne. Le bouton se plafonne a la largeur de son conteneur et l'adresse
+  passe a la ligne.
 - La liste des adhesions etait un tableau de sept colonnes, illisible sur un
   telephone : elle est doublee de cartes, une par bulletin, affichees seules
   en dessous de 768 px. Les cases a cocher et l'anonymisation en masse

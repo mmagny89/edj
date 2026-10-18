@@ -57,6 +57,9 @@ final class MembershipFiltersTest extends WebTestCase
         string $submittedAt,
         bool $validated = false,
         ?string $principal = null,
+        bool $philibert = false,
+        bool $imagesRefused = false,
+        PaymentMethod $payment = PaymentMethod::Cheque,
     ): MembershipApplication {
         $member = new Member('EDJ-'.random_int(100000, 999999));
         $application = (new MembershipApplication())
@@ -68,13 +71,15 @@ final class MembershipFiltersTest extends WebTestCase
             ->setEmail(mb_strtolower($firstName).'-'.bin2hex(random_bytes(4)).'@example.test')
             ->setMembershipType($type)
             ->setPrincipalMemberName($principal)
+            ->setPhilibertConsent($philibert)
+            ->setImageRightsRefused($imagesRefused)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($firstName.' '.$lastName)
             ->setSubmittedAt(new \DateTimeImmutable($submittedAt))
             ->setMember($member);
 
         if ($validated) {
-            $application->validate(PaymentMethod::Cheque, null);
+            $application->validate($payment, null);
         }
 
         $this->entityManager->persist($member);
@@ -92,18 +97,36 @@ final class MembershipFiltersTest extends WebTestCase
         return (string) $this->client->getResponse()->getContent();
     }
 
-    public function testWithoutAFilterEveryBulletinIsListed(): void
+    /**
+     * La liste s'ouvre sur la saison en cours : c'est celle dont on s'occupe, et
+     * les saisons passees noyaient la liste. Toutes les saisons : un choix.
+     */
+    public function testTheListOpensOnTheCurrentSeason(): void
     {
+        // Dates relatives a aujourd'hui : les trois bulletins du setUp ont des
+        // dates fixes, qui ne sont plus de la saison en cours des l'an prochain.
+        $this->create('Courant', 'Zoe', MembershipType::Individual, 'today');
+        $this->create('Ancien', 'Alain', MembershipType::Individual, '-3 years', validated: true);
+
         $body = $this->names('');
 
-        self::assertStringContainsString('Louis', $body);
+        self::assertStringContainsString('Zoe', $body);
+        self::assertStringNotContainsString('Alain', $body);
+    }
+
+    public function testAllSeasonsIsAnExplicitChoice(): void
+    {
+        $this->create('Ancien', 'Alain', MembershipType::Individual, '-3 years', validated: true);
+
+        $body = $this->names('saison=toutes');
+
         self::assertStringContainsString('Camille', $body);
-        self::assertStringContainsString('Alice', $body);
+        self::assertStringContainsString('Alain', $body);
     }
 
     public function testSearchingANameKeepsOnlyThatHousehold(): void
     {
-        $body = $this->names('q=durand');
+        $body = $this->names('saison=toutes&q=durand');
 
         self::assertStringContainsString('Camille', $body);
         self::assertStringNotContainsString('Alice', $body);
@@ -115,7 +138,7 @@ final class MembershipFiltersTest extends WebTestCase
      */
     public function testSearchingThePrincipalBringsBackTheWholeHousehold(): void
     {
-        $body = $this->names('q=louis');
+        $body = $this->names('saison=toutes&q=louis');
 
         self::assertStringContainsString('Camille', $body);
         self::assertStringNotContainsString('Alice', $body);
@@ -123,7 +146,7 @@ final class MembershipFiltersTest extends WebTestCase
 
     public function testFilteringOnPendingKeepsOnlyWhatIsUnpaid(): void
     {
-        $body = $this->names('etat=en_attente');
+        $body = $this->names('saison=toutes&etat=en_attente');
 
         self::assertStringContainsString('Camille', $body);
         self::assertStringNotContainsString('Alice', $body);
@@ -144,7 +167,7 @@ final class MembershipFiltersTest extends WebTestCase
 
     public function testFilteringOnAFormulaKeepsItsBulletins(): void
     {
-        $body = $this->names('formule=famille');
+        $body = $this->names('saison=toutes&formule=famille');
 
         self::assertStringContainsString('Camille', $body);
         self::assertStringNotContainsString('Alice', $body);
@@ -164,5 +187,71 @@ final class MembershipFiltersTest extends WebTestCase
         $this->client->request('GET', '/admin/adhesions?q=introuvable');
 
         self::assertSelectorTextContains('body', 'Aucun bulletin ne correspond à ces filtres.');
+    }
+
+    /**
+     * Philibert, droit a l'image et moyen de reglement : « les cheques », « les
+     * refus de photo », « ceux dont l'adresse part chez Philibert ».
+     */
+    public function testFilteringOnThePhilibertBox(): void
+    {
+        $this->create('Phil', 'Oui', MembershipType::Individual, 'today', philibert: true);
+        $this->create('Phil', 'Non', MembershipType::Individual, 'today');
+
+        $with = $this->names('philibert=oui');
+        $without = $this->names('philibert=non');
+
+        self::assertStringContainsString('Oui', $with);
+        self::assertStringNotContainsString('>Non', $with);
+        self::assertStringContainsString('Non', $without);
+        self::assertStringNotContainsString('Oui Phil', $without);
+    }
+
+    public function testFilteringOnImageRights(): void
+    {
+        $this->create('Photo', 'Refus', MembershipType::Individual, 'today', imagesRefused: true);
+        $this->create('Photo', 'Libre', MembershipType::Individual, 'today');
+
+        $refused = $this->names('photos=refused');
+        $allowed = $this->names('photos=allowed');
+
+        self::assertStringContainsString('Refus Photo', $refused);
+        self::assertStringNotContainsString('Libre Photo', $refused);
+        self::assertStringContainsString('Libre Photo', $allowed);
+        self::assertStringNotContainsString('Refus Photo', $allowed);
+    }
+
+    public function testFilteringOnThePaymentMethod(): void
+    {
+        $this->create('Reglement', 'Cheque', MembershipType::Individual, 'today', validated: true, payment: PaymentMethod::Cheque);
+        $this->create('Reglement', 'Especes', MembershipType::Individual, 'today', validated: true, payment: PaymentMethod::Cash);
+        $this->create('Reglement', 'Attente', MembershipType::Individual, 'today');
+
+        $cheque = $this->names('paiement=cheque');
+        $none = $this->names('paiement=none');
+
+        self::assertStringContainsString('Cheque Reglement', $cheque);
+        self::assertStringNotContainsString('Especes Reglement', $cheque);
+        self::assertStringContainsString('Attente Reglement', $none, 'Sans paiement : en attente, annule ou gratuit.');
+        self::assertStringNotContainsString('Cheque Reglement', $none);
+    }
+
+    /**
+     * L'URL se modifie a la main : une valeur inconnue vaut « pas de filtre ».
+     */
+    public function testAnUnknownFilterValueIsIgnored(): void
+    {
+        $this->create('Inconnu', 'Zoe', MembershipType::Individual, 'today');
+
+        $body = $this->names('paiement=bidon&photos=bidon&philibert=bidon&etat=bidon');
+
+        self::assertStringContainsString('Zoe Inconnu', $body);
+    }
+
+    public function testTheExportButtonCarriesTheCurrentFilters(): void
+    {
+        $this->client->request('GET', '/admin/adhesions?saison=toutes&paiement=cheque');
+
+        self::assertSelectorExists('a[href*="export.csv"][href*="paiement=cheque"][href*="saison=toutes"]');
     }
 }

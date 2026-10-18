@@ -7,14 +7,30 @@
 
 {% block main %}
     <main id="contenu" class="section membership-form-page">
+        {# Avec « renewal », on arrive par le lien signe d'un adherent : le
+           formulaire est pre-rempli, et le choix de formule n'a pas a etre propose. #}
+        {% if renewal is not defined %}
+            {% include 'site/_membership_choice.html.twig' with {active: 'new'} only %}
+        {% endif %}
+
         <div class="section__intro">
             <p class="eyebrow">Adhésion</p>
-            <h1>Bulletin d'adhésion</h1>
-            <p>
-                Le même bulletin que sur papier, à remplir en ligne. Une adhésion correspond à un
-                bulletin : pour une famille, chaque membre remplit le sien en désignant le même
-                adhérent principal.
-            </p>
+            {% if renewal is defined %}
+                <h1>Renouveler mon adhésion</h1>
+                <p>
+                    Numéro d'adhérent : <strong class="member-number">{{ renewal.number }}</strong>.
+                    Vos informations de l'an dernier sont déjà là : relisez-les, corrigez ce qui a
+                    changé, puis signez de nouveau. Votre renouvellement ne compte qu'une fois la
+                    cotisation réglée à l'association, pour la saison {{ season }}.
+                </p>
+            {% else %}
+                <h1>Bulletin d'adhésion</h1>
+                <p>
+                    Le même bulletin que sur papier, à remplir en ligne. Une adhésion correspond à un
+                    bulletin : pour une famille, chaque membre remplit le sien en désignant le même
+                    adhérent principal.
+                </p>
+            {% endif %}
         </div>
 
         {# Mention des champs obligatoires, avant le premier champ. #}
@@ -80,6 +96,11 @@
             <fieldset>
                 <legend>Avantage ludique</legend>
                 {{ form_row(form.philibertConsent) }}
+                {# Visible seulement quand la formule consommateur est choisie
+                   (voir membership-type_controller.js). #}
+                <p class="form-note" data-membership-type-target="philibertNote" role="status" hidden>
+                    Cet avantage est réservé aux adhérents à l'année : la formule consommateur n'y donne pas droit.
+                </p>
                 <p class="form-note">
                     Autres avantages inclus dans l'adhésion : 5 % de remise à La Crique au Jeu (Sens)
                     sur présentation de la carte d'adhérent, 10 % de réduction chez Carte sur Table

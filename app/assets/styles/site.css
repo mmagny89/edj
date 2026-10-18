@@ -231,6 +231,16 @@ h1 {
     margin-top: 32px;
 }
 
+/* L'adresse e-mail est un seul mot, sans point de coupure : a 320 px elle est
+   plus large que la colonne et fait deborder toute la page de quelques pixels.
+   Le bouton se plafonne a la largeur de son conteneur et laisse l'adresse
+   passer a la ligne plutot que de la couper ou de la faire sortir. */
+.contact-actions .button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
 .hero-pills {
     display: flex;
     flex-wrap: wrap;
@@ -2139,4 +2149,52 @@ html[data-motion="reduce"] *::after {
 
 .membership-form-page > .section__intro {
     margin-bottom: 0;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Choix « nouvelle adhesion / renouvellement »
+   Deux grands liens cote a cote : la page courante est reconnaissable a son
+   cadre et a son fond, pas a la couleur seule (aria-current le dit aussi).
+   --------------------------------------------------------------------------- */
+.membership-choice {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 860px;
+}
+
+.membership-choice__item {
+    display: grid;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    background: white;
+    box-shadow: 4px 4px 0 rgba(23, 25, 34, 0.18);
+}
+
+.membership-choice__item strong {
+    font-size: 1.05rem;
+}
+
+.membership-choice__item span {
+    color: #3f4554;
+    font-size: 0.95rem;
+}
+
+.membership-choice__item[aria-current="page"] {
+    background: var(--yellow);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.membership-choice__item:hover,
+.membership-choice__item:focus-visible {
+    background: var(--board);
+}
+
+@media (max-width: 560px) {
+    .membership-choice {
+        grid-template-columns: 1fr;
+    }
 }

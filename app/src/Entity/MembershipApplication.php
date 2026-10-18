@@ -215,6 +215,39 @@ class MembershipApplication
     }
 
     /**
+     * Brouillon du bulletin de la saison suivante, a partir du precedent : tout
+     * ce qui se reutilise est repris, rattache au meme adherent — donc au meme
+     * numero, sans repasser par le rapprochement d'identite, qu'une faute de
+     * frappe corrigee aurait fait echouer.
+     *
+     * Ne sont PAS repris : la signature, le lieu et l'acceptation des statuts
+     * et du reglement. Un renouvellement est un nouvel engagement : il se signe
+     * et se coche de nouveau, le reglement ayant pu changer entre-temps.
+     */
+    public static function renewalOf(self $previous): self
+    {
+        $draft = new self();
+        $draft->member = $previous->member;
+        $draft->lastName = $previous->lastName;
+        $draft->firstName = $previous->firstName;
+        $draft->birthDate = $previous->birthDate;
+        $draft->address = $previous->address;
+        $draft->postalCode = $previous->postalCode;
+        $draft->city = $previous->city;
+        $draft->phone = $previous->phone;
+        $draft->email = $previous->email;
+        $draft->membershipType = $previous->membershipType;
+        $draft->principalMemberName = $previous->principalMemberName;
+        $draft->philibertConsent = $previous->philibertConsent;
+        $draft->imageRightsRefused = $previous->imageRightsRefused;
+        $draft->guardianLastName = $previous->guardianLastName;
+        $draft->guardianFirstName = $previous->guardianFirstName;
+        $draft->guardianEmail = $previous->guardianEmail;
+
+        return $draft;
+    }
+
+    /**
      * @return Collection<int, MembershipEvent>
      */
     public function getHistory(): Collection
@@ -408,6 +441,16 @@ class MembershipApplication
                     ->atPath('principalMemberName')
                     ->addViolation();
             }
+        }
+
+        // L'avantage Philibert fait partie de l'adhesion annuelle : la formule
+        // consommateur, gratuite a l'annee, n'y donne pas droit. Accepter la case
+        // ici ferait transmettre a un tiers l'adresse de quelqu'un qui n'a droit a
+        // rien chez lui.
+        if (MembershipType::Consumer === $this->membershipType && $this->philibertConsent) {
+            $context->buildViolation("La communication de votre adresse à Philibert est réservée aux adhérents à l'année : la formule consommateur n'y donne pas droit.")
+                ->atPath('philibertConsent')
+                ->addViolation();
         }
 
         if (!$this->isMinor()) {

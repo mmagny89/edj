@@ -8,6 +8,7 @@ use App\Enum\PaymentMethod;
 use App\Repository\MemberRepository;
 use App\Repository\MembershipApplicationRepository;
 use App\Service\MemberDirectory;
+use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -56,6 +57,7 @@ final class GenerateDemoMembershipsCommand extends Command
     {
         $this
             ->addOption('count', 'c', InputOption::VALUE_REQUIRED, 'Nombre de bulletins à créer', '20')
+            ->addOption('former', null, InputOption::VALUE_REQUIRED, "Nombre d'anciens adhérents à créer, avec leur historique sur les saisons passées (pour travailler les renouvellements)", '0')
             ->addOption('purge', null, InputOption::VALUE_NONE, 'Supprime les bulletins fictifs (adresses en @example.test) au lieu d\'en créer');
     }
 
@@ -80,8 +82,19 @@ final class GenerateDemoMembershipsCommand extends Command
         }
 
         $count = filter_var($input->getOption('count'), \FILTER_VALIDATE_INT);
-        if (false === $count || $count < 1 || $count > 500) {
-            $io->error('--count attend un entier entre 1 et 500.');
+        $former = filter_var($input->getOption('former'), \FILTER_VALIDATE_INT);
+        if (false === $count || $count < 0 || $count > 500) {
+            $io->error('--count attend un entier entre 0 et 500.');
+
+            return Command::INVALID;
+        }
+        if (false === $former || $former < 0 || $former > 200) {
+            $io->error('--former attend un entier entre 0 et 200.');
+
+            return Command::INVALID;
+        }
+        if (0 === $count && 0 === $former) {
+            $io->error('Rien à créer : --count et --former valent zéro.');
 
             return Command::INVALID;
         }
@@ -98,12 +111,123 @@ final class GenerateDemoMembershipsCommand extends Command
             $this->entityManager->persist($application);
         }
 
+        $scenarios = [];
+        for ($i = 0; $i < $former; ++$i) {
+            $scenarios[] = $this->createFormerMember($i);
+        }
+
         $this->entityManager->flush();
+
+        if ($former > 0) {
+            $io->section(sprintf('%d ancien(s) adhérent(s), saison en cours : %d', $former, MembershipSeasons::of(new \DateTimeImmutable())));
+            foreach (array_count_values($scenarios) as $label => $number) {
+                $io->writeln(sprintf('  %3d × %s', $number, $label));
+            }
+        }
 
         $io->success(sprintf('%d bulletin(s) fictif(s) créé(s), dont %d mineur(s).', $count, $minors));
         $io->note('Pour les retirer : php bin/console app:memberships:demo --purge');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Les quatre situations d'un ancien adherent face a la saison en cours,
+     * dans l'ordre ou elles tournent. Ce sont celles que l'interface de
+     * renouvellement doit savoir distinguer : qui relancer, qui est a jour, qui
+     * a deja redepose mais n'a pas encore paye.
+     *
+     * Chaque entree donne les saisons validees, comptees depuis la saison en
+     * cours (0 = la saison en cours, 1 = la precedente...), et la saison en
+     * attente, s'il y en a une.
+     */
+    private const FORMER_SCENARIOS = [
+        'à renouveler — adhérent jusqu\'à la saison dernière' => ['validated' => [3, 2, 1], 'pending' => null],
+        'perdu de vue — dernière adhésion il y a trois saisons' => ['validated' => [3], 'pending' => null],
+        'déjà renouvelé pour la saison en cours' => ['validated' => [1, 0], 'pending' => null],
+        'renouvellement déposé, pas encore payé' => ['validated' => [1], 'pending' => 0],
+    ];
+
+    /**
+     * Cree une personne avec son historique sur les saisons passees, et
+     * renvoie le libelle de sa situation.
+     *
+     * Une seule personne, plusieurs bulletins : le premier passe par l'annuaire
+     * qui lui donne son numero d'adherent, les suivants s'y rattachent
+     * directement. Les relire par l'annuaire echouerait — l'adherent n'est pas
+     * encore ecrit en base, il ne s'y retrouverait pas, et son empreinte
+     * d'identite entrerait en conflit avec elle-meme.
+     */
+    private function createFormerMember(int $index): string
+    {
+        $labels = array_keys(self::FORMER_SCENARIOS);
+        $label = $labels[$index % \count($labels)];
+        $scenario = self::FORMER_SCENARIOS[$label];
+
+        $season = MembershipSeasons::of(new \DateTimeImmutable());
+        $lastName = self::LAST_NAMES[($index * 3) % \count(self::LAST_NAMES)];
+        $firstName = self::FIRST_NAMES[($index * 7 + 3) % \count(self::FIRST_NAMES)];
+        // Un foyer sur quatre prend la formule famille, rattachee a quelqu'un
+        // d'autre : jamais a soi-meme (voir MembershipApplication).
+        $family = 3 === $index % 4;
+        $methods = [PaymentMethod::Cheque, PaymentMethod::Transfer, PaymentMethod::Cash];
+        $birth = new \DateTimeImmutable(sprintf('-%d years -%d days', 25 + (($index * 11) % 46), ($index * 17) % 300));
+
+        $steps = [];
+        foreach ($scenario['validated'] as $back) {
+            $steps[] = [$season - $back, true];
+        }
+        if (null !== $scenario['pending']) {
+            $steps[] = [$season - $scenario['pending'], false];
+        }
+        usort($steps, static fn (array $a, array $b) => $a[0] <=> $b[0]);
+
+        $member = null;
+        foreach ($steps as [$year, $validated]) {
+            $application = (new MembershipApplication())
+                ->setLastName($lastName)
+                ->setFirstName($firstName)
+                ->setBirthDate($birth)
+                ->setAddress(sprintf('%d rue des Anciens', 1 + $index))
+                ->setPostalCode('89300')
+                ->setCity(0 === $index % 3 ? 'Joigny' : (1 === $index % 3 ? 'Cézy' : 'Auxerre'))
+                ->setEmail(sprintf('ancien.%02d%s', $index + 1, self::DEMO_DOMAIN))
+                ->setMembershipType($family ? MembershipType::Family : MembershipType::Individual)
+                ->setPrincipalMemberName($family ? self::FIRST_NAMES[($index * 7 + 9) % \count(self::FIRST_NAMES)].' '.$lastName : null)
+                ->setPhilibertConsent(0 === $index % 2)
+                ->setStatutesAccepted(true)
+                ->setRulesAccepted(true)
+                ->setSignaturePlace('Joigny')
+                ->setSignatureName($firstName.' '.$lastName)
+                ->setSubmittedAt($this->submissionDate($year, $index));
+
+            if ($validated) {
+                $application->validate($methods[$index % \count($methods)], null, min($application->getSubmittedAt()->modify('+2 days'), new \DateTimeImmutable()));
+            }
+
+            if (null === $member) {
+                $member = $this->members->attach($application);
+            } else {
+                $application->setMember($member);
+            }
+            $this->entityManager->persist($application);
+        }
+
+        return $label;
+    }
+
+    /**
+     * Un depot en novembre de la saison, sauf pour la saison en cours si ce
+     * novembre n'est pas encore arrive : un bulletin date du futur serait
+     * refuse par le formulaire, et fausserait les tris de l'administration.
+     */
+    private function submissionDate(int $season, int $index): \DateTimeImmutable
+    {
+        $now = new \DateTimeImmutable();
+        $start = new \DateTimeImmutable(sprintf('%d-10-01', $season - 1));
+        $date = new \DateTimeImmutable(sprintf('%d-11-%02d 18:30', $season - 1, 3 + $index % 20));
+
+        return $date > $now ? max($start, $now->modify('-1 day')) : $date;
     }
 
     private function build(int $index, MembershipType $type, bool $minor): MembershipApplication
@@ -133,7 +257,8 @@ final class GenerateDemoMembershipsCommand extends Command
             ->setPhone(0 === $index % 3 ? null : sprintf('06 00 00 %02d %02d', $index % 100, ($index * 3) % 100))
             ->setEmail(sprintf('demo.%02d%s', $index + 1, self::DEMO_DOMAIN))
             ->setMembershipType($type)
-            ->setPhilibertConsent(0 === $index % 2)
+            // Jamais pour un consommateur : le bulletin le refuse.
+            ->setPhilibertConsent(0 === $index % 2 && MembershipType::Consumer !== $type)
             ->setImageRightsRefused(0 === $index % 5)
             ->setStatutesAccepted(true)
             ->setRulesAccepted(true)

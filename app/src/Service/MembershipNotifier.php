@@ -37,7 +37,7 @@ final class MembershipNotifier
     ) {
     }
 
-    public function notifyBoard(MembershipApplication $application): void
+    public function notifyBoard(MembershipApplication $application, bool $renewal = false): void
     {
         $email = (new Email())
             ->from(new Address($this->mailerFrom, 'Site Envie de Jouer'))
@@ -46,12 +46,14 @@ final class MembershipNotifier
             // usurper le From ferait tomber le message dans les indesirables.
             ->replyTo(new Address((string) $application->getEmail()))
             ->subject(sprintf(
-                "Bulletin d'adhésion : %s %s",
+                '%s : %s %s',
+                $renewal ? 'Renouvellement' : "Bulletin d'adhésion",
                 (string) $application->getFirstName(),
                 (string) $application->getLastName(),
             ))
             ->html($this->twig->render('emails/membership_application.html.twig', [
                 'application' => $application,
+                'renewal' => $renewal,
             ]));
 
         $this->send($email);
@@ -105,6 +107,20 @@ final class MembershipNotifier
      */
     public function sendAccessLink(MembershipApplication $application, string $url): void
     {
+        $this->sendLink($application, $url, 'member_access_link', 'Votre fiche d\'adhérent Envie de Jouer', '30 minutes');
+    }
+
+    /**
+     * Lien de renouvellement : memes garanties que le lien d'acces — il part a
+     * la seule adresse du dernier bulletin, et signe le numero qu'il ouvre.
+     */
+    public function sendRenewalLink(MembershipApplication $application, string $url): void
+    {
+        $this->sendLink($application, $url, 'membership_renewal_link', 'Renouveler votre adhésion à Envie de Jouer', '2 heures');
+    }
+
+    private function sendLink(MembershipApplication $application, string $url, string $template, string $subject, string $lifetime): void
+    {
         // Plafond propre a ce courriel, par destinataire. Celui des
         // confirmations d'adhesion ne convenait pas : trois par jour, c'est
         // assez pour un accuse de reception, trop peu pour qui redemande son
@@ -122,16 +138,16 @@ final class MembershipNotifier
         $context = [
             'application' => $application,
             'url' => $url,
-            'lifetime' => '30 minutes',
+            'lifetime' => $lifetime,
         ];
 
         $email = (new Email())
             ->from(new Address($this->mailerFrom, 'Envie de Jouer'))
             ->to(...$recipients)
             ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
-            ->subject('Votre fiche d\'adhérent Envie de Jouer')
-            ->text($this->twig->render('emails/member_access_link.txt.twig', $context))
-            ->html($this->twig->render('emails/member_access_link.html.twig', $context));
+            ->subject($subject)
+            ->text($this->twig->render(sprintf('emails/%s.txt.twig', $template), $context))
+            ->html($this->twig->render(sprintf('emails/%s.html.twig', $template), $context));
 
         $this->send($email);
     }

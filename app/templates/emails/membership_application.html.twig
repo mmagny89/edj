@@ -1,4 +1,7 @@
-<h1>Nouveau bulletin d'adhésion</h1>
+<h1>{{ renewal|default(false) ? "Renouvellement d'adhésion" : "Nouveau bulletin d'adhésion" }}</h1>
+{% if renewal|default(false) and application.memberNumber %}
+    <p>Adhérent déjà connu : <strong>{{ application.memberNumber }}</strong>.</p>
+{% endif %}
 
 <p>Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}.</p>
 
