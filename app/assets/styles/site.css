@@ -375,7 +375,10 @@ h1 {
 
 .section__intro p:not(.eyebrow),
 .mascot-section p:not(.eyebrow) {
-    margin: 18px 0 0;
+    /* Les titres sont a « line-height: 0.88 » : leurs descendantes (le « y » de
+       « envoye », le « j » de « jeux ») mordent sur la ligne suivante si le
+       texte vient trop pres. */
+    margin: clamp(26px, 3.5vw, 40px) 0 0;
     color: #3f4554;
     font-size: 1.12rem;
     font-weight: 700;
@@ -396,6 +399,36 @@ h1 {
     background: var(--yellow);
     clip-path: polygon(10% 0, 100% 14%, 82% 100%, 0 76%);
     content: "";
+}
+
+/* Le decor ne doit jamais recouvrir le texte : sans z-index, un element
+   positionne se peint par-dessus le contenu qui ne l'est pas, et sur mobile
+   l'encart jaune cachait le titre « Les prochaines dates ». */
+.section--calendar::before,
+.section--calendar::after {
+    z-index: 0;
+    pointer-events: none;
+}
+
+.section--calendar > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 640px) {
+    .section--calendar::before {
+        right: -70px;
+        top: -50px;
+        width: 180px;
+        height: 140px;
+    }
+
+    .section--calendar::after {
+        left: -70px;
+        bottom: -60px;
+        width: 160px;
+        height: 130px;
+    }
 }
 
 .section--calendar::after {
@@ -833,118 +866,37 @@ h1 {
     width: auto;
 }
 
-/* Trois documents, trois colonnes : la moitie de largeur du bandeau ne laisse
-   pas de place a l'icone a gauche du libelle, elle passe donc au-dessus, et le
-   chevron de telechargement rejoint le coin. */
-.membership-band--join .document-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 10px;
-}
-
-.membership-band--join .document-links a {
-    grid-template-columns: 1fr auto;
-    align-content: start;
-    row-gap: 8px;
-    height: 100%;
-}
-
-.membership-band--join .document-links a > i:first-child {
-    grid-row: 1;
-    grid-column: 1;
-}
-
-.membership-band--join .document-links__label {
-    grid-column: 1 / -1;
-    /* Deux lignes reservees : « Reglement interieur » passe a la ligne, et le
-       format « PDF » doit rester aligne d'une carte a l'autre. */
-    min-height: 2.4em;
-    overflow-wrap: anywhere;
-}
-
-.membership-band--join .document-links__meta {
-    grid-column: 1;
-}
-
-.membership-band--join .document-links__action {
-    grid-row: 1;
-    grid-column: 2;
-    align-self: start;
-}
-
-@media (max-width: 560px) {
-    .membership-band--join .document-links {
-        grid-template-columns: 1fr;
-    }
-}
-
 @media (max-width: 920px) {
     .membership__flow {
         grid-template-columns: 1fr;
     }
-
 }
 
+/* Documents a lire avant d'adherer : trois petits boutons cote a cote, qui
+   passent a la ligne quand la place manque. Le format et l'onglet sont dits une
+   fois, dans la phrase qui les introduit, et non repetes sur chaque bouton : la
+   moitie de largeur du bandeau ne laisse de place que pour une icone et un
+   libelle. Le nom accessible de chaque lien, lui, le precise. */
 .document-links {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin: 16px 0 0;
     padding: 0;
     list-style: none;
 }
 
-.document-links a {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 12px;
-    padding: 12px 14px;
-    border: 3px solid var(--ink);
-    border-radius: 8px;
-    background: white;
+.document-links .button {
+    min-height: 44px;
+    gap: 8px;
+    padding: 6px 14px;
+    font-size: 0.95rem;
 }
 
-/* L'icone et le chevron de telechargement encadrent les deux lignes de
-   texte (libelle puis format) : sans le span explicite, ils se calent sur la
-   premiere ligne seule et le bloc parait de travers. */
-.document-links a > i:first-child {
-    display: grid;
-    place-items: center;
-    grid-row: 1 / span 2;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: var(--yellow);
-    font-size: 1.05rem;
-}
-
-.document-links__label {
-    font-weight: 900;
-    line-height: 1.2;
-}
-
-.document-links__meta {
-    grid-column: 2;
-    font-size: 0.82rem;
+.document-links__hint {
+    font-size: 0.85em;
     font-weight: 700;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.document-links__action {
-    grid-row: 1 / span 2;
-    grid-column: 3;
-    color: var(--muted);
-}
-
-.document-links a:hover,
-.document-links a:focus-visible {
-    background: var(--board);
-}
-
-.document-links a:hover .document-links__action,
-.document-links a:focus-visible .document-links__action {
-    color: var(--ink);
 }
 
 .mascot-section {
@@ -1691,7 +1643,7 @@ h1 {
    regle, un lien au fil du texte est indiscernable du texte autour, ce qui
    sur une page legale rend injoignables les adresses qu'elle existe pour
    donner. */
-.legal-block a {
+.legal-block a:not(.button) {
     color: var(--blue);
     font-weight: 700;
     text-decoration: underline;
@@ -1699,8 +1651,8 @@ h1 {
     text-underline-offset: 3px;
 }
 
-.legal-block a:hover,
-.legal-block a:focus-visible {
+.legal-block a:not(.button):hover,
+.legal-block a:not(.button):focus-visible {
     color: var(--red-dark);
 }
 
@@ -1934,6 +1886,13 @@ html[data-contrast="high"] .how-steps p {
     background: var(--cream);
 }
 
+/* Le fieldset du bulletin est en « display: grid » : sans cette regle, l'attribut
+   hidden ne le masque pas, la declaration d'auteur l'emportant sur la feuille
+   du navigateur. */
+.membership-form fieldset[hidden] {
+    display: none;
+}
+
 .family-panel[hidden] {
     display: none;
 }
@@ -2115,4 +2074,69 @@ html[data-motion="reduce"] *::after {
     border-color: #a16207;
     background: #fef3c7;
     color: #713f12;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Filtres du calendrier
+   Un filtre actif ne se reconnait pas qu'a sa couleur : la coche le dit aussi,
+   pour qui distingue mal le jaune du blanc. Sur telephone, les boutons passent
+   sur deux colonnes, a 48 px de haut.
+   --------------------------------------------------------------------------- */
+.calendar-toolbar__label {
+    margin: 0 0 8px;
+    font-weight: 900;
+}
+
+.calendar-filter.is-active::before {
+    content: "\2713\00a0";
+}
+
+@media (max-width: 640px) {
+    .event-carousel {
+        padding: 16px;
+    }
+
+    .event-carousel .calendar-toolbar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        padding-right: 0;
+    }
+
+    .calendar-filter {
+        min-height: 48px;
+        padding: 10px 12px;
+        font-size: 1rem;
+        line-height: 1.15;
+    }
+
+    .carousel-controls {
+        position: static;
+        justify-content: flex-end;
+        margin-bottom: 14px;
+    }
+
+    .carousel-controls button {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Pages de l'espace adherent
+   Le texte pose a nu sur le quadrillage du fond se lit mal : l'introduction et
+   la note de bas de page recoivent le meme panneau que les blocs legaux.
+   --------------------------------------------------------------------------- */
+.membership-form-page > .section__intro,
+.membership-form-page > .form-privacy {
+    padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 32px);
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 rgba(23, 25, 34, 0.18);
+}
+
+.membership-form-page > .section__intro {
+    margin-bottom: 0;
 }

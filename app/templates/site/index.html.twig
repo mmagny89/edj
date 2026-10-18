@@ -72,7 +72,8 @@
                saisie ne peut donc s'echapper de l'attribut. #}
             <div class="event-carousel" data-event-carousel
                  data-events="{{ events|json_encode }}">
-                <div class="calendar-toolbar" role="group" aria-label="Filtrer les événements">
+                <p class="calendar-toolbar__label" id="calendar-filter-label">Afficher :</p>
+                <div class="calendar-toolbar" role="group" aria-labelledby="calendar-filter-label">
                     <button class="calendar-filter is-active" type="button" data-filter="all" aria-pressed="true">Tous</button>
                     <button class="calendar-filter" type="button" data-filter="weekly" aria-pressed="false">Mardis</button>
                     <button class="calendar-filter" type="button" data-filter="monthly" aria-pressed="false">1ers samedis</button>
@@ -329,31 +330,28 @@
                     </ul>
 
 
-                    <p class="membership-band__note">À lire avant d'adhérer :</p>
+                    <p class="membership-band__note">À lire avant d'adhérer <span class="document-links__hint">(PDF, dans un nouvel onglet)</span> :</p>
 
                     <ul class="document-links">
                         <li>
-                            <a href="https://drive.google.com/file/d/1qFsjSDZdoP_orG-O-hxdlPMR67xB3iYu/view?usp=drive_link" target="_blank" rel="noopener">
+                            <a href="https://drive.google.com/file/d/1qFsjSDZdoP_orG-O-hxdlPMR67xB3iYu/view?usp=drive_link" target="_blank" rel="noopener" class="button button--quiet">
                                 <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
-                                <span class="document-links__label">Statuts</span>
-                                <span class="document-links__meta">PDF<span class="sr-only"> (s'ouvre dans un nouvel onglet)</span></span>
-                                <i class="fa-solid fa-arrow-up-right-from-square document-links__action" aria-hidden="true"></i>
+                                Statuts
+                                <span class="sr-only">(PDF, s'ouvre dans un nouvel onglet)</span>
                             </a>
                         </li>
                         <li>
-                            <a href="https://drive.google.com/file/d/1ytxhb8VO0YER9n6gX_iNCI4omTbcTk8S/view?usp=drive_link" target="_blank" rel="noopener">
+                            <a href="https://drive.google.com/file/d/1ytxhb8VO0YER9n6gX_iNCI4omTbcTk8S/view?usp=drive_link" target="_blank" rel="noopener" class="button button--quiet">
                                 <i class="fa-solid fa-scroll" aria-hidden="true"></i>
-                                <span class="document-links__label">Règlement intérieur</span>
-                                <span class="document-links__meta">PDF<span class="sr-only"> (s'ouvre dans un nouvel onglet)</span></span>
-                                <i class="fa-solid fa-arrow-up-right-from-square document-links__action" aria-hidden="true"></i>
+                                Règlement intérieur
+                                <span class="sr-only">(PDF, s'ouvre dans un nouvel onglet)</span>
                             </a>
                         </li>
                         <li>
-                            <a href="https://drive.google.com/file/d/1pKz15Jr1tQ_yJwXkIEP7hQLsaENgoIZc/view?usp=drive_link" target="_blank" rel="noopener">
+                            <a href="https://drive.google.com/file/d/1pKz15Jr1tQ_yJwXkIEP7hQLsaENgoIZc/view?usp=drive_link" target="_blank" rel="noopener" class="button button--quiet">
                                 <i class="fa-solid fa-paperclip" aria-hidden="true"></i>
-                                <span class="document-links__label">Annexes</span>
-                                <span class="document-links__meta">PDF<span class="sr-only"> (s'ouvre dans un nouvel onglet)</span></span>
-                                <i class="fa-solid fa-arrow-up-right-from-square document-links__action" aria-hidden="true"></i>
+                                Annexes
+                                <span class="sr-only">(PDF, s'ouvre dans un nouvel onglet)</span>
                             </a>
                         </li>
                     </ul>
@@ -432,6 +430,10 @@
                         <article>
                             <img src="/img/partenaires/la-crique-aux-jeux.jpg" alt="" width="54" height="54" loading="lazy">
                             <span><a href="https://www.crique-aux-jeux.fr/" target="_blank" rel="noopener noreferrer">La Crique aux jeux<span class="sr-only"> (nouvel onglet)</span></a></span>
+                        </article>
+                        <article>
+                            <img src="/img/partenaires/philibert.png" alt="" width="54" height="54" loading="lazy">
+                            <span><a href="https://www.philibertnet.com/fr/" target="_blank" rel="noopener noreferrer">Philibert<span class="sr-only"> (nouvel onglet)</span></a></span>
                         </article>
                         <article>
                             <img src="/img/partenaires/cartes-sur-table.jpg" alt="" width="54" height="54" loading="lazy">
