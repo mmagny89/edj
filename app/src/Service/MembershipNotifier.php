@@ -25,6 +25,7 @@ final class MembershipNotifier
         private readonly MailerInterface $mailer,
         private readonly Environment $twig,
         private readonly RateLimiterFactoryInterface $membershipConfirmationEmailLimiter,
+        private readonly RateLimiterFactoryInterface $memberAccessEmailLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
         #[Autowire('%app.mailer_from%')]
@@ -104,10 +105,12 @@ final class MembershipNotifier
      */
     public function sendAccessLink(MembershipApplication $application, string $url): void
     {
-        // Le plafond du courriel de confirmation sert aussi ici : les deux
-        // partent a la meme adresse, et c'est elle que l'on protege.
+        // Plafond propre a ce courriel, par destinataire. Celui des
+        // confirmations d'adhesion ne convenait pas : trois par jour, c'est
+        // assez pour un accuse de reception, trop peu pour qui redemande son
+        // lien apres avoir perdu le premier.
         $key = mb_strtolower((string) $application->getEmail());
-        if (!$this->membershipConfirmationEmailLimiter->create($key)->consume()->isAccepted()) {
+        if (!$this->memberAccessEmailLimiter->create($key)->consume()->isAccepted()) {
             return;
         }
 

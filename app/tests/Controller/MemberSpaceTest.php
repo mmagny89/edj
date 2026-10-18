@@ -123,14 +123,20 @@ final class MemberSpaceTest extends WebTestCase
 
     public function testTheLinkIsSentToTheAddressOnTheBulletin(): void
     {
-        $application = $this->create(email: 'camille-cible@example.test');
+        // Adresse propre a chaque lancement : le plafond par destinataire vit
+        // dans le cache applicatif, qui survit d'une execution de la suite a
+        // l'autre. Une adresse en dur finissait par etre bridee, et le test
+        // echouait au bout de quelques lancements sans qu'aucun code n'ait
+        // change.
+        $target = 'camille-cible-'.bin2hex(random_bytes(5)).'@example.test';
+        $application = $this->create(email: $target);
 
         $this->askForLink((string) $application->getMemberNumber());
 
         $sent = static::getContainer()->get('messenger.transport.async')->getSent();
         self::assertCount(1, $sent);
         $email = end($sent)->getMessage()->getMessage();
-        self::assertSame(['camille-cible@example.test'], array_map(
+        self::assertSame([$target], array_map(
             static fn ($address) => $address->getAddress(),
             $email->getTo(),
         ));

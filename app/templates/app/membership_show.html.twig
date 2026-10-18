@@ -143,7 +143,6 @@
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
                 {{ f.row('Montant dû', application.membershipType.amountDueLabel) }}
-                {{ f.row('Tarif de la formule', application.membershipType.priceLabel) }}
                 {% if not application.anonymized %}
                     {{ f.row('Adhérent principal', application.principalMemberName) }}
                 {% endif %}

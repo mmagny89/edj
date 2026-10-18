@@ -32,12 +32,22 @@ final class MembershipNotifierTest extends KernelTestCase
             }
         };
 
-        $limiter = new RateLimiterFactory(
-            ['id' => 'test', 'policy' => 'sliding_window', 'limit' => 3, 'interval' => '1 day'],
+        $limiter = static fn (int $limit, string $interval) => new RateLimiterFactory(
+            ['id' => 'test', 'policy' => 'sliding_window', 'limit' => $limit, 'interval' => $interval],
             new InMemoryStorage(),
         );
 
-        return [new MembershipNotifier($mailer, static::getContainer()->get('twig'), $limiter, 'asso@example.test', 'noreply@example.test', ''), $sent];
+        $notifier = new MembershipNotifier(
+            $mailer,
+            static::getContainer()->get('twig'),
+            $limiter(3, '1 day'),
+            $limiter(5, '1 hour'),
+            'asso@example.test',
+            'noreply@example.test',
+            '',
+        );
+
+        return [$notifier, $sent];
     }
 
     private function application(string $email): MembershipApplication

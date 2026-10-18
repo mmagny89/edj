@@ -30,6 +30,16 @@ framework:
             policy: 'sliding_window'
             limit: 10
             interval: '1 hour'
+        # Second plafond, par destinataire : celui ci-dessus borne un
+        # expediteur, celui-ci borne la personne que l'on pourrait inonder
+        # depuis des adresses IP differentes. Distinct du plafond des
+        # confirmations d'adhesion, qui est journalier : redemander son lien
+        # quatre fois dans la journee est le fait d'une personne qui a perdu le
+        # premier, pas d'un abus.
+        member_access_email:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
 
 # Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
 # (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
@@ -43,6 +53,10 @@ when@test:
                 limit: 100000
                 interval: '1 hour'
             member_access_request:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
+            member_access_email:
                 policy: 'sliding_window'
                 limit: 100000
                 interval: '1 hour'
