@@ -8,6 +8,17 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- Passage d'un adherent consommateur a l'adhesion annuelle depuis l'administration :
+  la fiche d'un consommateur de la saison en cours propose « Passer a l'adhesion
+  annuelle ». C'est la meme adhesion, sous le meme numero — pas un renouvellement,
+  qu'une saison n'autorise qu'une fois. On choisit la formule (individuelle, ou
+  famille avec son adherent principal) et, si la cotisation est encaissee sur le
+  moment, le moyen de reglement : l'adhesion est alors validee ; sinon elle repasse en
+  attente, l'annuelle n'etant pas gratuite. Un enfant de moins de huit ans, qui ne
+  doit rien, reste valide. Le changement figure dans l'historique de la fiche.
+
 ## [1.3.0] - 2026-10-18
 
 ### Ajoute

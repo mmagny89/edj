@@ -649,6 +649,172 @@ final class MembershipAdminTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    // ------------------------------------------------------------------
+    // Consommateur -> adhesion annuelle
+    // ------------------------------------------------------------------
+
+    private function consumer(bool $validated = true, ?string $submittedAt = null): MembershipApplication
+    {
+        return $this->create('conso-'.bin2hex(random_bytes(4)).'@example.test', validated: $validated, submittedAt: $submittedAt, type: MembershipType::Consumer);
+    }
+
+    /**
+     * @param array<string, string> $values
+     */
+    private function submitUpgrade(MembershipApplication $application, array $values): void
+    {
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/passer-annuel', $application->getId()));
+        $form = $crawler->selectButton("Passer à l'annuelle")->form();
+        foreach ($values as $name => $value) {
+            $form[$name] = $value;
+        }
+        $this->client->submit($form);
+    }
+
+    public function testTheUpgradeButtonIsOfferedToACurrentConsumer(): void
+    {
+        $application = $this->consumer();
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(1, $crawler->filter('a[href$="/passer-annuel"]'));
+    }
+
+    public function testNoUpgradeButtonForAnAnnualMember(): void
+    {
+        $application = $this->create('annuel@example.test', validated: true);
+
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertCount(0, $crawler->filter('a[href$="/passer-annuel"]'));
+    }
+
+    /**
+     * L'adhesion consommateur, deja validee, etait gratuite. L'annuelle ne l'est pas :
+     * sans encaissement, elle repasse en attente — elle ne reste pas « validee »
+     * pour 0 € quand elle en vaut 10.
+     */
+    public function testUpgradingWithoutPaymentPutsTheBulletinBackOnHold(): void
+    {
+        $application = $this->consumer();
+
+        $this->submitUpgrade($application, ['upgrade_membership[membershipType]' => 'individuelle']);
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+        $saved = $this->reload($application);
+        self::assertSame(MembershipType::Individual, $saved->getMembershipType());
+        self::assertTrue($saved->isPending());
+        self::assertNull($saved->getPaymentMethod());
+    }
+
+    public function testUpgradingWithPaymentValidatesAtOnce(): void
+    {
+        $application = $this->consumer();
+
+        $this->submitUpgrade($application, [
+            'upgrade_membership[membershipType]' => 'individuelle',
+            'upgrade_membership[paymentMethod]' => 'especes',
+        ]);
+
+        $saved = $this->reload($application);
+        self::assertTrue($saved->isValidated());
+        self::assertSame(PaymentMethod::Cash, $saved->getPaymentMethod());
+        self::assertSame(10, $saved->amountDue());
+    }
+
+    /**
+     * Meme saison, meme personne, meme numero : un bulletin, pas deux.
+     */
+    public function testUpgradingKeepsTheSameBulletinAndNumber(): void
+    {
+        $application = $this->consumer();
+        $number = $application->getMemberNumber();
+
+        $this->submitUpgrade($application, ['upgrade_membership[membershipType]' => 'individuelle']);
+
+        $this->entityManager->clear();
+        $all = $this->entityManager->getRepository(MembershipApplication::class)->findAll();
+        self::assertCount(1, $all);
+        self::assertSame($number, $all[0]->getMemberNumber());
+    }
+
+    public function testTheHistoryKeepsTheFormulaChange(): void
+    {
+        $application = $this->consumer();
+
+        $this->submitUpgrade($application, ['upgrade_membership[membershipType]' => 'individuelle']);
+
+        $types = array_map(static fn ($e) => $e->getType()->value, $this->reload($application)->getHistory()->toArray());
+        self::assertContains('formule', $types);
+        $event = array_values(array_filter($this->reload($application)->getHistory()->toArray(), static fn ($e) => 'formule' === $e->getType()->value))[0];
+        self::assertSame('consommateur → individuelle', $event->getDetail());
+    }
+
+    public function testTheFamilyFormulaNeedsAnotherPrincipal(): void
+    {
+        $application = $this->consumer();
+
+        $this->submitUpgrade($application, ['upgrade_membership[membershipType]' => 'famille']);
+        self::assertSelectorTextContains('main', "Indiquez le prénom et le nom de l'adhérent principal");
+
+        $this->submitUpgrade($application, [
+            'upgrade_membership[membershipType]' => 'famille',
+            'upgrade_membership[principalMemberName]' => 'Camille Durand',
+        ]);
+        self::assertSelectorTextContains('main', 'ce ne peut pas être vous');
+
+        self::assertSame(MembershipType::Consumer, $this->reload($application)->getMembershipType());
+    }
+
+    public function testTheFamilyFormulaWithAPrincipalIsAccepted(): void
+    {
+        $application = $this->consumer();
+
+        $this->submitUpgrade($application, [
+            'upgrade_membership[membershipType]' => 'famille',
+            'upgrade_membership[principalMemberName]' => 'Louis Durand',
+            'upgrade_membership[paymentMethod]' => 'cheque',
+        ]);
+
+        $saved = $this->reload($application);
+        self::assertSame(MembershipType::Family, $saved->getMembershipType());
+        self::assertSame('Louis Durand', $saved->getPrincipalMemberName());
+        self::assertSame(5, $saved->amountDue());
+    }
+
+    public function testAnAnnualMemberCannotBeUpgraded(): void
+    {
+        $application = $this->create('annuel@example.test', validated: true);
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/passer-annuel', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
+    /**
+     * Une adhesion d'une saison passee ne se transforme pas : elle se renouvelle,
+     * ce qui ouvre un bulletin pour la saison en cours.
+     */
+    public function testAPastSeasonConsumerCannotBeUpgraded(): void
+    {
+        $application = $this->consumer(submittedAt: '-3 years');
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/passer-annuel', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
+    public function testACancelledConsumerCannotBeUpgraded(): void
+    {
+        $application = $this->consumer();
+        $application->cancel(null);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/passer-annuel', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+    }
+
     public function testEveryBulletinCarriesAMemberNumber(): void
     {
         $application = $this->create('camille@example.test');
@@ -753,6 +919,10 @@ final class MembershipAdminTest extends WebTestCase
     private function reload(MembershipApplication $application): MembershipApplication
     {
         $manager = static::getContainer()->get(EntityManagerInterface::class);
+        // Detache tout : apres une requete refusee, l'entite que la requete a
+        // modifiee en memoire est encore dans l'identite du gestionnaire — la
+        // relire sans vider lirait ce que la page a tente, pas ce qui est en base.
+        $manager->clear();
         $saved = $manager->find(MembershipApplication::class, $application->getId());
         self::assertInstanceOf(MembershipApplication::class, $saved);
 

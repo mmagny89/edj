@@ -9,6 +9,7 @@ use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
 use App\Service\MemberDirectory;
+use App\Service\MembershipSeasons;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -359,6 +360,39 @@ class MembershipApplication
         return $this->recordStatusChange($adminId, $now);
     }
 
+    /**
+     * Inscrit dans l'historique le passage d'une formule a une autre.
+     *
+     * Le changement de formule lui-meme — le champ — se fait par le formulaire ;
+     * cette methode n'en garde que la trace : de quoi, vers quoi, par qui. Elle
+     * ne touche pas a l'etat du bulletin : une adhesion consommateur validee, qui
+     * devient annuelle, doit de nouveau etre encaissee, ce que l'appelant decide
+     * (remise en attente, ou validation avec le moyen de reglement).
+     */
+    public function recordFormulaChange(MembershipType $from, ?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        if (null === $this->membershipType || $from === $this->membershipType) {
+            return $this;
+        }
+
+        $this->record(MembershipEventType::Upgraded, $adminId, $now, sprintf('%s → %s', $from->value, $this->membershipType->value));
+
+        return $this;
+    }
+
+    /**
+     * Vrai pour une adhesion consommateur de la saison donnee, ni annulee ni
+     * anonymisee : la seule qu'on puisse faire passer a l'annuel. Une adhesion
+     * d'une saison passee ne se transforme pas — elle se renouvelle.
+     */
+    public function canBecomeAnnual(int $season): bool
+    {
+        return MembershipType::Consumer === $this->membershipType
+            && !$this->isCancelled()
+            && !$this->isAnonymized()
+            && MembershipSeasons::of($this->submittedAt) === $season;
+    }
+
     private function recordStatusChange(?int $adminId, ?\DateTimeImmutable $now): static
     {
         $this->statusChangedAt = $now ?? new \DateTimeImmutable();
@@ -423,7 +457,10 @@ class MembershipApplication
      * principal n'a de sens que pour une adhesion famille, et un mineur ne
      * peut adherer sans responsable legal.
      */
-    #[Assert\Callback]
+    // Groupe « upgrade » : le passage de consommateur a annuel ne rejoue que ces
+    // regles de formule, pas la signature ni l'acceptation des statuts, deja
+    // donnees au depot du bulletin et qu'on ne redemande pas pour changer de formule.
+    #[Assert\Callback(groups: ['Default', 'upgrade'])]
     public function validateConditionalFields(ExecutionContextInterface $context): void
     {
         if (MembershipType::Family === $this->membershipType) {
