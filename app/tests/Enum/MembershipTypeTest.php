@@ -44,4 +44,16 @@ final class MembershipTypeTest extends TestCase
             MembershipType::Family->amountDueLabel(),
         );
     }
+
+    /**
+     * Le formulaire de saisie d'une fiche papier annonce ce que doit la
+     * personne inscrite, pas le tarif du foyer entier.
+     */
+    public function testThePaperFormAnnouncesWhatTheFamilyMemberOwes(): void
+    {
+        self::assertSame(
+            'Adhésion famille annuelle — 5 € par personne supplémentaire',
+            MembershipType::Family->paperFormLabel(),
+        );
+    }
 }

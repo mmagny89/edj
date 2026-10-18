@@ -53,7 +53,7 @@ final class PaperMembershipType extends AbstractType
             ->add('membershipType', EnumType::class, [
                 'label' => "Formule d'adhésion",
                 'class' => MembershipType::class,
-                'choice_label' => fn (MembershipType $type) => $type->label().' — '.$type->priceLabel(),
+                'choice_label' => fn (MembershipType $type) => $type->paperFormLabel(),
                 'expanded' => true,
             ])
             ->add('principalMemberName', TextType::class, [

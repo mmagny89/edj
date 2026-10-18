@@ -382,6 +382,16 @@ final class MembershipAdminTest extends WebTestCase
         self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
     }
 
+    public function testThePaperFormLabelsTheFamilyFormulaWithWhatIsOwed(): void
+    {
+        $crawler = $this->client->request('GET', '/admin/adhesions/nouveau');
+
+        self::assertStringContainsString(
+            'Adhésion famille annuelle — 5 € par personne supplémentaire',
+            $crawler->filter('main')->text(),
+        );
+    }
+
     public function testEveryBulletinCarriesAMemberNumber(): void
     {
         $application = $this->create('camille@example.test');
