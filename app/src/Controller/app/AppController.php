@@ -2,6 +2,7 @@
 
 namespace App\Controller\app;
 
+use App\Enum\MembershipStatus;
 use App\Repository\EventRepository;
 use App\Repository\MembershipApplicationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,9 +19,8 @@ final class AppController extends AbstractController
     {
         return $this->render('app/index.html.twig', [
             'upcoming' => \array_slice($events->findUpcoming(), 0, 5),
-            // Le compte ne se calcule que pour qui peut voir les bulletins :
-            // un contributeur n'a pas a connaitre le nombre d'adhesions.
-            'applicationCount' => $this->isGranted('ROLE_SUPER_ADMIN') ? $applications->count([]) : null,
+            'applicationCount' => $applications->count([]),
+            'pendingCount' => $applications->count(['status' => MembershipStatus::Pending]),
         ]);
     }
 }

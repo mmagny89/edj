@@ -53,7 +53,7 @@
                             <th scope="col" class="px-3 py-3 font-semibold">Adhérent</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Contact</th>
                             <th scope="col" class="px-3 py-3 font-semibold">Formule</th>
-                            <th scope="col" class="px-3 py-3 font-semibold">Autorisations</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">État et autorisations</th>
                             <th scope="col" class="px-5 py-3 text-right font-semibold">Fiche</th>
                         </tr>
                     </thead>
@@ -79,6 +79,9 @@
                                 </td>
 
                                 <td class="px-3 py-3 align-top">
+                                    {% if application.memberNumber %}
+                                        <div class="font-mono text-xs font-bold tracking-wider text-brand">{{ application.memberNumber }}</div>
+                                    {% endif %}
                                     {% if application.anonymized %}
                                         <span class="badge bg-slate-200 text-slate-700">Anonymisé</span>
                                         <div class="mt-1 text-xs">le {{ application.anonymizedAt|date('d/m/Y') }}</div>
@@ -106,6 +109,9 @@
                                    a l'image doit se voir sans avoir a lire la ligne. #}
                                 <td class="px-3 py-3 align-top">
                                     <div class="flex flex-col items-start gap-1">
+                                        <span class="badge border {{ application.status.badgeClass }}">
+                                            {{ application.status.label }}{% if application.paymentMethod %} · {{ application.paymentMethod.label|lower }}{% endif %}
+                                        </span>
                                         {% if application.imageRightsRefused %}
                                             <span class="badge bg-red-100 text-red-900">Photos refusées</span>
                                         {% else %}

@@ -44,13 +44,14 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     #
-    # Les bulletins d'adhesion portent des donnees personnelles — dont celles de
-    # mineurs : seul le super-administrateur les voit. Un contributeur gere le
-    # calendrier et rien d'autre. Le motif est ancre (^/admin/adhesions) avant
-    # la regle generale, car seule la premiere regle qui correspond s'applique.
+    # Un contributeur gere le calendrier et les adhesions : c'est le travail
+    # courant du bureau. Les comptes d'administration, eux, restent au seul
+    # super-administrateur — lui seul cree, bloque ou promeut un compte. Le
+    # motif est ancre (^/admin/utilisateurs) avant la regle generale, car seule
+    # la premiere regle qui correspond s'applique.
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/admin/adhesions, roles: ROLE_SUPER_ADMIN }
+        - { path: ^/adhesion, roles: PUBLIC_ACCESS }
         - { path: ^/admin/utilisateurs, roles: ROLE_SUPER_ADMIN }
         - { path: ^/admin, roles: ROLE_CONTRIBUTOR }
         - { path: ^/, roles: PUBLIC_ACCESS }

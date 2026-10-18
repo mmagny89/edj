@@ -32,17 +32,20 @@
             </div>
         </section>
 
-        {% if is_granted('ROLE_SUPER_ADMIN') %}
-            <section class="card p-6" aria-labelledby="titre-adhesions">
-                <h2 id="titre-adhesions" class="text-lg font-bold text-ink">Adhésions</h2>
-                <p class="mt-4 text-5xl font-bold text-brand">{{ applicationCount }}</p>
-                <p class="mt-1 text-sm text-slate-600">
-                    {{ applicationCount == 1 ? 'bulletin déposé' : 'bulletins déposés' }} depuis le site.
+        <section class="card p-6" aria-labelledby="titre-adhesions">
+            <h2 id="titre-adhesions" class="text-lg font-bold text-ink">Adhésions</h2>
+            <p class="mt-4 text-5xl font-bold text-brand">{{ applicationCount }}</p>
+            <p class="mt-1 text-sm text-slate-600">
+                {{ applicationCount == 1 ? 'bulletin déposé' : 'bulletins déposés' }} depuis le site.
+            </p>
+            {% if pendingCount > 0 %}
+                <p class="mt-3 text-sm font-semibold text-amber-900">
+                    {{ pendingCount }} {{ pendingCount == 1 ? 'bulletin attend' : 'bulletins attendent' }} une validation.
                 </p>
-                <div class="mt-5">
-                    <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('users') }} Consulter les bulletins</a>
-                </div>
-            </section>
-        {% endif %}
+            {% endif %}
+            <div class="mt-5">
+                <a href="{{ path('app_membership_applications') }}" class="btn btn-secondary">{{ ui.icon('users') }} Consulter les bulletins</a>
+            </div>
+        </section>
     </div>
 {% endblock %}

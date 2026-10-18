@@ -23,7 +23,12 @@
             <h1 class="text-3xl font-bold text-ink">
                 {% if application.anonymized %}Bulletin anonymisé{% else %}{{ application.firstName }} {{ application.lastName }}{% endif %}
             </h1>
+            {% if application.memberNumber %}
+                <p class="mt-1 font-mono text-lg font-bold tracking-wider text-brand">{{ application.memberNumber }}</p>
+            {% endif %}
             <p class="mt-1 text-slate-600">
+                <span class="badge mr-1 border {{ application.status.badgeClass }}">{{ application.status.label }}</span>
+                {% if application.paymentMethod %}<span class="badge mr-1 bg-slate-100 text-slate-700">{{ application.paymentMethod.label }}</span>{% endif %}
                 {% if application.paper %}
                     <span class="badge mr-1 bg-amber-100 text-amber-900">Fiche papier</span> Remise le {{ application.submittedAt|date('d/m/Y') }}
                 {% else %}
@@ -55,6 +60,56 @@
             seuls la formule, les autorisations, la date de dépôt et l'année de naissance sont conservées.
         </div>
     {% endif %}
+
+    <section class="card mt-8 p-6" aria-labelledby="t-etat">
+        <h2 id="t-etat" class="text-lg font-bold text-ink">État de l'adhésion</h2>
+        <p class="mt-2 text-sm text-slate-600">
+            {% if application.validated %}
+                Validée le {{ application.statusChangedAt|date('d/m/Y') }}{% if application.paymentMethod %}, réglée par {{ application.paymentMethod.label|lower }}{% else %} (formule gratuite à l'année){% endif %}.
+            {% elseif application.cancelled %}
+                Annulée le {{ application.statusChangedAt|date('d/m/Y') }}. Le bulletin reste consultable.
+            {% else %}
+                En attente : la cotisation n'est pas encore enregistrée comme réglée.
+            {% endif %}
+        </p>
+
+        <div class="mt-5 flex flex-wrap items-end gap-3">
+            {% if not application.validated %}
+                <form method="post" action="{{ path('app_membership_validate', {id: application.id}) }}" class="flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    {% if application.membershipType.value != 'consommateur' %}
+                        <div>
+                            <label for="moyen-reglement" class="mb-1.5 block text-sm font-semibold text-slate-800">Réglée par</label>
+                            <select name="paymentMethod" id="moyen-reglement" required
+                                    class="block min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-brand">
+                                {% for method in enum_cases('App\\Enum\\PaymentMethod') %}
+                                    <option value="{{ method.value }}" {{ application.paymentMethod == method ? 'selected' }}>{{ method.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Valider l'adhésion</button>
+                </form>
+            {% endif %}
+
+            {% if not application.cancelled %}
+                <form method="post" action="{{ path('app_membership_cancel', {id: application.id}) }}"
+                      data-controller="confirm"
+                      data-confirm-message-value="Annuler cette adhésion ? Le bulletin reste consultable, mais l'adhésion ne compte plus."
+                      data-action="submit->confirm#ask">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    <button type="submit" class="btn btn-danger">{{ ui.icon('x') }} Annuler l'adhésion</button>
+                </form>
+            {% endif %}
+
+            {% if not application.pending %}
+                <form method="post" action="{{ path('app_membership_reopen', {id: application.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
+                    <button type="submit" class="btn btn-secondary">{{ ui.icon('arrow-left') }} Remettre en attente</button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-2">
         {% if not application.anonymized %}

@@ -4,7 +4,10 @@ namespace App\Command;
 
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
+use App\Repository\MemberRepository;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\MemberDirectory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -41,6 +44,8 @@ final class GenerateDemoMembershipsCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipApplicationRepository $applications,
+        private readonly MemberRepository $memberRepository,
+        private readonly MemberDirectory $members,
         #[Autowire('%kernel.environment%')]
         private readonly string $environment,
     ) {
@@ -66,7 +71,10 @@ final class GenerateDemoMembershipsCommand extends Command
 
         if ($input->getOption('purge')) {
             $deleted = $this->applications->deleteDemo(self::DEMO_DOMAIN);
-            $io->success(sprintf('%d bulletin(s) fictif(s) supprimé(s).', $deleted));
+            // Les adherents que ces bulletins faisaient naitre ne designent
+            // plus rien : les laisser consommerait des numeros pour toujours.
+            $orphans = $this->memberRepository->deleteOrphans();
+            $io->success(sprintf('%d bulletin(s) fictif(s) supprimé(s), et %d adhérent(s) devenu(s) orphelin(s).', $deleted, $orphans));
 
             return Command::SUCCESS;
         }
@@ -86,6 +94,7 @@ final class GenerateDemoMembershipsCommand extends Command
             // autorisations qui varient : la liste montre tous les cas.
             $application = $this->build($i, $types[$i % \count($types)], 0 === $i % 4);
             $minors += $application->isMinor() ? 1 : 0;
+            $this->members->attach($application);
             $this->entityManager->persist($application);
         }
 
@@ -126,6 +135,16 @@ final class GenerateDemoMembershipsCommand extends Command
         if (MembershipType::Family === $type) {
             $application->setPrincipalMemberName($fullName);
         }
+
+        // Les quatre etats possibles tournent, pour que la liste montre une
+        // adhesion en attente, deux validees aux reglements differents et une
+        // annulee.
+        match ($index % 4) {
+            1 => $application->validate(MembershipType::Consumer === $type ? null : PaymentMethod::Cheque, null),
+            2 => $application->validate(MembershipType::Consumer === $type ? null : PaymentMethod::Transfer, null),
+            3 => $application->cancel(null),
+            default => null,
+        };
 
         if ($minor) {
             $application

@@ -4,7 +4,10 @@ namespace App\Controller\app;
 
 use App\Entity\MembershipApplication;
 use App\Entity\User;
+use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
 use App\Form\PaperMembershipType;
+use App\Service\MemberDirectory;
 use App\Service\MembershipNotifier;
 use App\Repository\MembershipApplicationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,22 +19,24 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Bulletins d'adhesion : consultation, fiche imprimable, anonymisation et
- * liste Philibert.
+ * Bulletins d'adhesion : consultation, etat (validee, annulee), fiche
+ * imprimable, anonymisation et liste Philibert.
  *
- * Donnees personnelles, dont celles de mineurs : reservees au
- * super-administrateur. La regle d'access_control le dit deja ; l'attribut la
- * redit ici, pour qu'un changement de motif dans security.yaml ne suffise pas
- * a ouvrir ces pages.
+ * Ouvert aux contributeurs : le suivi des adhesions est le travail courant du
+ * bureau, pas une prerogative du seul super-administrateur. Seule la gestion
+ * des comptes lui reste reservee. La regle d'access_control le dit deja ;
+ * l'attribut la redit ici, pour qu'un changement de motif dans security.yaml
+ * ne suffise pas a ouvrir ces pages a un anonyme.
  */
 #[Route('/admin/adhesions')]
-#[IsGranted('ROLE_SUPER_ADMIN')]
+#[IsGranted('ROLE_CONTRIBUTOR')]
 final class MembershipApplicationController extends AbstractController
 {
     public function __construct(
         private readonly MembershipApplicationRepository $applications,
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
+        private readonly MemberDirectory $members,
     ) {
     }
 
@@ -78,6 +83,7 @@ final class MembershipApplicationController extends AbstractController
             // que la fiche imprimee ne dise pas « fiche papier signee » seul.
             $application->setSignatureName(trim($application->getFirstName().' '.$application->getLastName()));
 
+            $this->members->attach($application);
             $this->entityManager->persist($application);
             $this->entityManager->flush();
 
@@ -146,6 +152,63 @@ final class MembershipApplicationController extends AbstractController
         return $this->render('app/membership_sheet.html.twig', ['application' => $application]);
     }
 
+    /**
+     * Valide l'adhesion : la cotisation est encaissee, ou la formule est
+     * gratuite. Le moyen de reglement est obligatoire des que la formule est
+     * payante — l'association doit savoir ce qu'elle a encaisse, et comment.
+     */
+    #[Route('/{id}/valider', name: 'app_membership_validate', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function validate(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $method = PaymentMethod::tryFrom((string) $request->request->get('paymentMethod'));
+        if (null === $method && MembershipType::Consumer !== $application->getMembershipType()) {
+            return $this->refuseStatusChange($application, 'moyen de règlement manquant');
+        }
+
+        $application->validate($method, $this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', null !== $method
+            ? sprintf('Adhésion validée, cotisation réglée par %s.', mb_lcfirst($method->label()))
+            : 'Adhésion validée : la formule consommateur est gratuite à l\'année.');
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    #[Route('/{id}/annuler', name: 'app_membership_cancel', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function cancel(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $application->cancel($this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Adhésion annulée. Le bulletin reste consultable ; pour effacer les données personnelles, anonymisez-le.');
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    #[Route('/{id}/rouvrir', name: 'app_membership_reopen', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function reopen(Request $request, MembershipApplication $application): Response
+    {
+        if (!$this->isCsrfTokenValid('membership_status_'.$application->getId(), (string) $request->request->get('_token'))) {
+            return $this->refuseStatusChange($application, 'jeton invalide');
+        }
+
+        $application->reopen($this->adminId());
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Le bulletin est remis en attente.');
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
     #[Route('/{id}/anonymiser', name: 'app_membership_anonymize', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function anonymize(Request $request, MembershipApplication $application): Response
     {
@@ -156,6 +219,9 @@ final class MembershipApplicationController extends AbstractController
         }
 
         $application->anonymize();
+        if ($member = $application->getMember()) {
+            $this->members->forgetIfFullyAnonymized($member);
+        }
         $this->entityManager->flush();
 
         $this->addFlash('success', 'Le bulletin a été anonymisé.');
@@ -194,12 +260,27 @@ final class MembershipApplicationController extends AbstractController
                 $application->anonymize();
                 ++$count;
             }
+            if ($member = $application->getMember()) {
+                $this->members->forgetIfFullyAnonymized($member);
+            }
         }
         $this->entityManager->flush();
 
         $this->addFlash('success', sprintf('%d bulletin(s) anonymisé(s).', $count));
 
         return $this->redirectToRoute('app_membership_applications');
+    }
+
+    private function refuseStatusChange(MembershipApplication $application, string $reason): Response
+    {
+        $this->addFlash('error', sprintf('Changement d\'état refusé : %s. Réessayez depuis la fiche.', $reason));
+
+        return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+    }
+
+    private function adminId(): ?int
+    {
+        return $this->getUser() instanceof User ? $this->getUser()->getId() : null;
     }
 
     /**

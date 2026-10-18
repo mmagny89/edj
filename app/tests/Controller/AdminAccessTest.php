@@ -46,11 +46,25 @@ final class AdminAccessTest extends WebTestCase
         self::assertResponseRedirects('http://localhost/login');
     }
 
-    public function testMembershipApplicationsAreForbiddenToAContributor(): void
+    /**
+     * Le suivi des adhesions est le travail courant du bureau : un
+     * contributeur y accede. Seuls les comptes d'administration restent au
+     * super-administrateur.
+     */
+    public function testMembershipApplicationsAreOpenToAContributor(): void
     {
         $client = static::createClient();
         $this->logIn($client, 'contributeur@example.test');
         $client->request('GET', '/admin/adhesions');
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testUserAdministrationIsForbiddenToAContributor(): void
+    {
+        $client = static::createClient();
+        $this->logIn($client, 'contributeur@example.test');
+        $client->request('GET', '/admin/utilisateurs');
 
         self::assertResponseStatusCodeSame(403);
     }

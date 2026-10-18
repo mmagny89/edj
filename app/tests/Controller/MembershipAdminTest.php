@@ -186,14 +186,19 @@ final class MembershipAdminTest extends WebTestCase
         self::assertStringNotContainsString('Durand', $content);
     }
 
-    public function testAContributorCannotReachAnyBulletinPage(): void
+    /**
+     * Le suivi des adhesions appartient au bureau entier : un contributeur
+     * lit les bulletins, les valide et les annule. Le refus porte desormais
+     * sur les seuls comptes d'administration (voir AdminAccessTest).
+     */
+    public function testAContributorReachesEveryBulletinPage(): void
     {
         $application = $this->create('camille@example.test', philibert: true);
         $this->logIn('contributeur@example.test');
 
         foreach (['/admin/adhesions', '/admin/adhesions/philibert.csv', '/admin/adhesions/'.$application->getId(), sprintf('/admin/adhesions/%d/fiche', $application->getId())] as $path) {
             $this->client->request('GET', $path);
-            self::assertResponseStatusCodeSame(403, $path);
+            self::assertResponseIsSuccessful($path);
         }
     }
 
@@ -284,12 +289,12 @@ final class MembershipAdminTest extends WebTestCase
         self::assertSelectorTextContains('tbody', 'Fiche papier');
     }
 
-    public function testAContributorCannotRegisterAMember(): void
+    public function testAContributorCanRegisterAMember(): void
     {
         $this->logIn('contributeur@example.test');
 
         $this->client->request('GET', '/admin/adhesions/nouveau');
 
-        self::assertResponseStatusCodeSame(403);
+        self::assertResponseIsSuccessful();
     }
 }

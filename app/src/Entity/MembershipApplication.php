@@ -3,7 +3,9 @@
 namespace App\Entity;
 
 use App\Enum\MembershipSource;
+use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -18,6 +20,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 // L'index existe depuis la migration initiale (la liste se trie sur la date de
 // depot) ; le declarer ici evite que Doctrine veuille le supprimer.
 #[ORM\Index(name: 'idx_membership_application_submitted_at', columns: ['submitted_at'])]
+#[ORM\Index(name: 'idx_membership_application_member', columns: ['member_id'])]
 class MembershipApplication
 {
     #[ORM\Id]
@@ -158,9 +161,140 @@ class MembershipApplication
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $anonymizedAt = null;
 
+    /**
+     * L'adherent, au sens de la personne : c'est lui qui porte le numero
+     * EDJ-0001, stable d'une saison a l'autre. Nul uniquement le temps qu'un
+     * bulletin soit rattache (voir MemberDirectory).
+     */
+    #[ORM\ManyToOne(targetEntity: Member::class, inversedBy: 'applications')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
+    private ?Member $member = null;
+
+    #[ORM\Column(length: 20, enumType: MembershipStatus::class, options: ['default' => 'en_attente'])]
+    private MembershipStatus $status = MembershipStatus::Pending;
+
+    /**
+     * Moyen de reglement de la cotisation, renseigne a la validation. Nul pour
+     * une adhesion consommateur, gratuite a l'annee.
+     */
+    #[ORM\Column(length: 20, enumType: PaymentMethod::class, nullable: true)]
+    private ?PaymentMethod $paymentMethod = null;
+
+    /**
+     * Date du dernier changement d'etat, et identifiant de l'administrateur qui
+     * l'a decide. L'association doit pouvoir dire qui a valide un encaissement
+     * ou annule une adhesion.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $statusChangedAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $statusChangedById = null;
+
     public function __construct()
     {
         $this->submittedAt = new \DateTimeImmutable();
+    }
+
+    public function getMember(): ?Member
+    {
+        return $this->member;
+    }
+
+    public function setMember(?Member $member): static
+    {
+        $this->member = $member;
+
+        return $this;
+    }
+
+    public function getMemberNumber(): ?string
+    {
+        return $this->member?->getNumber();
+    }
+
+    public function getStatus(): MembershipStatus
+    {
+        return $this->status;
+    }
+
+    public function isValidated(): bool
+    {
+        return MembershipStatus::Validated === $this->status;
+    }
+
+    public function isCancelled(): bool
+    {
+        return MembershipStatus::Cancelled === $this->status;
+    }
+
+    public function isPending(): bool
+    {
+        return MembershipStatus::Pending === $this->status;
+    }
+
+    public function getPaymentMethod(): ?PaymentMethod
+    {
+        return $this->paymentMethod;
+    }
+
+    public function getStatusChangedAt(): ?\DateTimeImmutable
+    {
+        return $this->statusChangedAt;
+    }
+
+    public function getStatusChangedById(): ?int
+    {
+        return $this->statusChangedById;
+    }
+
+    /**
+     * Valide l'adhesion : la cotisation est encaissee, ou la formule est
+     * gratuite. Le moyen de reglement est obligatoire des que la formule est
+     * payante — c'est la seule trace de l'encaissement cote site.
+     */
+    public function validate(?PaymentMethod $paymentMethod, ?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        if (MembershipType::Consumer !== $this->membershipType && null === $paymentMethod) {
+            throw new \LogicException('Une adhesion payante ne se valide pas sans moyen de reglement.');
+        }
+
+        $this->status = MembershipStatus::Validated;
+        $this->paymentMethod = $paymentMethod;
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    /**
+     * Annule l'adhesion. Le moyen de reglement est efface : il ne designerait
+     * plus qu'un encaissement qui n'a pas lieu d'etre, ou qui a ete rembourse.
+     */
+    public function cancel(?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        $this->status = MembershipStatus::Cancelled;
+        $this->paymentMethod = null;
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    /**
+     * Remet le bulletin en attente : rattrape une validation ou une annulation
+     * decidee par erreur.
+     */
+    public function reopen(?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        $this->status = MembershipStatus::Pending;
+        $this->paymentMethod = null;
+
+        return $this->recordStatusChange($adminId, $now);
+    }
+
+    private function recordStatusChange(?int $adminId, ?\DateTimeImmutable $now): static
+    {
+        $this->statusChangedAt = $now ?? new \DateTimeImmutable();
+        $this->statusChangedById = $adminId;
+
+        return $this;
     }
 
     public function isMinor(?\DateTimeImmutable $reference = null): bool
