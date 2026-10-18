@@ -8,6 +8,36 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- Numero d'adherent unique et stable, de la forme `EDJ-0001`. Il appartient a
+  la personne et non au bulletin : une readhesion la saison suivante garde le
+  meme numero, le rapprochement se faisant sur le nom, le prenom et la date de
+  naissance normalises. Il figure sur la fiche d'administration, dans la liste
+  et dans le courriel de confirmation.
+- Suivi de l'etat d'une adhesion : en attente, validee ou annulee, avec le
+  moyen de reglement de la cotisation (virement, especes, cheque) et
+  l'administrateur qui l'a decide. Une adhesion annulee reste consultable ;
+  c'est l'anonymisation, distincte, qui efface les donnees personnelles.
+- Espace adherent, sans compte ni mot de passe : l'adherent saisit son numero
+  sur `/adhesion/ma-fiche`, recoit a l'adresse de son bulletin un lien signe
+  valable trente minutes, et consulte sa fiche. Aucune autre voie n'y mene, et
+  la reponse est la meme qu'un numero existe ou non.
+- Carte d'adherent dematerialisee, en PDF au format d'une carte bancaire :
+  recto a la marque de l'association, verso avec le nom, le numero et les huit
+  saisons, celles reglees etant cochees. Telechargeable depuis l'espace
+  adherent une fois l'adhesion validee.
+- Un oeil d'affichage sur tous les champs mot de passe (connexion et changement
+  de mot de passe). Le bouton est revele par JavaScript : sans lui, le champ
+  reste un champ mot de passe ordinaire.
+
+### Modifie
+
+- Le suivi des adhesions passe du super-administrateur au contributeur : c'est
+  le travail courant du bureau. Les comptes d'administration restent reserves
+  au super-administrateur, qui seul en cree, bloque ou promeut.
+- L'image PHP installe l'extension `gd`, exigee par la generation des cartes.
+
 ### Securite
 
 - Dependances de construction du front mises a jour (Webpack Encore 6,
