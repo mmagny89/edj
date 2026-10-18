@@ -8,6 +8,12 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- `outils/sauvegarder-serveur.sh` : sauvegarde chiffree (AES-256) de la base PostgreSQL de tous les projets
+  d'un serveur, verifiee avant d'etre gardee, avec copie rsync facultative. Un echec sur un projet
+  fait echouer le cron.
+
 ## [1.4.0] - 2026-10-18
 
 ### Ajoute
