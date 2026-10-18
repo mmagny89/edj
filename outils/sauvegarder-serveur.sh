@@ -16,6 +16,9 @@
 #   RACINE      dossier des projets             (defaut : /docker)
 #   DEST        dossier des sauvegardes         (defaut : /srv/sauvegardes)
 #   RETENTION   copies gardees par projet       (defaut : 14)
+#   EXCLURE     projets a ne pas traiter, separes par des espaces (ex. "sdj-prod", qui est
+#               en SQLite et a sa propre commande). Un projet exclu est NOMME au journal ;
+#               un projet qui disparait sans etre exclu fait echouer le script.
 #   BACKUP_REMOTE  destination rsync (ex. utilisateur@hote:/chemin/) : copie hors du
 #                  serveur. Sans elle le script avertit, car une sauvegarde qui reste
 #                  sur le serveur ne protege pas de sa perte.
@@ -27,6 +30,7 @@ RACINE=${RACINE:-/docker}
 DEST=${DEST:-/srv/sauvegardes}
 RETENTION=${RETENTION:-14}
 PHRASE=${BACKUP_PASSPHRASE_FILE:-}
+EXCLURE=${EXCLURE:-}
 
 journal() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
 
@@ -45,6 +49,13 @@ for dossier in "$RACINE"/*-prod; do
 	[ -d "$dossier" ] || continue
 	projet=$(basename "$dossier")
 	conteneur="${projet}-database"
+
+	case " $EXCLURE " in
+		*" $projet "*)
+			journal "Ignore $projet : exclu par EXCLURE."
+			continue
+			;;
+	esac
 
 	if [ "$(docker inspect -f '{{.State.Running}}' "$conteneur" 2>/dev/null || true)" != true ]; then
 		journal "ECHEC $projet : conteneur $conteneur absent ou arrete."
