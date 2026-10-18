@@ -1,0 +1,23 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Lien expiré - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Ce lien n'est plus valable</h1>
+            <p>
+                Un lien d'accès à une fiche d'adhérent expire au bout de trente minutes, et ne
+                fonctionne qu'à l'identique : recopié en partie ou modifié, il est refusé.
+                Demandez-en un nouveau, c'est immédiat.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('member_access_request') }}" class="button button--primary">Demander un nouveau lien</a>
+            <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

@@ -22,6 +22,14 @@ framework:
             policy: 'sliding_window'
             limit: 3
             interval: '1 day'
+        # Demande d'acces a l'espace adherent. Le formulaire envoie un courriel
+        # a chaque numero connu : sans plafond, il permet d'ecrire en rafale a
+        # tous les adherents, un numero apres l'autre. Dix demandes par heure et
+        # par adresse IP laissent largement la place a qui cherche son numero.
+        member_access_request:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'
 
 # Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
 # (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
@@ -31,6 +39,10 @@ when@test:
     framework:
         rate_limiter:
             membership_application:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
+            member_access_request:
                 policy: 'sliding_window'
                 limit: 100000
                 interval: '1 hour'

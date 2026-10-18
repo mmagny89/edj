@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Member;
 use App\Entity\MembershipApplication;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -26,6 +27,24 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Le bulletin que l'espace adherent presente : le plus recent de la
+     * personne, parmi ceux qui portent encore ses donnees. Un bulletin
+     * anonymise n'a plus rien a montrer, ni fiche ni carte.
+     */
+    public function findLatestForMember(Member $member): ?MembershipApplication
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.member = :member')
+            ->andWhere('a.anonymizedAt IS NULL')
+            ->setParameter('member', $member)
+            ->orderBy('a.submittedAt', 'DESC')
+            ->addOrderBy('a.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**

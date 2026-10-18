@@ -94,6 +94,45 @@ final class MembershipNotifier
         $this->send($email);
     }
 
+    /**
+     * Lien d'acces a l'espace adherent. Il part a la seule adresse du
+     * bulletin — jamais a une adresse saisie dans le formulaire : c'est ce qui
+     * fait tenir l'authentification.
+     *
+     * Le responsable legal d'un mineur le recoit aussi : c'est lui qui a
+     * engage l'enfant, et souvent lui qui releve les courriels.
+     */
+    public function sendAccessLink(MembershipApplication $application, string $url): void
+    {
+        // Le plafond du courriel de confirmation sert aussi ici : les deux
+        // partent a la meme adresse, et c'est elle que l'on protege.
+        $key = mb_strtolower((string) $application->getEmail());
+        if (!$this->membershipConfirmationEmailLimiter->create($key)->consume()->isAccepted()) {
+            return;
+        }
+
+        $recipients = [new Address((string) $application->getEmail())];
+        if ($application->isMinor() && $application->getGuardianEmail()) {
+            $recipients[] = new Address($application->getGuardianEmail());
+        }
+
+        $context = [
+            'application' => $application,
+            'url' => $url,
+            'lifetime' => '30 minutes',
+        ];
+
+        $email = (new Email())
+            ->from(new Address($this->mailerFrom, 'Envie de Jouer'))
+            ->to(...$recipients)
+            ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
+            ->subject('Votre fiche d\'adhérent Envie de Jouer')
+            ->text($this->twig->render('emails/member_access_link.txt.twig', $context))
+            ->html($this->twig->render('emails/member_access_link.html.twig', $context));
+
+        $this->send($email);
+    }
+
     private function send(Email $email): void
     {
         try {

@@ -2042,3 +2042,47 @@ html[data-motion="reduce"] *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Espace adherent
+   Consultable par lien signe, depuis un courriel : souvent ouvert sur un
+   telephone, d'ou des panneaux qui s'empilent plutot qu'une grille.
+   --------------------------------------------------------------------------- */
+
+.member-panel {
+    margin-top: clamp(18px, 3vw, 28px);
+}
+
+.member-number {
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    letter-spacing: 0.08em;
+}
+
+/* Pastille d'etat : le mot seul ne suffit pas a distinguer « validée » de
+   « annulée » d'un coup d'oeil, et la couleur seule ne suffit jamais — les
+   deux sont donc portes ensemble, texte compris. */
+.member-status {
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 4px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.member-status--validee {
+    border-color: var(--green);
+    background: #dcfce7;
+    color: #14532d;
+}
+
+.member-status--annulee {
+    background: #e9ebef;
+    color: #2b3040;
+}
+
+.member-status--en_attente {
+    border-color: #a16207;
+    background: #fef3c7;
+    color: #713f12;
+}

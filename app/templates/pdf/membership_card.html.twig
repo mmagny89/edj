@@ -1,0 +1,87 @@
+{#- Carte d'adherent, deux pages au format d'une carte bancaire : recto a la
+    marque de l'association, verso nominatif.
+
+    Gabarit destine a Dompdf et a lui seul : pas de Tailwind — la feuille du
+    site n'est pas chargee ici —, ni grid, ni flex, ni positionnement absolu.
+    Ce dernier a ete essaye : Dompdf ne traite pas un parent « position:
+    relative » comme reference, et place les enfants par rapport au flux, ce
+    qui repoussait chaque bloc « ancre en bas » sur une page de plus. Tout est
+    donc en flux normal, avec des tableaux la ou il faut aligner : c'est ce que
+    le moteur rend le plus fidelement. -#}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Carte d'adhérent {{ application.memberNumber }}</title>
+    <style>
+        @page { margin: 0; }
+        body { margin: 0; font-family: 'DejaVu Sans', sans-serif; color: #111827; }
+
+        table { border-collapse: collapse; width: 100%; }
+        td { vertical-align: top; }
+
+        .recto { padding: 8mm 6mm 0; }
+        .marque { font-size: 19pt; font-weight: bold; line-height: 1.1; letter-spacing: -0.3pt; }
+        .mention { margin-top: 8mm; font-size: 11pt; font-weight: bold; }
+
+        .bandeau { background-color: #1f2937; color: #ffffff; padding: 2.6mm 6mm; }
+        .bandeau-texte { font-size: 7.5pt; letter-spacing: 1.4pt; }
+        .numero { font-size: 11pt; font-weight: bold; letter-spacing: 1pt; text-align: right; }
+
+        .verso { padding: 3.5mm 5.5mm 0; }
+        .identite { font-size: 9pt; line-height: 1.55; }
+        .identite strong { font-size: 10.5pt; }
+
+        .saisons { margin-top: 2.5mm; }
+        .saisons td { width: 25%; height: 7.5mm; padding: 0; border: 0.4mm solid #9ca3af;
+                      text-align: center; vertical-align: middle; font-size: 8.5pt; color: #6b7280; }
+        .saison-valide { border-color: #166534 !important; background-color: #dcfce7; color: #14532d; font-weight: bold; }
+
+        .pied { margin-top: 2.5mm; font-size: 6pt; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="recto" style="page-break-after: always;">
+        <table>
+            <tr>
+                <td style="width: 52%;">
+                    <div class="marque">ENVIE DE</div>
+                    <div class="marque">JOUER</div>
+                </td>
+                <td style="width: 48%; text-align: right;">
+                    <img src="{{ logo }}" alt="" width="85" height="95">
+                </td>
+            </tr>
+        </table>
+        <div class="mention">Carte d'adhérent</div>
+    </div>
+
+    <div class="bandeau">
+        <table>
+            <tr>
+                <td class="bandeau-texte" style="width: 60%; vertical-align: middle;">ENVIE DE JOUER · JOIGNY</td>
+                <td class="numero" style="width: 40%; vertical-align: middle;">{{ application.memberNumber }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="verso">
+        <div class="identite">
+            Nom : <strong>{{ application.lastName }}</strong><br>
+            Prénom : <strong>{{ application.firstName }}</strong>
+        </div>
+
+        <table class="saisons">
+            {% for row in seasons|batch(4) %}
+                <tr>
+                    {% for season in row %}
+                        <td class="{{ season.valid ? 'saison-valide' }}">{{ season.year }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+
+        <div class="pied">Carte personnelle, à présenter aux évènements de l'association.</div>
+    </div>
+</body>
+</html>

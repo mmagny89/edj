@@ -1,0 +1,51 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block description %}Consultez votre fiche d'adhérent et téléchargez votre carte Envie de Jouer avec votre numéro d'adhérent.{% endblock %}
+{% block title %}Ma fiche d'adhérent - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Ma fiche d'adhérent</h1>
+            <p>
+                Saisissez votre numéro d'adhérent : nous vous envoyons un lien à l'adresse e-mail
+                de votre bulletin. Ce lien ouvre votre fiche et votre carte, et lui seul — il n'y a
+                ni compte ni mot de passe à retenir.
+            </p>
+        </div>
+
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    La demande n'a pas pu être envoyée : vérifiez le numéro saisi.
+                </p>
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Votre numéro</legend>
+                <div class="form-grid">
+                    {{ form_row(form.number) }}
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary">Recevoir mon lien</button>
+                <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+            </div>
+        {{ form_end(form) }}
+
+        <p class="form-privacy">
+            Vous ne connaissez pas votre numéro ? Il figure dans le courriel reçu lors de votre
+            adhésion. Écrivez-nous à
+            <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a> si vous ne
+            le retrouvez pas.
+        </p>
+    </main>
+{% endblock %}

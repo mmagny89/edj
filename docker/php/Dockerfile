@@ -33,9 +33,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=php_extension_installer /usr/bin/install-php-extensions /usr/local/bin/
+# gd : exigee par Dompdf des qu'une image entre dans un PDF — la carte
+# d'adherent porte la mascotte. Sans elle, la generation echoue a l'execution
+# (« The PHP GD extension is required »), jamais au build.
 RUN install-php-extensions \
         @composer \
         apcu \
+        gd \
         intl \
         opcache \
         pdo_pgsql \

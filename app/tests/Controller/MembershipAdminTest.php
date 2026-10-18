@@ -4,6 +4,8 @@ namespace App\Tests\Controller;
 
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
+use App\Enum\PaymentMethod;
+use App\Service\MemberDirectory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -55,6 +57,7 @@ final class MembershipAdminTest extends WebTestCase
             ->setPhilibertConsent($philibert)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($first.' Durand');
+        static::getContainer()->get(MemberDirectory::class)->attach($application);
         $this->entityManager->persist($application);
         $this->entityManager->flush();
 
@@ -287,6 +290,107 @@ final class MembershipAdminTest extends WebTestCase
         $this->client->request('GET', '/admin/adhesions');
 
         self::assertSelectorTextContains('tbody', 'Fiche papier');
+    }
+
+    public function testEveryBulletinCarriesAMemberNumber(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+
+        self::assertMatchesRegularExpression('/^EDJ-\\d{4,}$/', (string) $application->getMemberNumber());
+        self::assertSelectorTextContains('body', (string) $application->getMemberNumber());
+    }
+
+    /**
+     * Deux bulletins de la meme personne — une readhesion la saison suivante —
+     * partagent le numero : c'est tout l'objet de la table des adherents.
+     */
+    public function testAReapplicationKeepsTheSameNumber(): void
+    {
+        $first = $this->create('camille@example.test');
+        $second = $this->create('camille.autre@example.test');
+
+        self::assertSame($first->getMemberNumber(), $second->getMemberNumber());
+    }
+
+    public function testValidationRecordsThePaymentMethod(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->submitStatus($application, "Valider l'adhésion", ['paymentMethod' => 'cheque']);
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
+        $saved = $this->reload($application);
+        self::assertTrue($saved->isValidated());
+        self::assertSame(PaymentMethod::Cheque, $saved->getPaymentMethod());
+    }
+
+    /**
+     * Le formulaire impose le moyen de reglement, mais il se fabrique a la
+     * main : le refus doit venir du serveur.
+     */
+    public function testValidationIsRefusedWithoutAPaymentMethod(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->submitStatus($application, "Valider l'adhésion", remove: ['paymentMethod']);
+
+        self::assertTrue($this->reload($application)->isPending());
+    }
+
+    public function testCancellationLeavesTheBulletinReadable(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->submitStatus($application, "Annuler l'adhésion");
+
+        $saved = $this->reload($application);
+        self::assertTrue($saved->isCancelled());
+        self::assertFalse($saved->isAnonymized());
+    }
+
+    public function testAStatusChangeWithoutAValidTokenIsRefused(): void
+    {
+        $application = $this->create('camille@example.test');
+
+        $this->client->request('POST', sprintf('/admin/adhesions/%d/annuler', $application->getId()), ['_token' => 'faux']);
+
+        self::assertTrue($this->reload($application)->isPending());
+    }
+
+    /**
+     * Relit le bulletin apres une requete. Le client redemarre le noyau entre
+     * deux requetes : l'entite de depart n'est plus geree, et le gestionnaire
+     * d'entites de setUp() non plus.
+     */
+    private function reload(MembershipApplication $application): MembershipApplication
+    {
+        $manager = static::getContainer()->get(EntityManagerInterface::class);
+        $saved = $manager->find(MembershipApplication::class, $application->getId());
+        self::assertInstanceOf(MembershipApplication::class, $saved);
+
+        return $saved;
+    }
+
+    /**
+     * Passe par la fiche plutot que par un POST fabrique : le jeton CSRF se
+     * recupere ainsi comme un utilisateur le fait, sans monter de session a la
+     * main.
+     *
+     * @param array<string, string> $values
+     * @param list<string>          $remove
+     */
+    private function submitStatus(MembershipApplication $application, string $button, array $values = [], array $remove = []): void
+    {
+        $crawler = $this->client->request('GET', '/admin/adhesions/'.$application->getId());
+        $form = $crawler->selectButton($button)->form();
+
+        foreach ($remove as $field) {
+            $form->remove($field);
+        }
+
+        $this->client->submit($form, $values);
     }
 
     public function testAContributorCanRegisterAMember(): void
