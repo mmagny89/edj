@@ -50,6 +50,10 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- A 320 px de large, la page d'accueil debordait de 5 px sur la droite :
+  l'adresse e-mail du bouton de contact, d'un seul tenant, etait plus large que
+  la colonne. Le bouton se plafonne a la largeur de son conteneur et l'adresse
+  passe a la ligne.
 - La liste des adhesions etait un tableau de sept colonnes, illisible sur un
   telephone : elle est doublee de cartes, une par bulletin, affichees seules
   en dessous de 768 px. Les cases a cocher et l'anonymisation en masse

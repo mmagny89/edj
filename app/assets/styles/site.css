@@ -231,6 +231,16 @@ h1 {
     margin-top: 32px;
 }
 
+/* L'adresse e-mail est un seul mot, sans point de coupure : a 320 px elle est
+   plus large que la colonne et fait deborder toute la page de quelques pixels.
+   Le bouton se plafonne a la largeur de son conteneur et laisse l'adresse
+   passer a la ligne plutot que de la couper ou de la faire sortir. */
+.contact-actions .button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
 .hero-pills {
     display: flex;
     flex-wrap: wrap;
