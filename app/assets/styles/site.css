@@ -903,12 +903,6 @@ h1 {
     font-size: 0.95rem;
 }
 
-.document-links__hint {
-    font-size: 0.85em;
-    font-weight: 700;
-    color: var(--muted);
-}
-
 .mascot-section {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
