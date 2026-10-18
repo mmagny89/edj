@@ -1121,6 +1121,36 @@ h1 {
     }
 }
 
+/* En-tete sur les plus petits telephones. A 320 px, la marque et le bouton de
+   menu ne tiennent pas cote a cote : .brand porte min-width: max-content, donc
+   refuse de se reduire, et la page debordait de 14 px — un debordement
+   horizontal sur toutes les pages du site, celui que le point 12 des
+   conventions fait mesurer. On libere la marque et on reduit le bouton a son
+   icone, son libelle restant lisible par un lecteur d'ecran. */
+@media (max-width: 420px) {
+    .brand {
+        min-width: 0;
+    }
+
+    .brand__mascot {
+        width: 44px;
+        height: 44px;
+    }
+
+    .brand strong {
+        font-size: 1.25rem;
+    }
+
+    .menu-toggle span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
 @media (max-width: 680px) {
     .stats-grid,
     .partners-list {

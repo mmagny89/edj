@@ -43,6 +43,17 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- La liste des adhesions etait un tableau de sept colonnes, illisible sur un
+  telephone : elle est doublee de cartes, une par bulletin, affichees seules
+  en dessous de 768 px. Les cases a cocher et l'anonymisation en masse
+  restent une action de bureau, sur le tableau — un champ duplique aurait
+  envoye chaque identifiant deux fois.
+- Cibles tactiles sous la taille minimale : les cases a cocher de la liste des
+  adhesions passent de 20 a 24 px, et les liens de retour des pages
+  d'administration et de connexion de 20 a 44 px de haut.
+- Debordement horizontal de l'en-tete du site en dessous de 420 px : la marque
+  et le bouton de menu ne tenaient pas cote a cote, et toutes les pages
+  defilaient lateralement.
 - Le conteneur `worker` ne se voyait injecter ni `MAILER_FROM`, ni
   `SITE_INDEXABLE`, ni `MEMBERS_WHATSAPP_URL` : comme c'est lui qui rend et
   envoie les courriels, chaque envoi echouait sur « Environment variable not
