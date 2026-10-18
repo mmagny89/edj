@@ -153,9 +153,10 @@ final class GenerateDemoMembershipsCommand extends Command
         // Les quatre etats possibles tournent, pour que la liste montre une
         // adhesion en attente, deux validees aux reglements differents et une
         // annulee.
+        $owes = ($application->amountDue() ?? 0) > 0;
         match ($index % 4) {
-            1 => $application->validate(MembershipType::Consumer === $type ? null : PaymentMethod::Cheque, null),
-            2 => $application->validate(MembershipType::Consumer === $type ? null : PaymentMethod::Transfer, null),
+            1 => $application->validate($owes ? PaymentMethod::Cheque : null, null),
+            2 => $application->validate($owes ? PaymentMethod::Transfer : null, null),
             3 => $application->cancel(null),
             default => null,
         };

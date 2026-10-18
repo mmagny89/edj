@@ -24,6 +24,9 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 #[ORM\Index(name: 'idx_membership_application_member', columns: ['member_id'])]
 class MembershipApplication
 {
+    /** En dessous de cet age, l'adhesion est gratuite. */
+    public const FREE_UNDER_AGE = 8;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -250,13 +253,16 @@ class MembershipApplication
     }
 
     /**
-     * Valide l'adhesion : la cotisation est encaissee, ou la formule est
-     * gratuite. Le moyen de reglement est obligatoire des que la formule est
-     * payante — c'est la seule trace de l'encaissement cote site.
+     * Valide l'adhesion : la cotisation est encaissee, ou il n'y a rien a
+     * encaisser. Le moyen de reglement est obligatoire des qu'un montant est
+     * du — c'est la seule trace de l'encaissement cote site.
      */
     public function validate(?PaymentMethod $paymentMethod, ?int $adminId, ?\DateTimeImmutable $now = null): static
     {
-        if (MembershipType::Consumer !== $this->membershipType && null === $paymentMethod) {
+        // Le controle porte sur le montant du et non sur la formule : un
+        // enfant de moins de huit ans ne doit rien, quelle que soit la
+        // formule, et exiger un moyen de reglement bloquerait sa validation.
+        if (($this->amountDue() ?? 0) > 0 && null === $paymentMethod) {
             throw new \LogicException('Une adhesion payante ne se valide pas sans moyen de reglement.');
         }
 
@@ -296,6 +302,48 @@ class MembershipApplication
         $this->statusChangedById = $adminId;
 
         return $this;
+    }
+
+    /**
+     * Age de l'adherent au depot du bulletin. C'est la date qui compte pour la
+     * cotisation : un enfant qui adhere a sept ans ne devient pas redevable le
+     * jour de ses huit ans.
+     */
+    public function ageAtSubmission(): ?int
+    {
+        return $this->birthDate?->diff($this->submittedAt)->y;
+    }
+
+    /**
+     * Ce que doit la personne, en euros. Nul quand il n'y a rien a encaisser.
+     *
+     * Deux regles se superposent : le tarif de la formule, et la gratuite des
+     * moins de huit ans. C'est ici et non sur la formule que le montant se
+     * calcule, parce qu'il depend de l'adherent autant que de ce qu'il a
+     * choisi.
+     */
+    public function amountDue(): ?int
+    {
+        if (null === $this->membershipType) {
+            return null;
+        }
+
+        $age = $this->ageAtSubmission();
+
+        return null !== $age && $age < self::FREE_UNDER_AGE ? 0 : $this->membershipType->amountDue();
+    }
+
+    public function amountDueLabel(): string
+    {
+        $amount = $this->amountDue();
+
+        if (0 === $amount) {
+            return sprintf('0 € (moins de %d ans)', self::FREE_UNDER_AGE);
+        }
+
+        return null !== $amount && $amount > 0
+            ? $amount.' €'
+            : (string) $this->membershipType?->amountDueLabel();
     }
 
     public function isMinor(?\DateTimeImmutable $reference = null): bool

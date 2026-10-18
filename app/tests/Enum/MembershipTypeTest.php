@@ -29,7 +29,7 @@ final class MembershipTypeTest extends TestCase
 
     public function testTheConsumerMembershipOwesNothingForTheSeason(): void
     {
-        self::assertNull(MembershipType::Consumer->amountDue());
+        self::assertSame(0, MembershipType::Consumer->amountDue());
         self::assertStringContainsString('1 €', MembershipType::Consumer->amountDueLabel());
     }
 

@@ -116,6 +116,31 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Tous les bulletins valides de ces adherents, toutes saisons confondues.
+     * Sert a distinguer un renouvellement d'une premiere adhesion sans
+     * parcourir la collection de chaque adherent, qui reste vide pour un
+     * adherent cree dans la meme unite de travail.
+     *
+     * @param list<Member> $members
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findValidatedForMembers(array $members): array
+    {
+        if ([] === $members) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('a')
+            ->where('a.member IN (:members)')
+            ->andWhere('a.status = :status')
+            ->setParameter('members', $members)
+            ->setParameter('status', MembershipStatus::Validated)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Le bulletin d'adhesion individuelle qui porte ce nom, s'il en existe un.
      * Sert a dire sur la fiche si l'adherent principal designe par un bulletin
      * famille correspond bien a quelqu'un : le bulletin public laisse saisir un

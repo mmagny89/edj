@@ -26,6 +26,34 @@ parameters:
     # possede, sans approbation.
     app.social.members_whatsapp: '%env(MEMBERS_WHATSAPP_URL)%'
 
+    # Communes de la communaute de communes du Jovinien, pour la repartition
+    # geographique du tableau de bord. Joigny en fait partie mais est comptee a
+    # part : c'est la commune ou l'association a son siege et ou elle joue.
+    #
+    # ATTENTION, liste incomplete : le registre officiel BANATIC annonce 19
+    # communes et n'en publiait que 17 au relevé du 2026-10-18. Les deux
+    # manquantes sont a ajouter ici — les adherents qui en viennent sont pour
+    # l'instant comptes « hors territoire ».
+    # Source : https://www.banatic.interieur.gouv.fr/intercommunalite/248900938-cc-du-jovinien
+    app.territory.joigny: 'Joigny'
+    app.territory.intercommunality:
+        - 'Béon'
+        - 'Brion'
+        - 'Bussy-en-Othe'
+        - 'Cézy'
+        - 'Champlay'
+        - 'Chamvres'
+        - 'Cudot'
+        - 'La Celle-Saint-Cyr'
+        - 'Looze'
+        - 'Paroy-sur-Tholon'
+        - 'Précy-sur-Vrin'
+        - 'Saint-Aubin-sur-Yonne'
+        - 'Saint-Julien-du-Sault'
+        - "Saint-Martin-d'Ordon"
+        - 'Sépeaux-Saint-Romain'
+        - 'Verlin'
+
 services:
     _defaults:
         autowire: true

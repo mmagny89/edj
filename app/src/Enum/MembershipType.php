@@ -44,7 +44,7 @@ enum MembershipType: string
 
     /**
      * Ce que doit la personne qui choisit cette formule, en euros, a
-     * encaisser a la validation. Nul pour la formule consommateur, gratuite a
+     * encaisser a la validation. Zero pour la formule consommateur, gratuite a
      * l'annee et reglee evenement par evenement.
      *
      * A ne pas confondre avec priceLabel(), qui decrit le tarif de la formule
@@ -52,12 +52,15 @@ enum MembershipType: string
      * supplementaire » se lisait comme 10 € sur une fiche famille, alors que
      * la personne ne doit que 5 €.
      */
-    public function amountDue(): ?int
+    public function amountDue(): int
     {
         return match ($this) {
             self::Individual => 10,
             self::Family => 5,
-            self::Consumer => null,
+            // Gratuite a l'annee : ce qui se paie se paie a l'evenement, et ne
+            // passe pas par le bulletin. Zero et non « rien a dire » : c'est
+            // bien un montant du, et il vaut zero.
+            self::Consumer => 0,
         };
     }
 
@@ -67,9 +70,9 @@ enum MembershipType: string
      */
     public function amountDueLabel(): string
     {
-        return null !== $this->amountDue()
-            ? $this->amountDue().' €'
-            : "Gratuite à l'année, puis 1 € par évènement";
+        return self::Consumer === $this
+            ? "Gratuite à l'année, puis 1 € par évènement"
+            : $this->amountDue().' €';
     }
 
     /**

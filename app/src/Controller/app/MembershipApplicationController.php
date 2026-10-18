@@ -219,7 +219,7 @@ final class MembershipApplicationController extends AbstractController
         }
 
         $method = PaymentMethod::tryFrom((string) $request->request->get('paymentMethod'));
-        if (null === $method && MembershipType::Consumer !== $application->getMembershipType()) {
+        if (null === $method && ($application->amountDue() ?? 0) > 0) {
             return $this->refuseStatusChange($application, 'moyen de règlement manquant');
         }
 
@@ -228,7 +228,7 @@ final class MembershipApplicationController extends AbstractController
 
         $this->addFlash('success', null !== $method
             ? sprintf('Adhésion validée, cotisation réglée par %s.', mb_lcfirst($method->label()))
-            : 'Adhésion validée : la formule consommateur est gratuite à l\'année.');
+            : sprintf('Adhésion validée : %s.', mb_lcfirst($application->amountDueLabel())));
 
         return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
     }

@@ -73,10 +73,10 @@
                 Annulée le {{ application.statusChangedAt|date('d/m/Y') }}. Le bulletin reste consultable.
             {% else %}
                 En attente :
-                {% if application.membershipType.amountDue %}
-                    <strong>{{ application.membershipType.amountDueLabel }}</strong> restent à encaisser.
+                {% if application.amountDue %}
+                    <strong>{{ application.amountDueLabel }}</strong> restent à encaisser.
                 {% else %}
-                    la formule consommateur est gratuite à l'année, il n'y a rien à encaisser.
+                    {{ application.amountDueLabel|lower }}, il n'y a rien à encaisser.
                 {% endif %}
             {% endif %}
         </p>
@@ -85,7 +85,7 @@
             {% if not application.validated %}
                 <form method="post" action="{{ path('app_membership_validate', {id: application.id}) }}" class="flex flex-wrap items-end gap-3">
                     <input type="hidden" name="_token" value="{{ csrf_token('membership_status_' ~ application.id) }}">
-                    {% if application.membershipType.value != 'consommateur' %}
+                    {% if application.amountDue %}
                         <div>
                             <label for="moyen-reglement" class="mb-1.5 block text-sm font-semibold text-slate-800">Réglée par</label>
                             <select name="paymentMethod" id="moyen-reglement" required
@@ -142,7 +142,7 @@
             <h2 id="t-adhesion" class="text-lg font-bold text-ink">Adhésion</h2>
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
-                {{ f.row('Montant dû', application.membershipType.amountDueLabel) }}
+                {{ f.row('Montant dû', application.amountDueLabel) }}
                 {% if not application.anonymized and application.principalMemberName %}
                     <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
                         <dt class="text-sm font-semibold text-slate-600">Adhérent principal</dt>

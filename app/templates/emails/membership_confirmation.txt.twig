@@ -7,7 +7,7 @@ Votre bulletin d'adhésion est bien arrivé. Le Conseil d'Administration le trai
 VOTRE ADHÉSION
 {% if application.memberNumber %}Votre numéro d'adhérent : {{ application.memberNumber }}
 Conservez-le : il vous donne accès à votre fiche et à votre carte sur {{ url('member_access_request') }}
-{% endif %}{{ application.membershipType.label }} — à régler : {{ application.membershipType.amountDueLabel }}
+{% endif %}{{ application.membershipType.label }} — à régler : {{ application.amountDueLabel }}
 Le règlement se fait sur place, lors d'une de nos soirées. La saison associative court du 1er octobre au 30 septembre suivant.
 
 NOUS RETROUVER
