@@ -280,7 +280,7 @@ Voir la phase D pour l'automatiser.
 
 ## Phase C — Deploiement continu depuis GitHub
 
-Une fois la phase B eprouvee. Chaque push sur `main` deploie.
+Une fois la phase B eprouvee. Un push sur `main` deploie **si la variable de depot `DEPLOIEMENT_PROD` vaut `oui`** : la poser en dernier (voir C.2), elle est l'interrupteur.
 
 ### C.1 Cles et acces
 
@@ -313,6 +313,13 @@ Secrets > New repository secret*. Les valeurs sortent de
 Une valeur oubliee n'est pas signalee par GitHub (secret vide) : le workflow
 controle leur presence avant de s'en servir et nomme ceux qui manquent.
 
+**1 bis. La variable d'activation** — meme page, onglet **Variables** > *New
+repository variable* : nom `DEPLOIEMENT_PROD`, valeur `oui`. C'est l'interrupteur
+du job `deploiement-prod` : absente ou differente de `oui`, le job est ignore et
+rien n'est livre. La poser **en dernier**, une fois C.3 reussi a la main. Une
+PPD a son propre jeu — secrets prefixes de `STAGING_` et variable
+`DEPLOIEMENT_STAGING` — voir `GITHUB.md`.
+
 **2. L'environnement `production`** — *Settings > Environments > New
 environment* > nom exact `production`. Le workflow le reference : sans lui, le
 job echoue ou en cree un vide. Option recommandee : cocher **Required
@@ -341,8 +348,8 @@ Actions > « Qualite et deploiement » > **Run workflow** sur `main`
 (`workflow_dispatch`). Lire la sortie du job `Deploiement en production` : c'est
 celle de `deployer.sh`, relayee.
 
-Ensuite : un push sur `develop` ne deploie **rien** ; seule une fusion dans
-`main` le fait.
+Ensuite : un push sur `develop` ne deploie **rien** tant que `DEPLOIEMENT_STAGING`
+n'est pas posee a `oui` ; seule une fusion dans `main` deploie la production.
 
 ---
 

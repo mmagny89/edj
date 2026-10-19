@@ -5,7 +5,7 @@
 #   sh outils/installer-deploiement.sh serveur              # une fois par serveur
 #   sh outils/installer-deploiement.sh projet prod|staging  # une fois par projet, depuis sa racine
 #
-# Deux directions, deux portees, et c'est voulu (conventions, section 22c) :
+# Deux directions, deux portees, et c'est voulu (conventions, section ci/portage) :
 #
 #   serveur → GitHub  : UNE cle globale, celle d'un compte machine. La
 #                       globaliser supprime toute ceremonie par projet.
@@ -83,6 +83,16 @@ installer_projet() {
 			;;
 	esac
 
+	# Les secrets de production portent les noms nus, ceux de pre-production le
+	# prefixe STAGING_ (conventions, section ci/qualite). Un seul endroit le decide.
+	if [ "$ENVIRONNEMENT" = "staging" ]; then
+		PREFIXE=STAGING_
+		VARIABLE=DEPLOIEMENT_STAGING
+	else
+		PREFIXE=
+		VARIABLE=DEPLOIEMENT_PROD
+	fi
+
 	PROJET_CHEMIN=$(pwd)
 	PROJET=$(basename "$PROJET_CHEMIN" | tr '[:upper:]' '[:lower:]')
 	DEPLOYEUR="$PROJET_CHEMIN/outils/deployer.sh"
@@ -112,6 +122,14 @@ installer_projet() {
 
 	touch "$HOME/.ssh/authorized_keys"
 	chmod 600 "$HOME/.ssh/authorized_keys"
+
+	# Un fichier qui ne finit pas par un retour a la ligne (cle posee par l'hebergeur,
+	# par exemple) : sans lui, la ligne ajoutee se colle a la derniere et devient son
+	# commentaire. sshd l'ignore alors sans rien dire, et le deploiement repond
+	# « Permission denied (publickey) » alors que la cle est la bonne.
+	if [ -s "$HOME/.ssh/authorized_keys" ] && [ -n "$(tail -c 1 "$HOME/.ssh/authorized_keys")" ]; then
+		echo >> "$HOME/.ssh/authorized_keys"
+	fi
 
 	# La ligne est remplacee et non simplement ajoutee : un clone deplace, ou
 	# une premiere pose depuis le mauvais repertoire, laisse sinon une forced
@@ -162,7 +180,7 @@ installer_projet() {
 		echo
 		echo "Lignes retirees, leur cible n'existe plus :"
 		printf '%s\n' "$CADUQUES" | sed 's/^/  /'
-		echo "Si GitHub detenait la cle correspondante, remplacez DEPLOIEMENT_CLE_PRIVEE"
+		echo "Si GitHub detenait la cle correspondante, remplacez ${PREFIXE}DEPLOIEMENT_CLE_PRIVEE"
 		echo "par celle affichee plus bas."
 	fi
 
@@ -192,19 +210,19 @@ installer_projet() {
 		exit 1
 	fi
 
-	titre "A COLLER DANS GITHUB"
+	titre "A COLLER DANS GITHUB — SECRETS"
 	echo "Depot → Settings → Secrets and variables → Actions → New repository secret"
 	echo
-	echo "DEPLOIEMENT_HOTE"
+	echo "${PREFIXE}DEPLOIEMENT_HOTE"
 	echo "$ADRESSE"
 	echo
-	echo "DEPLOIEMENT_UTILISATEUR"
+	echo "${PREFIXE}DEPLOIEMENT_UTILISATEUR"
 	echo "$(id -un)"
 	echo
-	echo "DEPLOIEMENT_KNOWN_HOSTS"
+	echo "${PREFIXE}DEPLOIEMENT_KNOWN_HOSTS"
 	echo "$EMPREINTES"
 	echo
-	echo "DEPLOIEMENT_CLE_PRIVEE"
+	echo "${PREFIXE}DEPLOIEMENT_CLE_PRIVEE"
 	echo "  La cle privee n'est pas affichee ici : une cle qui passe par un"
 	echo "  terminal finit dans son historique, et de la dans un copier-coller"
 	echo "  malheureux — un ticket, une conversation, un canal d'equipe."
@@ -218,6 +236,19 @@ installer_projet() {
 	echo "  Si elle a ete divulguee, la remplacer ne coute rien :"
 	echo "    rm -f $CLE $CLE.pub && sh outils/installer-deploiement.sh projet $ENVIRONNEMENT"
 	echo
+	# Sans cette variable, le job reste ignore et les quatre secrets ne servent a
+	# rien : le pas est facile a oublier, donc il est annonce a part.
+	titre "A COLLER DANS GITHUB — VARIABLE D'ACTIVATION"
+	echo "Depot → Settings → Secrets and variables → Actions → onglet Variables"
+	echo
+	echo "  $VARIABLE = oui"
+	echo
+	echo "Tant qu'elle est absente ou differente de « oui », le job"
+	echo "deploiement-$ENVIRONNEMENT est ignore : c'est le defaut sur, et c'est"
+	echo "aussi l'interrupteur pour suspendre les deploiements sans toucher aux"
+	echo "secrets ni au workflow."
+	echo
+
 	if [ "$(id -u)" = "0" ]; then
 		echo
 		echo "AVERTISSEMENT : ce deploiement tournera sous root."

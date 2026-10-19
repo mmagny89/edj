@@ -108,9 +108,13 @@ l'hote (conventions, section 4).
 > **Mise en production pas a pas** — de la machine vierge au site en ligne, puis
 > du domaine provisoire au domaine definitif : [`docs/MISE-EN-PRODUCTION.md`](docs/MISE-EN-PRODUCTION.md).
 
-Tout push sur `main` declenche le job `deploiement` de
+Un push sur `main` declenche le job `deploiement-prod` de
 `.github/workflows/qualite.yml`, apres les portes qualite et le build de
-verification de l'image.
+verification de l'image — **si la variable de depot `DEPLOIEMENT_PROD` vaut
+`oui`** (voir « Prealables cote GitHub »). Un lancement manuel (« Run workflow »)
+passe par la meme garde. Un push sur `develop` declenche de la meme facon
+`deploiement-staging`, garde par `DEPLOIEMENT_STAGING`. Absente, une variable
+rend son job ignore : rien n'est livre, et la CI reste verte.
 
 Ce job **n'envoie aucune commande**. Il ouvre une connexion SSH, et c'est la
 *forced command* d'`authorized_keys` qui impose, cote serveur,
@@ -153,6 +157,7 @@ cp .env.prod.local.dist .env.prod.local
 sh outils/renseigner-secrets.sh prod
 sh outils/installer-deploiement.sh serveur       # une fois par machine
 sh outils/installer-deploiement.sh projet prod   # une fois par projet
+sh outils/installer-deploiement.sh projet staging  # depuis le clone de PPD, si l'environnement existe
 ```
 
 `renseigner-secrets.sh` se joue **avant** le premier build : les variables
@@ -190,10 +195,29 @@ par `installer-deploiement.sh projet prod` :
 | `DEPLOIEMENT_CLE_PRIVEE` | Cle privee dont la publique est dans `authorized_keys`, derriere la forced command |
 | `DEPLOIEMENT_KNOWN_HOSTS` | Empreinte du serveur, a l'adresse exacte que le workflow utilise |
 
-Le prefixe `DEPLOIEMENT_` est normatif (conventions, section 22) : il dit le
+Le prefixe `DEPLOIEMENT_` est normatif (conventions, §ci/qualite) : il dit le
 role, pas la machine, et reste identique d'un depot a l'autre. Le workflow
 controle leur presence avant de s'en servir — GitHub remplace un secret absent
 par une chaine vide, sans rien signaler.
+
+La pre-production a son propre jeu, **prefixe de `STAGING_`**
+(`STAGING_DEPLOIEMENT_HOTE`, `STAGING_DEPLOIEMENT_UTILISATEUR`,
+`STAGING_DEPLOIEMENT_CLE_PRIVEE`, `STAGING_DEPLOIEMENT_KNOWN_HOSTS`), produit par
+`installer-deploiement.sh projet staging`. Les deux jeux ne sont pas
+interchangeables : chaque cle est figee sur son environnement par sa forced
+command.
+
+Variables (onglet **Variables**, meme page) — l'interrupteur de chaque
+deploiement :
+
+| Variable | Valeur | Effet |
+|---|---|---|
+| `DEPLOIEMENT_PROD` | `oui` | un push sur `main` deploie la production |
+| `DEPLOIEMENT_STAGING` | `oui` | un push sur `develop` deploie la pre-production |
+
+Absente ou differente de `oui`, le job est ignore. La poser **en dernier**, une
+fois le deploiement manuel reussi. Le reste de ce qui se regle dans GitHub
+(reglages Actions, protection des branches, Dependabot) est dans `GITHUB.md`.
 
 Les valeurs applicatives (`APP_SECRET`, `POSTGRES_PASSWORD`, `APP_DOMAIN`,
 `MAILER_DSN`) ne sont **pas** des secrets GitHub : elles vivent dans
@@ -246,7 +270,7 @@ jamais le poste de developpement).
 |---|---|
 | `sh outils/renseigner-secrets.sh prod` | Remplir `.env.prod.local` : le script deduit du nom de chaque variable comment la produire. A jouer **avant** le premier build, les `${VAR:?}` bloquant `docker compose build` lui-meme |
 | `sh outils/deployer.sh prod` | Le deploiement lui-meme (`git pull`, build, migrations, verification externe). Appele par la forced command SSH, ou a la main sur le serveur |
-| `sh outils/installer-deploiement.sh serveur\|projet prod` | Poser les acces du deploiement continu : cles, `authorized_keys`, empreinte, secrets a coller dans GitHub |
+| `sh outils/installer-deploiement.sh serveur\|projet prod\|staging` | Poser les acces du deploiement continu : cles, `authorized_keys`, empreinte, secrets a coller dans GitHub |
 | `sh outils/diagnostic-traefik.sh` | Relever sur l'hote le nom du reseau, l'entrypoint et le certresolver du Traefik en place — ils se constatent, ils ne se devinent pas |
 | `sh outils/sauvegarder.sh prod` | Sauvegarde de la base (dump compresse, controle, rotation sur 14), dossier et fichiers fermes au monde. A lancer chaque nuit par cron |
 | `sh outils/tester-restauration.sh prod` | Restaure la derniere sauvegarde dans une base **jetable**, compte les lignes, la supprime : prouve que la sauvegarde sert, sans toucher a la base en service |

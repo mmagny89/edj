@@ -3,6 +3,14 @@
 # --env-file REMPLACE le .env racine (conventions, section 3).
 services:
   php:
+    # Capabilities reduites au strict necessaire. NET_BIND_SERVICE est la seule
+    # indispensable : frankenphp ecoute sur le port 80, et la capability posee sur
+    # son binaire au build (setcap) ne sert a rien si le conteneur la perd. Un
+    # cap_drop: ALL seul : « exec: frankenphp: Operation not permitted ».
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     # L'image est construite sur le serveur, depuis le clone, par
     # outils/deployer.sh. Le stage et le tag sont figes ici plutot que laisses
     # a ${TARGET} : un fichier de secrets incomplet ne doit pas pouvoir
@@ -32,6 +40,18 @@ services:
     image: edj-php:staging
     networks:
       - edj
+
+  database:
+    # Le moteur demarre en root, cree son repertoire de donnees et bascule sur
+    # son utilisateur : CHOWN, SETUID, SETGID, DAC_OVERRIDE et FOWNER suffisent.
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
 
 networks:
   edj:
