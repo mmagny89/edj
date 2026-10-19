@@ -339,12 +339,17 @@ jobs:
   # 22). Ce job n'envoie donc aucune commande — l'argument "prod" est fixe par
   # authorized_keys, cote serveur. Les chemins et les secrets ne quittent
   # jamais la machine, et la cle confiee a GitHub ne peut rien lancer d'autre.
-  deploiement:
+  deploiement-prod:
     name: Deploiement en production
     needs: portes
-    # Jamais sur une demande de fusion : une PR d'un depot tiers deploierait
-    # du code non relu.
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    # Deux gardes cumulees, jamais une seule :
+    #   - la branche, et jamais une pull request : une PR d'un depot tiers
+    #     deploierait du code non relu ;
+    #   - la variable de depot DEPLOIEMENT_PROD, comparee a « oui ».
+    #     Absente, GitHub la rend comme une chaine vide et le job est
+    #     ignore : ne rien deployer est le defaut. Une variable plutot
+    #     qu'un secret — elle se lit dans un `if:`, sans rien de confidentiel.
+    if: ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && vars.DEPLOIEMENT_PROD == 'oui'
     runs-on: ubuntu-latest
     environment: production
     defaults:
@@ -404,3 +409,73 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
             "$DEPLOIEMENT_UTILISATEUR@$DEPLOIEMENT_HOTE"
+
+  deploiement-staging:
+    name: Deploiement en pre-production
+    needs: portes
+    # Deux gardes cumulees, jamais une seule :
+    #   - la branche, et jamais une pull request : une PR d'un depot tiers
+    #     deploierait du code non relu ;
+    #   - la variable de depot DEPLOIEMENT_STAGING, comparee a « oui ».
+    #     Absente, GitHub la rend comme une chaine vide et le job est
+    #     ignore : ne rien deployer est le defaut. Une variable plutot
+    #     qu'un secret — elle se lit dans un `if:`, sans rien de confidentiel.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && vars.DEPLOIEMENT_STAGING == 'oui'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    # Deux deploiements simultanes visent le meme clone et le meme stack : on
+    # attend son tour, on ne coupe jamais un deploiement en cours.
+    concurrency:
+      group: deploiement-staging
+      cancel-in-progress: false
+    steps:
+      # GitHub remplace un secret absent par une chaine vide, sans rien
+      # signaler : ssh "@" produit alors une page d'usage illisible au lieu
+      # d'une erreur. Defaut reel, paye au premier declenchement.
+      - name: Controler la presence des secrets de deploiement
+        env:
+          STAGING_DEPLOIEMENT_HOTE: ${{ secrets.STAGING_DEPLOIEMENT_HOTE }}
+          STAGING_DEPLOIEMENT_UTILISATEUR: ${{ secrets.STAGING_DEPLOIEMENT_UTILISATEUR }}
+          STAGING_DEPLOIEMENT_CLE_PRIVEE: ${{ secrets.STAGING_DEPLOIEMENT_CLE_PRIVEE }}
+          STAGING_DEPLOIEMENT_KNOWN_HOSTS: ${{ secrets.STAGING_DEPLOIEMENT_KNOWN_HOSTS }}
+        run: |
+          manquants=''
+          for v in STAGING_DEPLOIEMENT_HOTE STAGING_DEPLOIEMENT_UTILISATEUR STAGING_DEPLOIEMENT_CLE_PRIVEE STAGING_DEPLOIEMENT_KNOWN_HOSTS; do
+            eval "valeur=\${$v}"
+            [ -n "$valeur" ] || manquants="$manquants $v"
+          done
+          if [ -n "$manquants" ]; then
+            echo "::error title=Secrets manquants::A definir dans Settings → Secrets and variables → Actions :$manquants"
+            exit 1
+          fi
+
+      - name: Preparer l'acces SSH au serveur
+        env:
+          STAGING_DEPLOIEMENT_CLE_PRIVEE: ${{ secrets.STAGING_DEPLOIEMENT_CLE_PRIVEE }}
+          STAGING_DEPLOIEMENT_KNOWN_HOSTS: ${{ secrets.STAGING_DEPLOIEMENT_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$STAGING_DEPLOIEMENT_CLE_PRIVEE" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # L'empreinte du serveur est fournie en secret et verifiee : jamais
+          # de StrictHostKeyChecking=no, qui accepterait n'importe quel hote
+          # se presentant a cette adresse. known_hosts est indexe par
+          # l'adresse exacte de connexion — une IP et un domaine y sont deux
+          # entrees distinctes.
+          printf '%s\n' "$STAGING_DEPLOIEMENT_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # Aucune commande n'est passee : la forced command d'authorized_keys
+      # impose "outils/deployer.sh staging" et ignore ce que le client demande.
+      # Le script tire la branche develop, construit l'image, joue les
+      # migrations, fait le menage et verifie la reponse du site depuis
+      # l'exterieur — sa sortie est relayee ici.
+      - name: Lancer le deploiement sur le serveur
+        env:
+          STAGING_DEPLOIEMENT_HOTE: ${{ secrets.STAGING_DEPLOIEMENT_HOTE }}
+          STAGING_DEPLOIEMENT_UTILISATEUR: ${{ secrets.STAGING_DEPLOIEMENT_UTILISATEUR }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+            "$STAGING_DEPLOIEMENT_UTILISATEUR@$STAGING_DEPLOIEMENT_HOTE"
