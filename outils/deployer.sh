@@ -101,8 +101,11 @@ journal "Version deployee : $(git rev-parse --short HEAD) — $(git log -1 --pre
 #
 # RUN_MIGRATIONS=0 en production (section 8) : la mise a jour de schema est une
 # etape explicite, jamais le demarrage du conteneur.
+# --pull : sans lui, `build` reutilise l'image de base presente dans le cache du
+# serveur, et un correctif PHP publie entre-temps n'arrive jamais en production
+# — sans que ni le code ni le .env ne changent (CERTFR-2026-ALE-014).
 journal "Construction de l'image"
-$COMPOSE build
+$COMPOSE build --pull
 
 journal "Base de donnees"
 $COMPOSE up -d --wait database

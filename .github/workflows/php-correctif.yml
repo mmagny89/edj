@@ -1,0 +1,59 @@
+# Le PHP epingle dans le .env est-il encore le dernier correctif de sa
+# branche (section manifeste/versions) ?
+#
+# Epingler le correctif a la generation garantit qu'un projet part a
+# jour, pas qu'il le reste. Rien ne regarde la date d'un .env : sans ce
+# workflow, un projet sans activite reste sur un PHP vulnerable sans
+# que personne ne puisse le savoir sans l'ouvrir a la main. C'est la
+# situation qu'a revelee CERTFR-2026-ALE-014 (2026-10-21).
+#
+# Portee : le .env versionne, le seul que la CI voit. Les
+# .env.<env>.local sont ignores par git et portent leur PROPRE
+# PHP_VERSION (--env-file les substitue au .env, section
+# env/trois-niveaux) : ce workflow ne peut pas les controler. C'est
+# verif-php-correctif.sh, joue sur le serveur, qui s'en charge.
+name: Correctif PHP
+
+on:
+  schedule:
+    # Lundi 6h UTC. Le jour compte peu, la regularite si.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: .
+
+jobs:
+  correctif:
+    name: Dernier correctif de la branche PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Comparer le .env au registre
+        run: |
+          set -euo pipefail
+          declaree="$(sed -n 's/^PHP_VERSION=\([0-9][0-9.]*\).*/\1/p' .env | head -n1)"
+          [ -n "$declaree" ] || { echo "::error::PHP_VERSION absent du .env racine"; exit 1; }
+          branche="${declaree%.*}"
+          case "$declaree" in
+            *.*.*) ;;
+            *) echo "::error::PHP_VERSION=$declaree est une branche, pas un correctif — tag d'image flottant, le cache de build peut figer un correctif ancien"; exit 1 ;;
+          esac
+          # Pas d'ordering=-last_updated : library/php publie des milliers
+          # de tags et le tag nu n'est pas dans les 100 plus recents. Le
+          # filtre name= est applique par le registre avant la pagination.
+          attendue="$(curl -fsSL --max-time 15 \
+            "https://hub.docker.com/v2/repositories/library/php/tags/?page_size=100&name=${branche}." \
+            | jq -r --arg b "^${branche//./\\.}\\.[0-9]+$" \
+                '[ .results[].name | select(test($b)) ] | sort_by(split(".") | map(tonumber)) | last // empty')"
+          [ -n "$attendue" ] || { echo "::error::aucun correctif publie pour la branche $branche — branche en fin de vie ? (php.net/supported-versions.php)"; exit 1; }
+          if [ "$declaree" != "$attendue" ]; then
+            echo "::error::PHP $declaree epingle, or la branche $branche est a $attendue. Rejouer .claude/scripts/resolve-versions.sh, reporter PHP_VERSION et FRANKENPHP_VERSION dans le .env ET dans chaque .env.<env>.local du serveur, puis redeployer (le deploiement fait --pull always)."
+            exit 1
+          fi
+          echo "PHP $declaree — dernier correctif de la branche $branche."

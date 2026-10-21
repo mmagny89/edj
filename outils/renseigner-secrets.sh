@@ -23,6 +23,17 @@ case "$ENVIRONNEMENT" in
 		;;
 esac
 
+# Le conteneur jetable qui hache les mots de passe tourne sur le MEME correctif
+# PHP que le stack, lu dans le .env racine, jamais une version ecrite en dur.
+php_cli_tag() {
+	tag=$(sed -n 's/^PHP_VERSION=\([0-9][0-9.]*\).*/\1/p' .env 2>/dev/null | head -n1)
+	if [ -z "$tag" ]; then
+		echo "renseigner-secrets : PHP_VERSION absent du .env racine." >&2
+		exit 1
+	fi
+	printf '%s' "$tag"
+}
+
 FICHIER=".env.${ENVIRONNEMENT}.local"
 MODELE=".env.${ENVIRONNEMENT}.local.dist"
 
@@ -51,7 +62,7 @@ produire() {
 			stty echo 2>/dev/null || true
 			echo >&2
 			[ -n "$motdepasse" ] || { echo "  Vide, abandon." >&2; exit 1; }
-			MDP="$motdepasse" docker run --rm -e MDP php:8.5-cli \
+			MDP="$motdepasse" docker run --rm -e MDP "php:$(php_cli_tag)-cli" \
 				php -r 'echo password_hash(getenv("MDP"), PASSWORD_BCRYPT, ["cost" => 13]);'
 			motdepasse=
 			;;
@@ -127,7 +138,7 @@ if docker compose -f compose.yml -f "compose.${ENVIRONNEMENT}.yml" --env-file "$
 	echo "  OK — plus aucune variable manquante."
 	echo
 	echo "Etape suivante :"
-	echo "  docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml --env-file $FICHIER up -d --build --wait"
+	echo "  docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml --env-file $FICHIER up -d --build --pull always --wait"
 else
 	echo "  Il reste un probleme :"
 	docker compose -f compose.yml -f "compose.${ENVIRONNEMENT}.yml" --env-file "$FICHIER" config 2>&1 >/dev/null | sed 's/^/    /'
