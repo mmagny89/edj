@@ -8,7 +8,7 @@ sur https://edj.mmagny.fr.
 
 | Composant | Version |
 |---|---|
-| PHP | 8.4 (via FrankenPHP, mode worker) |
+| PHP | 8.5 (via FrankenPHP, mode worker) |
 | Symfony | 8.0 |
 | PostgreSQL | 18 |
 | FrankenPHP / Caddy | 1.12 |
