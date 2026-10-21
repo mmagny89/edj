@@ -40,7 +40,7 @@ env:
   # Suit PHP_VERSION du .env racine, source de verite unique (section 5) :
   # jamais plus recente que l'image de production. Toute montee de version
   # touche aussi le defaut de .github/actions/php/action.yml.
-  PHP_VERSION: '8.4'
+  PHP_VERSION: '8.5'
   APP_ENV: test
   APP_SECRET: ci-only-not-a-real-secret
   DATABASE_URL: postgresql://edj:edj@127.0.0.1:5432/edj?serverVersion=18&charset=utf8

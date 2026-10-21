@@ -5,7 +5,7 @@ secret, d'adresse personnelle d'adherent ni de donnee reelle.
 
 ## Stack
 
-Symfony 8 (PHP 8.4) sur FrankenPHP en mode worker, PostgreSQL 18, Webpack
+Symfony 8 (PHP 8.5) sur FrankenPHP en mode worker, PostgreSQL 18, Webpack
 Encore + Tailwind 4, Turbo/Stimulus. Tout le code applicatif vit dans `app/` ;
 la racine ne porte que l'infrastructure.
 

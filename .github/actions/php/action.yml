@@ -6,11 +6,11 @@ description: Installe PHP et les dépendances Composer de app/.
 inputs:
   php-version:
     description: >
-      Branche PHP de la stack (ex. 8.4), pas le correctif. setup-php ne
+      Branche PHP de la stack (ex. 8.5), pas le correctif. setup-php ne
       documente que le format major.minor ; c'est "update" qui amene le
       dernier correctif de cette branche.
     required: false
-    default: '8.4'
+    default: '8.5'
 
 runs:
   using: composite

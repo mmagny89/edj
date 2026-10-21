@@ -10,8 +10,8 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Securite
 
-- **PHP 8.4.27** (correctifs de CVE-2026-109618 et CVE-2026-109619, execution de code a distance) et
-  FrankenPHP 1.13.2. Le deploiement construit desormais l'image avec `build --pull` : sans cela, un
+- **PHP 8.5.12** (correctifs de CVE-2026-109618 et CVE-2026-109619, execution de code a distance), en
+  passant de la branche 8.4 a la 8.5, et FrankenPHP 1.13.2. Le deploiement construit desormais l'image avec `build --pull` : sans cela, un
   correctif PHP publie entre deux deploiements n'arrivait jamais en production. Un controle hebdomadaire
   (`.github/workflows/php-correctif.yml`) signale un PHP en retard sur le dernier correctif de sa branche.
 
