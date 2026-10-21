@@ -129,8 +129,10 @@ d'autre, et les chemins comme les secrets ne quittent jamais la machine
 2. `git fetch` puis `merge --ff-only` : un deploiement ne fusionne rien et ne
    resout aucun conflit. Si l'avance rapide est impossible, quelqu'un a
    modifie le clone du serveur, et c'est a un humain de regarder ;
-3. `build`, puis la base seule : l'image est construite **sur le serveur**,
-   depuis le code qui vient d'etre tire ;
+3. `build --pull`, puis la base seule : l'image est construite **sur le serveur**,
+   depuis le code qui vient d'etre tire, et `--pull` re-telecharge l'image de
+   base (sans lui, un correctif PHP publie entre deux deploiements n'arrive
+   jamais) ;
 4. les migrations, explicitement et **avant** la bascule du code
    (`RUN_MIGRATIONS` vaut 0 en production, conventions section 8) : l'ancien
    code sert pendant que le schema avance, et le nouveau demarre sur un schema

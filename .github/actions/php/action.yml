@@ -5,7 +5,10 @@ description: Installe PHP et les dépendances Composer de app/.
 
 inputs:
   php-version:
-    description: Version de PHP. Suit PHP_VERSION du .env racine.
+    description: >
+      Branche PHP de la stack (ex. 8.4), pas le correctif. setup-php ne
+      documente que le format major.minor ; c'est "update" qui amene le
+      dernier correctif de cette branche.
     required: false
     default: '8.4'
 
@@ -17,6 +20,11 @@ runs:
         php-version: ${{ inputs.php-version }}
         extensions: pdo_pgsql, intl, zip
         coverage: none
+      env:
+        # Sans "update", le runner garde le PHP preinstalle de l'image GitHub,
+        # qui n'est pas au dernier correctif : la CI validait le code sur un
+        # PHP plus ancien que celui de production (CERTFR-2026-ALE-014).
+        update: true
         tools: composer:v2
 
     - name: Cache des dependances Composer
