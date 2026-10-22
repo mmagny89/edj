@@ -39,6 +39,46 @@
 	encode zstd br gzip
 	log
 
+	# En-tetes de securite, sur toutes les reponses. defer : appliques aussi
+	# aux reponses d'erreur, ou Caddy remettrait Server. Pas de HSTS ici : le TLS
+	# est termine par le proxy, et un HSTS servi en developpement sur localhost
+	# s'imposerait a tous les projets locaux. La Content-Security-Policy depend
+	# des ressources du projet : a poser dans le Caddyfile du projet.
+	header {
+		defer
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+		-X-Powered-By
+	}
+
+	# durcissement:fichiers-sensibles — php_server sert tout le docroot ; Caddy
+	# ne lit pas les .htaccess. Dotfiles (sauf /.well-known/) et fichiers de
+	# sauvegarde, de journal, de dependances : 404, comme s'ils n'existaient pas.
+	@fichiers_caches {
+		path_regexp fichiers_caches (^|/)\.
+		not path /.well-known/*
+	}
+	@fichiers_sensibles path_regexp fichiers_sensibles (?i)(\.(sql|bak|old|orig|save|swp|log|dist|lock)|~|(^|/)(composer\.json|package(-lock)?\.json|Dockerfile|compose[^/]*\.ya?ml))$
+	handle @fichiers_caches {
+		respond 404
+	}
+	handle @fichiers_sensibles {
+		respond 404
+	}
+
+	# Seul public/index.php s'execute : c'est le point d'entree unique, et la
+	# regle du fichier de configuration nginx de la documentation Symfony.
+	@php_hors_index {
+		path_regexp php_hors_index \.php(/|$)
+		not path /index.php /index.php/*
+	}
+	handle @php_hors_index {
+		respond 404
+	}
+
 	route {
 		respond /health 200
 		php_server
