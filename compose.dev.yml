@@ -19,11 +19,21 @@ services:
       # La surveillance est donc restreinte aux repertoires que l'on edite
       # reellement. Les assets du front ont leur propre rechargement, par
       # "npm run watch" : public/build est volontairement absent d'ici.
+      #
+      # Et, dans ces repertoires, aux seuls fichiers de code. Un editeur ou un
+      # outil qui ecrit un fichier passe par des fichiers temporaires, un
+      # renommage, un changement de droits : chaque etape est un evenement, donc
+      # un redemarrage de tous les threads PHP, et une rafale peut en enchainer
+      # plusieurs pendant qu'une requete est en cours. Un redemarrage qui depasse
+      # six secondes est coupe de force, et le site ne repond plus alors que
+      # /health, servie par Caddy, repond toujours (§mission/pieges-symfony,
+      # point 1).
       FRANKENPHP_WORKER_CONFIG: |-
-        watch /app/src
-        watch /app/templates
-        watch /app/config
-        watch /app/translations
+        watch /app/src/**/*.php
+        watch /app/templates/**/*.twig
+        watch /app/config/**/*.php
+        watch /app/config/**/*.yaml
+        watch /app/translations/**/*.yaml
         watch /app/public/index.php
     volumes:
       - ./app:/app
