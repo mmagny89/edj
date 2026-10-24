@@ -35,6 +35,15 @@
     {% block stylesheets %}
         {{ encore_entry_link_tags('site') }}
     {% endblock %}
+    {# Dans le <head>, jamais dans le <body> : Turbo remplace le corps a chaque
+       navigation et reexecute les scripts qu'il y trouve. Chaque visite
+       ajoutait alors un ecouteur « turbo:load » de plus : le menu d'accessibilite
+       se rouvrait et se refermait d'un seul clic. Le <head> n'est pas rejoue ;
+       « defer » (pose par Encore) execute le script apres l'analyse du document,
+       et « turbo:load » se declenche aussi au premier chargement. #}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('site') }}
+    {% endblock %}
 </head>
 <body>
 {% block body %}
@@ -108,9 +117,6 @@
         <a href="{{ path('site_privacy') }}">Données personnelles</a>
         <span>Site créé par <a href="https://mmagny.fr/" target="_blank" rel="noopener noreferrer">Mylène Magny<span class="sr-only"> (nouvel onglet)</span></a></span>
     </footer>
-{% endblock %}
-{% block javascripts %}
-    {{ encore_entry_script_tags('site') }}
 {% endblock %}
 </body>
 </html>

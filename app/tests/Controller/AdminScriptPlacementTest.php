@@ -5,7 +5,7 @@ namespace App\Tests\Controller;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * Le script de l'administration vit dans le <head>.
+ * Les scripts de l'administration et du site public vivent dans le <head>.
  *
  * Turbo Drive remplace le <body> a chaque navigation et reexecute les scripts
  * qu'il y trouve : un script en bas de page demarre une application Stimulus de
@@ -26,6 +26,18 @@ final class AdminScriptPlacementTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertGreaterThan(0, $crawler->filter('head script[src]')->count(), 'Le script de l\'application doit etre dans le head.');
+        self::assertSame(0, $crawler->filter('body script')->count(), 'Un script dans le body est reexecute par Turbo a chaque navigation.');
+    }
+
+    public function testThePublicSiteScriptIsInTheHeadNotTheBody(): void
+    {
+        self::ensureKernelShutdown();
+        $client = static::createClient();
+
+        $crawler = $client->request('GET', '/');
+
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(0, $crawler->filter('head script[src]')->count(), 'Le script du site doit etre dans le head.');
         self::assertSame(0, $crawler->filter('body script')->count(), 'Un script dans le body est reexecute par Turbo a chaque navigation.');
     }
 }

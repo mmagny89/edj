@@ -48,6 +48,9 @@ GitHub, par `.github/workflows/publication.yml`.
   interne. Le script etait charge dans le corps de la page, que Turbo reexecute a chaque navigation : les
   controleurs s'empilaient sur le meme formulaire et l'un d'eux rouvrait une boite. Le script est
   desormais dans l'en-tete.
+- Site public : meme defaut, meme correctif. Le script, charge dans le corps de la page, ajoutait un
+  ecouteur de plus a chaque navigation Turbo : le menu d'accessibilite pouvait s'ouvrir et se refermer
+  d'un seul clic.
 
 - Import : un en-tete present etait annonce « manquant » quand le fichier venait d'Excel ou de Google
   Sheets (espace insecable, accent decompose, caractere invisible). La comparaison des en-tetes les
