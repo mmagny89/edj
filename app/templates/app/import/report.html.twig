@@ -11,12 +11,16 @@
     <dl class="mt-6 grid max-w-3xl gap-4 sm:grid-cols-3">
         <div class="card p-4"><dt class="text-sm text-slate-600">À importer</dt><dd class="text-2xl font-bold text-ink">{{ report.importable }}</dd></div>
         <div class="card p-4"><dt class="text-sm text-slate-600">Ignorées</dt><dd class="text-2xl font-bold text-ink">{{ report.skipped|length }}</dd></div>
-        <div class="card p-4"><dt class="text-sm text-slate-600">Erreurs</dt><dd class="text-2xl font-bold {{ report.hasErrors ? 'text-red-700' : 'text-ink' }}">{{ report.errors|length }}</dd></div>
+        <div class="card p-4"><dt class="text-sm text-slate-600">Rejetées</dt><dd class="text-2xl font-bold {{ report.hasErrors ? 'text-red-700' : 'text-ink' }}">{{ report.errors|length }}</dd></div>
     </dl>
 
     {% if report.hasErrors %}
         <section class="card mt-6 p-6" aria-labelledby="t-err">
-            <h2 id="t-err" class="text-lg font-bold text-red-800">Erreurs à corriger dans le fichier</h2>
+            <h2 id="t-err" class="text-lg font-bold text-red-800">Lignes rejetées, non importées</h2>
+            <p class="mt-1 text-sm text-slate-600">
+                Ces lignes n'empêchent pas d'importer les autres. Corrigez-les dans le fichier et relancez
+                l'import : les personnes déjà importées sont ignorées, rien n'est dupliqué.
+            </p>
             <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
                 {% for e in report.errors %}<li>Ligne {{ e.line }} : {{ e.message }}</li>{% endfor %}
             </ul>
@@ -62,14 +66,14 @@
     {% endif %}
 
     <div class="mt-6 flex flex-wrap gap-3">
-        {% if not report.hasErrors and report.importable > 0 %}
+        {% if report.importable > 0 %}
             <form method="post" action="{{ path('app_import_apply', {token: token}) }}"
                   data-controller="confirm"
-                  data-confirm-message-value="Importer {{ report.importable }} adhésion(s) ? Chacune reçoit un numéro d'adhérent."
+                  data-confirm-message-value="Importer {{ report.importable }} adhésion(s) valide(s){{ report.hasErrors ? ', sans les ' ~ report.errors|length ~ ' ligne(s) rejetée(s)' }} ? Chacune reçoit un numéro d'adhérent."
                   data-action="submit->confirm#ask">
                 <input type="hidden" name="_token" value="{{ csrf_token('import_' ~ token) }}">
                 <input type="hidden" name="image" value="{{ image }}">
-                <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Importer {{ report.importable }} adhésion(s)</button>
+                <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Importer {{ report.importable }} adhésion(s){{ report.hasErrors ? ' valide(s)' }}</button>
             </form>
         {% endif %}
         <form method="post" action="{{ path('app_import_cancel', {token: token}) }}">

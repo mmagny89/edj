@@ -40,6 +40,9 @@
 
         {% if not application.anonymized %}
             <div class="flex flex-wrap gap-3">
+                <a href="{{ path('app_membership_edit', {id: application.id}) }}" class="btn btn-secondary">
+                    {{ ui.icon('pencil') }} Corriger la fiche
+                </a>
                 <a href="{{ path('app_membership_sheet', {id: application.id}) }}" target="_blank" rel="noopener" class="btn btn-secondary">
                     {{ ui.icon('printer') }} Imprimer la fiche<span class="sr-only"> (nouvel onglet)</span>
                 </a>

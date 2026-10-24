@@ -4,6 +4,8 @@ namespace App\Tests\Controller;
 
 use App\Entity\Member;
 use App\Entity\MembershipApplication;
+use App\Enum\MembershipEventType;
+use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Service\MemberDirectory;
@@ -62,6 +64,8 @@ final class MembershipAdminTest extends WebTestCase
             ->setEmail($email)
             ->setMembershipType($type)
             ->setPhilibertConsent($philibert)
+            ->setStatutesAccepted(true)
+            ->setRulesAccepted(true)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($first.' Durand');
         if (null !== $submittedAt) {
@@ -86,6 +90,76 @@ final class MembershipAdminTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Camille Durand');
         self::assertSelectorExists('a[href$="/fiche"]');
+    }
+
+    public function testAFicheCanBeCorrectedAndTheCorrectionIsLogged(): void
+    {
+        $application = $this->create('camille@example.test', validated: true);
+        $id = $application->getId();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $id));
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Enregistrer la correction')->form([
+            'edit_membership[city]' => 'Auxerre',
+            'edit_membership[phone]' => '06 98 76 54 32',
+        ]);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/admin/adhesions/'.$id);
+        $this->entityManager->clear();
+        $saved = $this->entityManager->find(MembershipApplication::class, $id);
+        self::assertSame('Auxerre', $saved->getCity());
+        self::assertSame('06 98 76 54 32', $saved->getPhone());
+        self::assertSame(MembershipEventType::Edited, $saved->getHistory()->last()->getType());
+        self::assertSame(MembershipStatus::Validated, $saved->getStatus(), 'Corriger une fiche ne change pas son etat.');
+    }
+
+    /**
+     * Corriger un nom change l'identite : le numero reste, et le renouvellement
+     * saisi sous le vrai nom retrouve la personne au lieu de lui donner un
+     * second numero.
+     */
+    public function testCorrectingTheNameKeepsTheNumberAndMovesTheIdentity(): void
+    {
+        $application = $this->create('camille@example.test', validated: true);
+        $id = $application->getId();
+        $number = $application->getMember()->getNumber();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $id));
+        $this->client->submit($crawler->selectButton('Enregistrer la correction')->form(['edit_membership[lastName]' => 'Durant']));
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+        $saved = $this->entityManager->find(MembershipApplication::class, $id);
+        self::assertSame($number, $saved->getMember()->getNumber());
+        self::assertSame(
+            MemberDirectory::identityKey('Durant', 'Camille', new \DateTimeImmutable('1990-04-02')),
+            $saved->getMember()->getIdentityKey(),
+        );
+    }
+
+    public function testCorrectionIsRefusedWhenItWouldMergeTwoPeople(): void
+    {
+        $this->create('camille@example.test', first: 'Camille', validated: true);
+        $other = $this->create('zoe@example.test', first: 'Zoé', validated: true);
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $other->getId()));
+        $this->client->submit($crawler->selectButton('Enregistrer la correction')->form(['edit_membership[firstName]' => 'Camille']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'porte déjà ce nom');
+    }
+
+    public function testAnAnonymizedFicheCannotBeCorrected(): void
+    {
+        $application = $this->create('camille@example.test');
+        $application->anonymize(null);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $application->getId()));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
     }
 
     public function testPrintableSheetIsAStandalonePage(): void

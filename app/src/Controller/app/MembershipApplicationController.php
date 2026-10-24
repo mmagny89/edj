@@ -7,11 +7,13 @@ use App\Entity\User;
 use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
+use App\Form\EditMembershipType;
 use App\Form\PaperMembershipType;
 use App\Form\UpgradeMembershipType;
 use App\Service\MemberDirectory;
 use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
+use App\Repository\MemberRepository;
 use App\Repository\MembershipApplicationRepository;
 use App\Repository\UserRepository;
 use App\Service\MembershipSeasons;
@@ -48,6 +50,7 @@ final class MembershipApplicationController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
         private readonly MemberDirectory $members,
+        private readonly MemberRepository $memberRepository,
         private readonly UserRepository $users,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,
@@ -386,6 +389,65 @@ final class MembershipApplicationController extends AbstractController
         ));
 
         return $response;
+    }
+
+    /**
+     * Corrige une fiche : nom, coordonnees, autorisations. Surtout utile apres un
+     * import, dont le fichier d'origine portait des fautes ou des oublis.
+     *
+     * Corriger le nom ou la date de naissance change l'identite de la personne :
+     * l'empreinte qui la rattache a son numero suit, pour que son prochain
+     * renouvellement la retrouve. Si cette identite appartient deja a un autre
+     * adherent, la correction est refusee plutot que de fusionner deux personnes.
+     */
+    #[Route('/{id}/modifier', name: 'app_membership_edit', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function edit(Request $request, MembershipApplication $application): Response
+    {
+        if ($application->isAnonymized()) {
+            $this->addFlash('error', 'Un bulletin anonymisé ne se modifie plus.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        $form = $this->createForm(EditMembershipType::class, $application);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $member = $application->getMember();
+            $key = MemberDirectory::identityKey(
+                (string) $application->getLastName(),
+                (string) $application->getFirstName(),
+                $application->getBirthDate(),
+            );
+
+            if (null !== $member && null !== $member->getIdentityKey() && $member->getIdentityKey() !== $key) {
+                $other = $this->memberRepository->findOneByIdentityKey($key);
+                if (null !== $other && $other->getId() !== $member->getId()) {
+                    $form->get('lastName')->addError(new FormError(sprintf(
+                        'Un autre adhérent (%s) porte déjà ce nom et cette date de naissance.',
+                        $other->getNumber(),
+                    )));
+
+                    return $this->render('app/membership_edit.html.twig', ['form' => $form, 'application' => $application], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
+                }
+                $member->reidentify($key);
+            }
+
+            // Sur une fiche saisie d'apres un papier, la signature de
+            // substitution porte le nom de la personne : elle suit la correction.
+            if ($application->isPaper()) {
+                $application->setSignatureName(trim($application->getFirstName().' '.$application->getLastName()));
+            }
+
+            $application->recordEdit($this->getUser() instanceof User ? $this->getUser()->getId() : null);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'La fiche est corrigée.');
+
+            return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
+        }
+
+        return $this->render('app/membership_edit.html.twig', ['form' => $form, 'application' => $application], new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK));
     }
 
     #[Route('/{id}', name: 'app_membership_show', methods: ['GET'], requirements: ['id' => '\d+'])]

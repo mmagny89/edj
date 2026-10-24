@@ -80,6 +80,19 @@ class Member
         return $this->identityKey;
     }
 
+    /**
+     * Remplace l'empreinte d'identite apres une correction de nom ou de date de
+     * naissance : sans cela, le prochain renouvellement de la personne, saisi
+     * sous son vrai nom, ne la retrouverait pas et lui donnerait un second
+     * numero.
+     */
+    public function reidentify(string $identityKey): static
+    {
+        $this->identityKey = $identityKey;
+
+        return $this;
+    }
+
     public function forgetIdentity(): static
     {
         $this->identityKey = null;

@@ -14,6 +14,7 @@ enum MembershipEventType: string
     case Reopened = 'rouverte';
     case Anonymized = 'anonymisee';
     case Upgraded = 'formule';
+    case Edited = 'modifiee';
 
     public function label(): string
     {
@@ -23,6 +24,7 @@ enum MembershipEventType: string
             self::Reopened => 'Remise en attente',
             self::Anonymized => 'Bulletin anonymisé',
             self::Upgraded => 'Formule modifiée',
+            self::Edited => 'Fiche corrigée',
         };
     }
 }

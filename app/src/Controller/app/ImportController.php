@@ -101,8 +101,11 @@ final class ImportController extends AbstractController
 
         try {
             $report = $this->importer->analyze($path, $options);
-            if ($report->hasErrors()) {
-                $this->addFlash('error', 'Le fichier contient des erreurs : corrigez-le puis téléversez-le de nouveau.');
+            // Les lignes en erreur ne bloquent plus les autres : on importe ce qui
+            // est valide. Relancer l'import avec le fichier corrige est sans
+            // danger, une personne deja inscrite pour la saison etant ecartee.
+            if (0 === $report->importable()) {
+                $this->addFlash('error', 'Aucune ligne valide à importer : corrigez le fichier puis téléversez-le de nouveau.');
 
                 return $this->redirectToRoute('app_import_report', ['token' => $token, 'image' => $request->request->getString('image')]);
             }
@@ -120,7 +123,14 @@ final class ImportController extends AbstractController
             'user_id' => $user instanceof User ? $user->getId() : null,
             'created' => $created,
         ]);
+        $rejected = \count($report->errors);
         $this->addFlash('success', sprintf('%d adhésion(s) importée(s).', $created));
+        if ($rejected > 0) {
+            $this->addFlash('error', sprintf(
+                '%d ligne(s) rejetée(s), non importée(s). Corrigez-les dans le fichier et relancez l\'import : les personnes déjà importées seront ignorées.',
+                $rejected,
+            ));
+        }
 
         return $this->redirectToRoute('app_membership_applications');
     }

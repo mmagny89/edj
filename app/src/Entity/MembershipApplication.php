@@ -278,6 +278,18 @@ class MembershipApplication
         return $this->history;
     }
 
+    /**
+     * Garde la trace d'une correction faite par le bureau sur la fiche. Seul le
+     * fait de la correction est note, jamais ce qui a change : l'historique ne
+     * doit retenir aucune donnee de l'adherent, pour survivre a l'anonymisation.
+     */
+    public function recordEdit(?int $adminId, ?\DateTimeImmutable $at = null): static
+    {
+        $this->record(MembershipEventType::Edited, $adminId, $at);
+
+        return $this;
+    }
+
     private function record(MembershipEventType $type, ?int $actorId, ?\DateTimeImmutable $at, ?string $detail = null): void
     {
         $this->history->add(new MembershipEvent($this, $type, $actorId, $at, $detail));
@@ -852,9 +864,16 @@ class MembershipApplication
         return $this->source;
     }
 
+    /**
+     * Vrai d'un bulletin saisi par le bureau d'apres un papier : une fiche
+     * remise a l'association, ou un fichier d'adherents repris en une fois.
+     * Un import est l'equivalent de fiches papier, et se presente comme telles :
+     * meme mention, meme fiche imprimee, memes droits de correction. La source
+     * exacte reste lisible par getSource().
+     */
     public function isPaper(): bool
     {
-        return MembershipSource::Paper === $this->source;
+        return MembershipSource::Paper === $this->source || MembershipSource::Import === $this->source;
     }
 
     public function getEnteredById(): ?int

@@ -282,7 +282,6 @@ final class MembershipImporterTest extends KernelTestCase
      */
     public static function blocking(): iterable
     {
-        yield 'e-mail invalide' => [['EMAIL' => 'pas-un-courriel'], 'e-mail'];
         yield 'date d\'adhesion absente' => [['DATE ADHESION' => null], 'date d\'adhésion'];
         yield 'naissance dans le futur' => [['NAISSANCE' => 90000 - 1000], 'naissance'];
         yield 'naissance illisible' => [['NAISSANCE' => 'hier'], 'naissance'];
@@ -311,6 +310,35 @@ final class MembershipImporterTest extends KernelTestCase
      * Le fichier decrit des gens deja inscrits sur papier : on ne les refuse pas pour
      * une regle du bulletin en ligne. On avertit, pour completer ensuite.
      */
+    /**
+     * Une faute de frappe dans un courriel ne fait pas rejeter la personne : elle
+     * est reprise sans l'adresse, avec un avertissement.
+     */
+    public function testAnUnreadableEmailIsAWarningAndTheFicheIsKept(): void
+    {
+        $report = $this->importer->analyze($this->file([$this->row(['EMAIL' => 'pas-un-courriel'])]), $this->options());
+
+        self::assertSame(1, $report->importable());
+        self::assertSame([], $report->errors);
+        self::assertNull($report->rows[0]->application->getEmail());
+        self::assertStringContainsString('e-mail illisible', implode(' ', $report->rows[0]->warnings));
+    }
+
+    /**
+     * Les lignes valides s'importent meme quand d'autres sont rejetees.
+     */
+    public function testValidLinesImportEvenWhenOthersAreRejected(): void
+    {
+        $report = $this->importer->analyze(
+            $this->file([$this->row(), $this->row(['NAISSANCE' => 'hier']), $this->row()]),
+            $this->options(),
+        );
+
+        self::assertSame(2, $report->importable());
+        self::assertCount(1, $report->errors);
+        self::assertSame(2, $this->importer->apply($report, $this->options()));
+    }
+
     public function testFormulaRulesAreWarningsNotErrors(): void
     {
         $report = $this->importer->analyze($this->file([

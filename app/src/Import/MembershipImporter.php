@@ -258,7 +258,12 @@ final class MembershipImporter
         if ('' === $email) {
             $warnings[] = 'pas d\'adresse e-mail : ni confirmation ni lien d\'accès pour cette personne';
         } elseif (false === filter_var($email, \FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'adresse e-mail invalide';
+            // Comme un telephone illisible : la fiche est reprise sans l'adresse,
+            // qui se corrige ensuite sur la fiche. Rejeter la personne pour une
+            // faute de frappe dans un courriel serait plus grave que de ne pas
+            // en avoir.
+            $warnings[] = sprintf('adresse e-mail illisible (« %s »), non reprise', $email);
+            $email = '';
         }
 
         $postalCode = self::text($raw['postalCode'] ?? null);

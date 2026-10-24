@@ -31,6 +31,17 @@ GitHub, par `.github/workflows/publication.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Modifie (import et fiches)
+
+- **Import plus tolerant** : les lignes valides s'importent meme quand d'autres sont rejetees ; le compte
+  rendu liste les lignes rejetees, et relancer l'import avec le fichier corrige ecarte les personnes deja
+  inscrites. Une adresse e-mail illisible n'est plus une erreur : la fiche est reprise sans l'adresse, avec
+  un avertissement.
+- Un import est l'equivalent de fiches papier : meme mention « Fiche papier », meme fiche imprimee.
+- **Corriger la fiche** (`/admin/adhesions/<id>/modifier`) : nom, coordonnees, responsable legal,
+  autorisations. Le numero d'adherent reste, l'identite suit un changement de nom, et la correction est
+  notee dans l'historique. Refusee si elle fusionnait deux personnes.
+
 ### Corrige
 
 - Import : un en-tete present etait annonce « manquant » quand le fichier venait d'Excel ou de Google
