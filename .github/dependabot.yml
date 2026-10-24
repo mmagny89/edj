@@ -1,10 +1,15 @@
 # Surveillance des dependances. Sans ce fichier, les montees de version de
 # securite restent manuelles, donc oubliees.
+#
+# target-branch: develop sur chaque entree — sans lui, Dependabot ouvre ses
+# demandes de fusion sur la branche par defaut du depot (main), qui ne recoit
+# que du code deja valide en pre-production.
 version: 2
 updates:
   # Composer — le code applicatif vit dans app/, jamais a la racine.
   - package-ecosystem: composer
     directory: /app
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -17,6 +22,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /app
+    target-branch: develop
     schedule:
       interval: weekly
       day: monday
@@ -33,6 +39,7 @@ updates:
   # voit pas, elles se relevent a la main.
   - package-ecosystem: docker
     directory: /docker/php
+    target-branch: develop
     schedule:
       interval: monthly
     commit-message:
@@ -40,6 +47,7 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: develop
     schedule:
       interval: monthly
     commit-message:
