@@ -20,6 +20,10 @@ GitHub, par `.github/workflows/publication.yml`.
 - Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur
   exacte de la fenetre : le calendrier commence juste sous le pli.
 
+### Corrige
+
+- Sur telephone, le libelle du filtre « Manifestations » debordait de son bouton une fois coche.
+
 ### Ajoute
 
 - `outils/sauvegarder-serveur.sh` : sauvegarde chiffree (AES-256) de la base PostgreSQL de tous les projets

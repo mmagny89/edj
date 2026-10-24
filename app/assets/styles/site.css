@@ -2107,7 +2107,12 @@ html[data-motion="reduce"] *::after {
 
     .event-carousel .calendar-toolbar {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        /* 148 px, et non 130 : c'est la largeur du plus long libelle une fois
+           coche (« Manifestations »), bordures et marges comprises. En dessous
+           de 130 px, le mot debordait de son bouton des qu'on cochait ce
+           filtre (constate a 360 px) ; avec 148 px la grille passe d'elle-meme
+           a une seule colonne plutot que de trop serrer. */
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
         gap: 10px;
         padding-right: 0;
     }
