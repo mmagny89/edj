@@ -15,6 +15,11 @@ GitHub, par `.github/workflows/publication.yml`.
   correctif PHP publie entre deux deploiements n'arrivait jamais en production. Un controle hebdomadaire
   (`.github/workflows/php-correctif.yml`) signale un PHP en retard sur le dernier correctif de sa branche.
 
+### Modifie
+
+- Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur
+  exacte de la fenetre : le calendrier commence juste sous le pli.
+
 ### Ajoute
 
 - `outils/sauvegarder-serveur.sh` : sauvegarde chiffree (AES-256) de la base PostgreSQL de tous les projets

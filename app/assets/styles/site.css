@@ -143,8 +143,12 @@ h2 {
     display: grid;
     grid-template-columns: minmax(0, 1.02fr) minmax(300px, 0.56fr);
     gap: clamp(24px, 4vw, 56px);
-    min-height: calc(100svh - 76px);
-    padding: clamp(40px, 7vw, 94px) clamp(16px, 5vw, 74px);
+    /* Le bandeau fait 77 px (son contenu et sa bordure de 3 px) : la
+       section d'accueil occupe exactement le reste de la fenetre. La marge
+       verticale se reduit en consequence, sinon le contenu seul depasse cette
+       hauteur et le bandeau suivant n'est plus au pli. */
+    min-height: calc(100svh - 77px);
+    padding: clamp(32px, 4vh, 56px) clamp(16px, 5vw, 74px);
     overflow: hidden;
 }
 
