@@ -9,6 +9,11 @@ import { Controller } from '@hotwired/stimulus';
 // previsualisations bloquent aussi ces boites. Le message vient de
 // data-confirm-message-value ; un handler « onsubmit » en ligne serait refuse
 // par la politique de contenu de l'administration.
+//
+// Un formulaire a plusieurs boutons ne confirme que celui qui porte son propre
+// message (data-confirm-message, et data-confirm-label pour le libelle du bouton
+// de la boite) : « Apercu » et « Essai » partent sans question, « Envoyer » non.
+// Un bouton sans message, dans un formulaire sans message, ne demande rien.
 export default class extends Controller {
     static values = { message: String, confirmLabel: { type: String, default: 'Confirmer' } };
 
@@ -20,18 +25,23 @@ export default class extends Controller {
             return;
         }
 
-        event.preventDefault();
         const submitter = event.submitter;
+        const message = submitter?.dataset.confirmMessage || this.messageValue;
+        if (!message) {
+            return;
+        }
+
+        event.preventDefault();
 
         if (typeof HTMLDialogElement === 'undefined' || typeof HTMLDialogElement.prototype.showModal !== 'function') {
-            if (window.confirm(this.messageValue)) {
+            if (window.confirm(message)) {
                 this.submit(submitter);
             }
 
             return;
         }
 
-        this.open(submitter);
+        this.open(submitter, message);
     }
 
     submit(submitter) {
@@ -39,7 +49,7 @@ export default class extends Controller {
         this.element.requestSubmit(submitter);
     }
 
-    open(submitter) {
+    open(submitter, text) {
         const dialog = document.createElement('dialog');
         dialog.className = 'm-auto w-[min(28rem,calc(100%-2rem))] rounded-xl border border-slate-200 bg-white p-0 text-slate-700 shadow-xl backdrop:bg-ink/60';
         dialog.setAttribute('aria-labelledby', 'confirm-titre');
@@ -56,7 +66,7 @@ export default class extends Controller {
         const message = document.createElement('p');
         message.id = 'confirm-message';
         message.className = 'mt-2';
-        message.textContent = this.messageValue;
+        message.textContent = text;
 
         const actions = document.createElement('div');
         actions.className = 'mt-6 flex flex-wrap justify-end gap-3';
@@ -69,7 +79,7 @@ export default class extends Controller {
         const confirm = document.createElement('button');
         confirm.type = 'button';
         confirm.className = 'btn btn-danger';
-        confirm.textContent = this.confirmLabelValue;
+        confirm.textContent = submitter?.dataset.confirmLabel || this.confirmLabelValue;
 
         actions.append(cancel, confirm);
         body.append(title, message, actions);

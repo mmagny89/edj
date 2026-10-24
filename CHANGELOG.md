@@ -4,7 +4,7 @@ Format inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions selon [SemVer](https://semver.org/lang/fr/).
 
 Les sections publiees ici sont reprises telles quelles dans les releases
-GitHub, par `.github/workflows/publication.yml`.
+GitHub, par `.github/workflows/release.yml`.
 
 ## [Non publie]
 
@@ -30,6 +30,22 @@ GitHub, par `.github/workflows/publication.yml`.
 - **Comptabilite** (`/admin/comptabilite`) : par saison, le total encaisse, les cotisations, les euros de
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
+
+### Ajoute (courriels aux adherents)
+
+- **Courriels aux adherents** (`/admin/courriels`) : ecrire aux adherents d'une saison, choisie dans un
+  selecteur. Destinataires au choix (adherents a l'annee, consommateurs), personnalisation par variables
+  (`{{prenom}}`, `{{nom}}`, `{{numero}}`, `{{saison}}`, `{{formule}}`, remplacees pour chaque personne ;
+  une variable inconnue est refusee a la saisie). Parcours en deux temps : apercu (nombre de messages, et
+  pourquoi d'autres adherents n'en recoivent pas), essai a soi-meme, puis envoi avec confirmation ; un
+  envoi n'est accepte qu'avec le nombre annonce par l'apercu et ne part jamais deux fois.
+- Le responsable legal d'un mineur recoit aussi le message ; une adresse partagee en recoit un seul.
+- **Desinscription** : chaque message porte un lien signe (et les en-tetes `List-Unsubscribe`, avec le
+  « un clic » des messageries). La personne n'est plus ecrite, quelle que soit la saison ; elle peut se
+  reabonner depuis le meme lien ; la fiche l'indique. Les courriels de gestion (confirmation, lien d'acces)
+  ne sont pas concernes.
+- **Historique** des envois : objet, texte, saison, nombre de messages, auteur. Aucun destinataire n'est
+  conserve. La page « Donnees personnelles » annonce cet usage.
 
 ### Modifie (site public)
 

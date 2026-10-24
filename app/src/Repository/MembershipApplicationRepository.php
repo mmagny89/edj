@@ -413,6 +413,36 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Les bulletins valides d'une saison, avec leur adherent : la matiere d'un
+     * envoi de courriel. Un bulletin anonymise n'a plus ni nom ni adresse, et
+     * n'est pas rendu.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findValidatedInSeason(int $season): array
+    {
+        [$from, $to] = self::seasonBounds($season);
+
+        /** @var list<MembershipApplication> $rows */
+        $rows = $this->createQueryBuilder('a')
+            ->addSelect('m')
+            ->join('a.member', 'm')
+            ->andWhere('a.status = :validated')
+            ->andWhere('a.anonymizedAt IS NULL')
+            ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
+            ->setParameter('validated', MembershipStatus::Validated)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('a.lastName', 'ASC')
+            ->addOrderBy('a.firstName', 'ASC')
+            ->addOrderBy('a.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $rows;
+    }
+
+    /**
      * Du 1er octobre de l'annee precedente (inclus) au 1er octobre du
      * millesime (exclu) : la saison 2027 va du 1er octobre 2026 au 30
      * septembre 2027.

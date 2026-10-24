@@ -52,6 +52,17 @@ class Member
     private \DateTimeImmutable $createdAt;
 
     /**
+     * Date a laquelle la personne a demande a ne plus recevoir les messages de
+     * l'association, nulle tant qu'elle les accepte. Sur l'adherent et non sur le
+     * bulletin : le refus vaut pour toutes ses saisons, et survit a un
+     * renouvellement. Les courriels de gestion — confirmation d'adhesion, lien
+     * d'acces a sa fiche — ne sont pas des messages de l'association et ne sont
+     * pas concernes.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $mailingOptOutAt = null;
+
+    /**
      * @var Collection<int, MembershipApplication>
      */
     #[ORM\OneToMany(targetEntity: MembershipApplication::class, mappedBy: 'member')]
@@ -89,6 +100,34 @@ class Member
     public function reidentify(string $identityKey): static
     {
         $this->identityKey = $identityKey;
+
+        return $this;
+    }
+
+    public function isOptedOutOfMailings(): bool
+    {
+        return null !== $this->mailingOptOutAt;
+    }
+
+    public function getMailingOptOutAt(): ?\DateTimeImmutable
+    {
+        return $this->mailingOptOutAt;
+    }
+
+    /**
+     * Sans effet si la personne s'est deja desinscrite : la date d'origine est
+     * celle qui compte, et un second clic sur le lien ne la repousse pas.
+     */
+    public function optOutOfMailings(?\DateTimeImmutable $now = null): static
+    {
+        $this->mailingOptOutAt ??= $now ?? new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function optBackIntoMailings(): static
+    {
+        $this->mailingOptOutAt = null;
 
         return $this;
     }

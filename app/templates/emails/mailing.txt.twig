@@ -1,0 +1,8 @@
+{{ body_text|raw }}
+
+--
+Vous recevez ce message parce que vous êtes adhérent(e) d'Envie de Jouer (n° {{ number }}).
+{% if unsubscribe_url %}Pour ne plus recevoir les messages de l'association : {{ unsubscribe_url }}
+{% else %}[Ici : le lien de désinscription propre à chaque adhérent.]
+{% endif %}
+Envie de Jouer — Joigny

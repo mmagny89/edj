@@ -1,0 +1,95 @@
+{% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
+{% form_theme form 'app/form_theme.html.twig' %}
+
+{% block title %}Nouveau message - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <a href="{{ path('app_mailing') }}" class="inline-flex min-h-11 items-center gap-1.5 py-2 text-sm font-semibold text-brand underline underline-offset-4 hover:text-brand-dark">
+        {{ ui.icon('arrow-left', 'size-4') }} Retour aux messages
+    </a>
+    <h1 class="mt-3 text-3xl font-bold text-ink">Nouveau message</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        Rédigez, regardez à qui le message part, puis envoyez-le. Rien ne part avant le dernier bouton.
+    </p>
+
+    <div class="card mt-8 max-w-3xl p-6">
+        {# Turbo desactive : l'apercu et l'essai repondent par la page elle-meme (200), et Turbo
+           n'affiche pas une reponse 200 a un POST — il attend une redirection. Le formulaire
+           semblerait ne rien faire. Les erreurs (422) s'afficheraient, elles, ce qui masque le
+           defaut a qui ne teste que les cas d'echec ; les tests PHP, sans JavaScript, ne le voient pas.
+           La boite de confirmation ne s'ouvre que pour « Envoyer » : seul ce bouton porte un message. #}
+        {{ form_start(form, {attr: {class: 'space-y-8', novalidate: 'novalidate', 'data-turbo': 'false', 'data-controller': 'confirm', 'data-action': 'submit->confirm#ask'}}) }}
+            {{ form_errors(form) }}
+
+            <fieldset class="space-y-6">
+                <legend class="mb-4 text-lg font-bold text-ink">À qui</legend>
+                {{ form_row(form.season) }}
+                <div class="space-y-3">
+                    {{ form_row(form.includeAnnual) }}
+                    {{ form_row(form.includeConsumers) }}
+                </div>
+            </fieldset>
+
+            <fieldset class="space-y-6">
+                <legend class="mb-4 text-lg font-bold text-ink">Message</legend>
+                {{ form_row(form.subject) }}
+                {{ form_row(form.body) }}
+                {# Les variables viennent du serveur : la liste de la page est celle que la validation accepte. #}
+                <p class="text-sm text-slate-600">
+                    Variables, remplacées pour chaque personne :
+                    {% for name, label in constant('App\\Service\\MailingTemplate::VARIABLES') %}
+                        <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-800" title="{{ label }}">{{ '{{' ~ name ~ '}}' }}</code>{{ not loop.last ? ' ' }}
+                    {% endfor %}
+                </p>
+            </fieldset>
+
+            {% if preview %}
+                {% set audience = preview.audience %}
+                <section class="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4" aria-labelledby="titre-apercu">
+                    <h2 id="titre-apercu" class="text-lg font-bold text-ink">
+                        Aperçu : {{ audience.count }} message{{ audience.count > 1 ? 's' }}
+                    </h2>
+
+                    <dl class="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                        <div class="flex justify-between gap-4"><dt class="text-slate-600">Adhérents de la saison visés</dt><dd class="font-semibold">{{ audience.members }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-slate-600">Messages à envoyer</dt><dd class="font-semibold">{{ audience.count }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-slate-600">Sans adresse e-mail</dt><dd class="font-semibold">{{ audience.skippedWithoutAddress }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-slate-600">Désinscrits</dt><dd class="font-semibold">{{ audience.skippedOptedOut }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-slate-600">Adresse partagée (un seul message)</dt><dd class="font-semibold">{{ audience.sharedAddress }}</dd></div>
+                    </dl>
+
+                    <div class="rounded-lg border border-slate-200 bg-white p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {% if preview.sampleName %}Tel que le recevra {{ preview.sampleName }}{% else %}Avec des valeurs d'exemple{% endif %}
+                        </p>
+                        <p class="mt-2 font-semibold text-ink">{{ preview.subject }}</p>
+                        <div class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ preview.body }}</div>
+                    </div>
+
+                    {{ form_widget(form.expected, {value: audience.count}) }}
+                    {{ form_widget(form.nonce, {value: preview.nonce}) }}
+                </section>
+            {% endif %}
+
+            {# Les boutons sont ecrits a la main plus bas, avec leurs icones : sans cela,
+               form_end() rendrait aussi ceux du formulaire, en double et sans style. #}
+            {% do form.preview.setRendered %}
+            {% do form.test.setRendered %}
+            {% do form.send.setRendered %}
+
+            <div class="flex flex-wrap gap-3 pt-2">
+                <button type="submit" name="{{ form.preview.vars.full_name }}" class="btn {{ preview ? 'btn-secondary' : 'btn-primary' }}">{{ ui.icon('eye') }} Aperçu et destinataires</button>
+                <button type="submit" name="{{ form.test.vars.full_name }}" class="btn btn-secondary">{{ ui.icon('check') }} M'envoyer un essai</button>
+
+                {% if preview and preview.audience.count > 0 %}
+                    <button type="submit" name="{{ form.send.vars.full_name }}" class="btn btn-primary"
+                            data-confirm-message="Envoyer ce message à {{ preview.audience.count }} adresse(s) ? Un envoi ne se rattrape pas."
+                            data-confirm-label="Envoyer">
+                        {{ ui.icon('check') }} Envoyer à {{ preview.audience.count }} adresse{{ preview.audience.count > 1 ? 's' }}
+                    </button>
+                {% endif %}
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

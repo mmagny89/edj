@@ -1,0 +1,42 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Messages de l'association - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Messages de l'association</h1>
+            {% if optedOut %}
+                <p>
+                    Vous ne recevez plus les messages d'Envie de Jouer. Les courriels qui concernent
+                    votre adhésion — confirmation, lien d'accès à votre fiche — continuent de vous parvenir
+                    quand vous les demandez.
+                </p>
+                <p>Vous vous êtes trompé(e) ? Vous pouvez les recevoir de nouveau.</p>
+            {% else %}
+                <p>
+                    Vous recevez les messages d'Envie de Jouer : informations sur les soirées, les
+                    manifestations et la vie de l'association. Vous pouvez choisir de ne plus les recevoir.
+                </p>
+                <p>
+                    Cela ne change rien à votre adhésion, et les courriels qui la concernent — confirmation,
+                    lien d'accès à votre fiche — continueront de vous parvenir quand vous les demandez.
+                </p>
+            {% endif %}
+        </div>
+
+        {# L'action est l'adresse signee de la page : sans sa signature, le POST serait refuse. #}
+        <form method="post" action="{{ app.request.uri }}" class="form-actions">
+            {% if optedOut %}
+                <input type="hidden" name="action" value="resubscribe">
+                <button type="submit" class="button button--primary">Recevoir de nouveau les messages</button>
+            {% else %}
+                <input type="hidden" name="action" value="unsubscribe">
+                <button type="submit" class="button button--primary">Ne plus recevoir les messages</button>
+            {% endif %}
+            <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+        </form>
+    </main>
+{% endblock %}

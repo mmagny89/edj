@@ -1,0 +1,23 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Lien invalide - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Ce lien n'est pas valable</h1>
+            {# Meme page pour un numero inconnu et pour une signature fausse :
+               elle ne dit jamais qu'un numero existe. #}
+            <p>
+                Le lien a été modifié ou copié incomplètement. Ouvrez-le de nouveau depuis le
+                courriel d'origine, ou écrivez-nous : nous retirerons votre adresse à la main.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

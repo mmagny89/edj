@@ -35,6 +35,9 @@
                     Déposé le {{ application.submittedAt|date('d/m/Y à H:i') }}
                 {% endif %}
                 {% if application.isMinor and not application.anonymized %}<span class="badge ml-1 bg-amber-100 text-amber-900">mineur</span>{% endif %}
+                {% if application.member and application.member.optedOutOfMailings and not application.anonymized %}
+                    <span class="badge ml-1 bg-slate-100 text-slate-700" title="Cette personne a demandé à ne plus recevoir les messages de l'association">désinscrit des messages</span>
+                {% endif %}
             </p>
         </div>
 

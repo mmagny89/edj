@@ -1,0 +1,45 @@
+{% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}Courriels - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-ink">Courriels aux adhérents</h1>
+            <p class="mt-1 max-w-2xl text-slate-600">
+                Écrire aux adhérents d'une saison : un message pour tous, ou personnalisé avec leur
+                prénom, leur nom ou leur numéro. Chaque message part avec un lien pour ne plus en recevoir.
+            </p>
+        </div>
+        <a href="{{ path('app_mailing_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Nouveau message</a>
+    </div>
+
+    <section class="card mt-8" aria-labelledby="titre-envois">
+        <h2 id="titre-envois" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
+            Messages envoyés <span class="font-medium text-slate-500">{{ campaigns|length }}</span>
+        </h2>
+
+        {% if campaigns is empty %}
+            <p class="px-5 py-8 text-slate-600">Aucun message n'a encore été envoyé depuis le site.</p>
+        {% else %}
+            <ul class="divide-y divide-slate-100">
+                {% for campaign in campaigns %}
+                    <li>
+                        <a href="{{ path('app_mailing_show', {id: campaign.id}) }}" class="block px-5 py-4 hover:bg-slate-50 focus-visible:bg-slate-50">
+                            <span class="block font-semibold text-ink">{{ campaign.subject }}</span>
+                            <span class="mt-1 block text-sm text-slate-600">
+                                {{ campaign.sentAt|date('d/m/Y à H:i') }} ·
+                                saison {{ campaign.season - 1 }}-{{ campaign.season }} ·
+                                {{ campaign.recipientCount }} message{{ campaign.recipientCount > 1 ? 's' }}
+                                {% if campaign.sentById is not null %}
+                                    · par {{ actors[campaign.sentById] ?? 'un compte supprimé' }}
+                                {% endif %}
+                            </span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+{% endblock %}
