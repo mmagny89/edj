@@ -95,6 +95,31 @@ final class AccountingTest extends KernelTestCase
         self::assertSame(0, $summary['unpaidCount']);
     }
 
+    /**
+     * La purge nocturne supprime les evenements passes : un euro deja encaisse
+     * ne doit pas disparaitre de la caisse avec la soiree qui l'a vu naitre.
+     */
+    public function testAPassageSurvivesThePurgeOfItsEvent(): void
+    {
+        $consumer = $this->application('Alix', 'Consommatrice', MembershipType::Consumer);
+        $this->attendance($consumer, paid: true);
+        $this->em->flush();
+
+        $this->em->createQuery('DELETE FROM '.Event::class.' e WHERE e.title = :t')
+            ->setParameter('t', 'Soirée de compta')->execute();
+        $this->em->clear();
+
+        $lines = $this->mine($this->accounting->entries($this->season));
+
+        self::assertCount(1, $lines);
+        self::assertSame('Soirée de compta', $lines[0]['label']);
+        self::assertSame(100, $this->accounting->summary($this->season, $lines)['passagesCents']);
+        self::assertSame(
+            (new \DateTimeImmutable('today'))->format('Y-m-d'),
+            $lines[0]['date']->format('Y-m-d'),
+        );
+    }
+
     public function testTheJournalPutsTheMostRecentFirst(): void
     {
         $consumer = $this->application('Alix', 'Consommatrice', MembershipType::Consumer);

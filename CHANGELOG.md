@@ -25,7 +25,8 @@ GitHub, par `.github/workflows/publication.yml`.
 - **Pointage** (`/admin/pointage`) : la liste des consommateurs d'une saison, et un bouton par personne pour
   noter qu'elle est venue a une seance et qu'elle a paye son euro (ou, a part, qu'elle est venue sans
   payer). Chaque geste s'enregistre au clic ; un pointage saisi par erreur se retire. Une seance est un
-  evenement du calendrier.
+  evenement du calendrier ; le pointage garde sa date et son libelle, et survit a la purge nocturne
+  des evenements passes.
 - **Comptabilite** (`/admin/comptabilite`) : par saison, le total encaisse, les cotisations, les euros de
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.

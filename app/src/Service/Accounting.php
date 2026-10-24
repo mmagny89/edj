@@ -58,11 +58,10 @@ final readonly class Accounting
         }
 
         foreach ($this->attendances->findForSeason($season) as $attendance) {
-            $event = $attendance->getEvent();
             $rows[] = [
-                'date' => $event->getStartsAt() ?? $attendance->getRecordedAt(),
+                'date' => $attendance->getOccurredOn(),
                 'kind' => 'passage',
-                'label' => $event->getTitle() ?? 'Séance',
+                'label' => $attendance->getLabel(),
                 'person' => $this->nameOf($attendance->getApplication()),
                 'number' => $attendance->getApplication()->getMember()?->getNumber(),
                 'method' => $attendance->getPaymentMethod(),

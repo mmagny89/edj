@@ -37,13 +37,12 @@ class EventAttendanceRepository extends ServiceEntityRepository
 
     /**
      * Les pointages d'une saison, du plus recent au plus ancien, avec leur
-     * evenement et leur bulletin deja charges : le journal de caisse en
-     * affiche la date et le nom, et une lecture paresseuse ferait une requete
-     * par ligne.
+     * bulletin deja charge : le journal de caisse en affiche le nom, et une
+     * lecture paresseuse ferait une requete par ligne.
      *
-     * Les bornes sont celles de la saison associative, lues sur la date de
-     * l'evenement et non sur celle du pointage : une soiree pointee le
-     * lendemain appartient a la soiree.
+     * Les bornes sont celles de la saison associative, lues sur le jour de la
+     * seance copie sur le pointage et non sur l'evenement, qui a pu etre
+     * purge entre-temps.
      *
      * @return list<EventAttendance>
      */
@@ -52,13 +51,12 @@ class EventAttendanceRepository extends ServiceEntityRepository
         [$from, $to] = MembershipApplicationRepository::seasonBounds($season);
 
         return $this->createQueryBuilder('p')
-            ->addSelect('e', 'a')
-            ->join('p.event', 'e')
+            ->addSelect('a')
             ->join('p.application', 'a')
-            ->andWhere('e.startsAt >= :from AND e.startsAt < :to')
+            ->andWhere('p.occurredOn >= :from AND p.occurredOn < :to')
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('e.startsAt', 'DESC')
+            ->orderBy('p.occurredOn', 'DESC')
             ->addOrderBy('a.lastName', 'ASC')
             ->getQuery()
             ->getResult();

@@ -22,6 +22,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'event_attendance')]
 #[ORM\UniqueConstraint(name: 'uniq_event_attendance_personne', columns: ['event_id', 'application_id'])]
 #[ORM\Index(name: 'idx_event_attendance_event', columns: ['event_id'])]
+#[ORM\Index(name: 'idx_event_attendance_occurred_on', columns: ['occurred_on'])]
 class EventAttendance
 {
     /** Ce que doit un consommateur par evenement, en centimes. */
@@ -32,9 +33,26 @@ class EventAttendance
     #[ORM\Column]
     private ?int $id = null;
 
+    /**
+     * La seance, tant qu'elle existe. La purge nocturne supprime les
+     * evenements passes : le lien se vide alors (SET NULL) et le pointage
+     * reste, porteur de sa propre date et de son propre libelle. Sans cela, la
+     * purge emporterait des encaissements que la tresorerie doit garder.
+     */
     #[ORM\ManyToOne(targetEntity: Event::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private Event $event;
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Event $event;
+
+    /**
+     * Le jour de la seance, copie a la saisie : c'est lui qui date la recette
+     * dans le journal, et il survit a l'evenement.
+     */
+    #[ORM\Column(type: 'date_immutable')]
+    private \DateTimeImmutable $occurredOn;
+
+    /** Le titre de la seance, copie pour la meme raison. */
+    #[ORM\Column(length: 150)]
+    private string $label;
 
     /**
      * Le bulletin, et non la personne : c'est lui qui porte la formule et la
@@ -71,6 +89,8 @@ class EventAttendance
         ?\DateTimeImmutable $recordedAt = null,
     ) {
         $this->event = $event;
+        $this->occurredOn = $event->getStartsAt() ?? new \DateTimeImmutable('today');
+        $this->label = (string) ($event->getTitle() ?? 'Séance');
         $this->application = $application;
         $this->recordedById = $recordedById;
         $this->recordedAt = $recordedAt ?? new \DateTimeImmutable();
@@ -81,9 +101,19 @@ class EventAttendance
         return $this->id;
     }
 
-    public function getEvent(): Event
+    public function getEvent(): ?Event
     {
         return $this->event;
+    }
+
+    public function getOccurredOn(): \DateTimeImmutable
+    {
+        return $this->occurredOn;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
     }
 
     public function getApplication(): MembershipApplication
