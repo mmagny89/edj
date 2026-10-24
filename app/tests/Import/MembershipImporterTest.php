@@ -339,6 +339,68 @@ final class MembershipImporterTest extends KernelTestCase
         self::assertSame(2, $this->importer->apply($report, $this->options()));
     }
 
+    /**
+     * Le code d'un consommateur est CONS ; CONSO, ecrit ainsi dans d'anciens
+     * fichiers, reste lu.
+     */
+    #[DataProvider('consumerCodes')]
+    public function testTheConsumerCodeIsRead(string $code): void
+    {
+        $report = $this->importer->analyze(
+            $this->file([$this->row(['TYPE' => $code, 'PHILIBERT' => 0, 'COTISATION' => 0, 'PAIEMENT' => null])]),
+            $this->options(),
+        );
+
+        self::assertSame(1, $report->importable());
+        self::assertSame(MembershipType::Consumer, $report->rows[0]->application->getMembershipType());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function consumerCodes(): iterable
+    {
+        yield 'CONS' => ['CONS'];
+        yield 'CONSO, ancien code' => ['CONSO'];
+        yield 'en toutes lettres' => ['consommateur'];
+    }
+
+    public function testAnUnknownTypeNamesTheExpectedCodes(): void
+    {
+        $report = $this->importer->analyze($this->file([$this->row(['TYPE' => 'VIP'])]), $this->options());
+
+        self::assertStringContainsString('IND, FAM ou CONS', $report->errors[0]['message']);
+    }
+
+    /**
+     * Une date de naissance absente n'empeche pas l'import : la personne est
+     * reprise, avec un avertissement. Une date presente mais fausse reste une erreur.
+     */
+    public function testAMissingBirthDateIsImportedWithAWarning(): void
+    {
+        $report = $this->importer->analyze($this->file([$this->row(['NAISSANCE' => null])]), $this->options());
+
+        self::assertSame(1, $report->importable());
+        self::assertSame([], $report->errors);
+        self::assertNull($report->rows[0]->application->getBirthDate());
+        self::assertStringContainsString('pas de date de naissance', implode(' ', $report->rows[0]->warnings));
+
+        self::assertSame(1, $this->importer->apply($report, $this->options()));
+        $this->entityManager->clear();
+        $saved = $this->entityManager->getRepository(MembershipApplication::class)->findOneBy(['email' => $report->rows[0]->application->getEmail()]);
+        self::assertNotNull($saved);
+        self::assertNull($saved->getBirthDate());
+        self::assertNotNull($saved->getMember(), 'La personne recoit son numero d\'adherent.');
+    }
+
+    public function testAnImpossibleBirthDateIsStillAnError(): void
+    {
+        $report = $this->importer->analyze($this->file([$this->row(['NAISSANCE' => 'hier'])]), $this->options());
+
+        self::assertSame(0, $report->importable());
+        self::assertStringContainsString('naissance', $report->errors[0]['message']);
+    }
+
     public function testFormulaRulesAreWarningsNotErrors(): void
     {
         $report = $this->importer->analyze($this->file([
@@ -387,7 +449,7 @@ final class MembershipImporterTest extends KernelTestCase
 
     public function testPhilibertForAConsumerIsDroppedWithAWarning(): void
     {
-        $report = $this->importer->analyze($this->file([$this->row(['TYPE' => 'CONSO', 'PHILIBERT' => 1, 'COTISATION' => 0, 'PAIEMENT' => null])]), $this->options());
+        $report = $this->importer->analyze($this->file([$this->row(['TYPE' => 'CONS', 'PHILIBERT' => 1, 'COTISATION' => 0, 'PAIEMENT' => null])]), $this->options());
 
         self::assertFalse($report->rows[0]->application->isPhilibertConsent());
         self::assertNotEmpty(array_filter($report->rows[0]->warnings, static fn (string $w) => str_contains($w, 'consommateur')));
@@ -434,7 +496,7 @@ final class MembershipImporterTest extends KernelTestCase
 
     public function testNothingDueIsValidatedWithoutPayment(): void
     {
-        $report = $this->importer->analyze($this->file([$this->row(['TYPE' => 'CONSO', 'PHILIBERT' => 0, 'COTISATION' => 0, 'PAIEMENT' => null])]), $this->options());
+        $report = $this->importer->analyze($this->file([$this->row(['TYPE' => 'CONS', 'PHILIBERT' => 0, 'COTISATION' => 0, 'PAIEMENT' => null])]), $this->options());
 
         self::assertTrue($report->rows[0]->validated);
         self::assertNull($report->rows[0]->payment);

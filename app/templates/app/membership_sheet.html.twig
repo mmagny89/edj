@@ -36,7 +36,7 @@
                     <dt class="font-semibold text-slate-600">Nom</dt><dd>{{ application.lastName }}</dd>
                     <dt class="font-semibold text-slate-600">Prénom</dt><dd>{{ application.firstName }}</dd>
                     <dt class="font-semibold text-slate-600">Date de naissance</dt>
-                    <dd>{{ application.birthDate|date('d/m/Y') }}{% if application.isMinor %} (mineur){% endif %}</dd>
+                    <dd>{{ application.birthDate ? application.birthDate|date('d/m/Y') : '—' }}{% if application.isMinor %} (mineur){% endif %}</dd>
                     <dt class="font-semibold text-slate-600">Adresse</dt>
                     <dd>{% if application.address %}{{ application.address }}, {% endif %}{{ application.postalCode }} {{ application.city }}</dd>
                     <dt class="font-semibold text-slate-600">Téléphone</dt><dd>{{ application.phone ?: '—' }}</dd>

@@ -59,8 +59,9 @@ class MembershipApplication
     #[Assert\Regex(pattern: self::FREE_TEXT, message: self::FREE_TEXT_MESSAGE)]
     private ?string $firstName = null;
 
-    #[ORM\Column(type: 'date_immutable')]
-    #[Assert\NotNull(message: 'La date de naissance est obligatoire.')]
+    // Obligatoire pour un bulletin en ligne ou une fiche papier (voir
+    // validateConditionalFields), facultative pour une personne reprise d'un fichier.
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
     #[Assert\LessThan('today', message: 'La date de naissance doit être passée.')]
     #[Assert\GreaterThan('-120 years', message: 'Cette date de naissance ne semble pas correcte.')]
     private ?\DateTimeImmutable $birthDate = null;
@@ -501,6 +502,12 @@ class MembershipApplication
         // Une fiche papier ou un fichier repris peut ne pas en avoir.
         if (MembershipSource::Online === $this->source && (null === $this->email || '' === trim($this->email))) {
             $context->buildViolation("L'adresse e-mail est obligatoire.")->atPath('email')->addViolation();
+        }
+
+        // Une personne reprise d'un fichier peut ne pas avoir de date de naissance ;
+        // les autres bulletins la demandent.
+        if (null === $this->birthDate && MembershipSource::Import !== $this->source) {
+            $context->buildViolation('La date de naissance est obligatoire.')->atPath('birthDate')->addViolation();
         }
 
         if (MembershipType::Family === $this->membershipType) {

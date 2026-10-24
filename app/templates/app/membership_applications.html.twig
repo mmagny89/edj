@@ -201,7 +201,7 @@
                                     {% else %}
                                         <div class="font-semibold text-slate-800">{{ application.firstName }} {{ application.lastName }}</div>
                                         <div class="text-xs text-slate-600">
-                                            Né(e) le {{ application.birthDate|date('d/m/Y') }}
+                                            {{ application.birthDate ? 'Né(e) le ' ~ application.birthDate|date('d/m/Y') : 'Date de naissance non renseignée' }}
                                             {% if application.isMinor %}<span class="badge ml-1 bg-amber-100 text-amber-900">mineur</span>{% endif %}
                                         </div>
                                     {% endif %}
@@ -279,7 +279,7 @@
                                     <div class="flex flex-wrap gap-x-2">
                                         <dt class="font-semibold text-slate-600">Né(e) le</dt>
                                         <dd>
-                                            {{ application.birthDate|date('d/m/Y') }}
+                                            {{ application.birthDate ? application.birthDate|date('d/m/Y') : '—' }}
                                             {%- if application.isMinor %} <span class="badge bg-amber-100 text-amber-900">mineur</span>{% endif %}
                                         </dd>
                                     </div>

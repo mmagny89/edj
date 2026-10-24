@@ -139,7 +139,7 @@
                 <dl class="mt-2 divide-y divide-slate-100">
                     {{ f.row('Nom', application.lastName) }}
                     {{ f.row('Prénom', application.firstName) }}
-                    {{ f.row('Date de naissance', application.birthDate|date('d/m/Y')) }}
+                    {{ f.row('Date de naissance', application.birthDate ? application.birthDate|date('d/m/Y') : null) }}
                     {{ f.row('Adresse', application.address) }}
                     {{ f.row('Code postal et ville', application.postalCode ~ ' ' ~ application.city) }}
                     {{ f.row('Téléphone', application.phone) }}

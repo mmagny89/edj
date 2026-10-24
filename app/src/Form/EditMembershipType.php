@@ -32,6 +32,9 @@ final class EditMembershipType extends AbstractType
                 'label' => 'Date de naissance',
                 'widget' => 'single_text',
                 'input' => 'datetime_immutable',
+                // Absente d'une personne reprise d'un fichier : la fiche est a
+                // completer. L'entite l'exige pour les autres bulletins.
+                'required' => false,
             ])
             ->add('address', TextType::class, ['label' => 'Adresse', 'required' => false])
             ->add('postalCode', TextType::class, ['label' => 'Code postal', 'attr' => ['inputmode' => 'numeric', 'maxlength' => 5]])

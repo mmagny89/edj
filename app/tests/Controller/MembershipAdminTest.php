@@ -162,6 +162,55 @@ final class MembershipAdminTest extends WebTestCase
         self::assertResponseRedirects('/admin/adhesions/'.$application->getId());
     }
 
+    /**
+     * Une personne reprise d'un fichier peut ne pas avoir de date de naissance :
+     * sa fiche, sa liste et sa correction doivent s'afficher sans elle.
+     */
+    public function testAnImportedFicheWithoutBirthDateDisplaysAndCanBeCompleted(): void
+    {
+        $application = $this->create('sans-date@example.test', validated: true);
+        $application->setBirthDate(null)->enterFromImport(null);
+        $this->entityManager->flush();
+        $id = $application->getId();
+
+        $this->client->request('GET', '/admin/adhesions/'.$id);
+        self::assertResponseIsSuccessful();
+        $this->client->request('GET', '/admin/adhesions');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Date de naissance non renseignée');
+        $this->client->request('GET', sprintf('/admin/adhesions/%d/fiche', $id));
+        self::assertResponseIsSuccessful();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $id));
+        self::assertResponseIsSuccessful();
+        $this->client->submit($crawler->selectButton('Enregistrer la correction')->form(['edit_membership[birthDate]' => '1985-06-12']));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$id);
+        $this->entityManager->clear();
+        self::assertSame('1985-06-12', $this->entityManager->find(MembershipApplication::class, $id)->getBirthDate()?->format('Y-m-d'));
+    }
+
+    /**
+     * La date reste obligatoire pour une fiche saisie a la main.
+     */
+    public function testAPaperFicheStillRequiresABirthDate(): void
+    {
+        $crawler = $this->client->request('GET', '/admin/adhesions/nouveau');
+        $form = $crawler->selectButton("Inscrire l'adhérent")->form([
+            'paper_membership[lastName]' => 'Durand',
+            'paper_membership[firstName]' => 'Zoé',
+            'paper_membership[postalCode]' => '89300',
+            'paper_membership[city]' => 'Joigny',
+            'paper_membership[membershipType]' => 'individuelle',
+            'paper_membership[paperConfirmed]' => '1',
+        ]);
+        $form['paper_membership[birthDate]'] = '';
+        $this->client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', 'La date de naissance est obligatoire');
+    }
+
     public function testPrintableSheetIsAStandalonePage(): void
     {
         $application = $this->create('camille@example.test');

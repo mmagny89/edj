@@ -245,9 +245,18 @@ final class MembershipImporter
             $errors[] = 'date d\'adhésion manquante ou invalide';
         }
 
-        $birthDate = self::date($raw['birthDate'] ?? null);
-        if (null === $birthDate || $birthDate < new \DateTimeImmutable('1900-01-01') || $birthDate >= new \DateTimeImmutable('today')) {
-            $errors[] = 'date de naissance manquante ou invalide';
+        // Une date absente n'empeche pas l'import : beaucoup de fiches papier ne la
+        // portent pas, et la refuser, c'est refuser la personne. Elle se renseigne
+        // ensuite sur la fiche. Une date presente mais illisible, ou impossible,
+        // reste une erreur : c'est une faute de frappe a corriger, pas une absence.
+        $birthDate = null;
+        if (self::blank($raw['birthDate'] ?? null)) {
+            $warnings[] = 'pas de date de naissance : la personne est reprise, mais retrouvée par son nom seul (deux homonymes se confondraient), et sans âge dans les statistiques';
+        } else {
+            $birthDate = self::date($raw['birthDate']);
+            if (null === $birthDate || $birthDate < new \DateTimeImmutable('1900-01-01') || $birthDate >= new \DateTimeImmutable('today')) {
+                $errors[] = 'date de naissance illisible ou impossible';
+            }
         }
 
         // Pas d'adresse n'est pas une erreur : beaucoup d'adherents d'un fichier papier
@@ -281,7 +290,7 @@ final class MembershipImporter
 
         $type = self::type(self::text($raw['type'] ?? null));
         if (null === $type) {
-            $errors[] = 'formule inconnue (attendu : IND, FAM ou CONSO)';
+            $errors[] = 'formule inconnue (attendu : IND, FAM ou CONS)';
         }
 
         // « -- » est ce qu'un tableur met quand il n'y a pas de numero : on ne le
@@ -442,7 +451,8 @@ final class MembershipImporter
         return match (self::normalize($value)) {
             'ind', 'individuelle', 'individuel' => MembershipType::Individual,
             'fam', 'famille' => MembershipType::Family,
-            'conso', 'consommateur' => MembershipType::Consumer,
+            // « conso » reste lu : des fichiers l'ecrivent encore ainsi.
+            'cons', 'conso', 'consommateur' => MembershipType::Consumer,
             default => null,
         };
     }

@@ -37,6 +37,11 @@ GitHub, par `.github/workflows/publication.yml`.
   rendu liste les lignes rejetees, et relancer l'import avec le fichier corrige ecarte les personnes deja
   inscrites. Une adresse e-mail illisible n'est plus une erreur : la fiche est reprise sans l'adresse, avec
   un avertissement.
+- Import : le code d'un consommateur est **CONS** (CONSO reste lu). Une **date de naissance absente**
+  n'empeche plus l'import : la personne est reprise avec un avertissement, et la date se complete ensuite
+  depuis « Corriger la fiche ». Une date presente mais illisible reste une erreur. Sans date, la personne
+  est retrouvee par son nom seul : deux homonymes se confondraient, et elle n'a pas d'age dans les
+  statistiques. La date reste obligatoire sur le bulletin en ligne et la fiche papier.
 - Un import est l'equivalent de fiches papier : meme mention « Fiche papier », meme fiche imprimee.
 - **Corriger la fiche** (`/admin/adhesions/<id>/modifier`) : nom, coordonnees, responsable legal,
   autorisations. Le numero d'adherent reste, l'identite suit un changement de nom, et la correction est
