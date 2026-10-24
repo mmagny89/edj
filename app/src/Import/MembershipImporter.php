@@ -72,8 +72,6 @@ final class MembershipImporter
         'email' => 'EMAIL', 'postalCode' => 'CP', 'city' => 'VILLE', 'type' => 'TYPE',
     ];
 
-    /** Champs dont la regle de bulletin est un avertissement et non une erreur. */
-    private const SOFT_PATHS = ['principalMemberName', 'membershipType', 'guardianLastName', 'guardianFirstName', 'guardianEmail'];
 
     public function __construct(
         private readonly XlsxReader $reader,
@@ -350,11 +348,13 @@ final class MembershipImporter
         // Les regles du bulletin : une erreur de fond bloque, une regle de formule
         // devient un avertissement a completer.
         foreach ($this->validator->validate($application) as $violation) {
-            if (\in_array($violation->getPropertyPath(), self::SOFT_PATHS, true)) {
-                $warnings[] = (string) $violation->getMessage();
-            } else {
-                $errors[] = $violation->getPropertyPath().' : '.$violation->getMessage();
-            }
+            $errors[] = $violation->getPropertyPath().' : '.$violation->getMessage();
+        }
+        // Les regles de formule ne bloquent pas une fiche reprise d'un fichier (la
+        // validation de l'entite les ignore pour une source « import ») : elles
+        // deviennent des avertissements a completer sur la fiche.
+        foreach ($application->formulaIssues() as $message) {
+            $warnings[] = $message;
         }
         if ([] !== $errors) {
             $report->errors[] = ['line' => $line, 'message' => implode(' ; ', $errors)];

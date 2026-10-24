@@ -510,21 +510,29 @@ class MembershipApplication
             $context->buildViolation('La date de naissance est obligatoire.')->atPath('birthDate')->addViolation();
         }
 
-        if (MembershipType::Family === $this->membershipType) {
-            if (!$this->principalMemberName) {
-                $context->buildViolation("Indiquez le prénom et le nom de l'adhérent principal de la famille.")
-                    ->atPath('principalMemberName')
-                    ->addViolation();
-            } elseif ($this->designatesSelfAsPrincipal()) {
-                // L'adhesion famille a 5 € se greffe sur une adhesion
-                // individuelle a 10 € deja prise par quelqu'un d'autre du
-                // foyer. Se designer soi-meme, c'est declarer une famille d'une
-                // seule personne : l'association encaisserait 5 € la ou elle
-                // doit en encaisser 10.
-                $context->buildViolation("L'adhérent principal est la personne de votre foyer qui a déjà pris l'adhésion individuelle à 10 € : ce ne peut pas être vous.")
-                    ->atPath('principalMemberName')
-                    ->addViolation();
+        // Les regles de formule (adherent principal d'une famille, formule et
+        // responsable legal d'un mineur) bloquent un bulletin saisi. Une fiche reprise
+        // d'un fichier decrit une personne deja inscrite sur papier : elle ne les
+        // subit pas, et l'importeur les affiche comme des avertissements a completer
+        // (formulaIssues). Les refuser ici empecherait de corriger la fiche — nom,
+        // telephone, adresse — tant que ce point n'est pas renseigne.
+        if (MembershipSource::Import !== $this->source) {
+            foreach ($this->formulaIssues() as $path => $message) {
+                $context->buildViolation($message)->atPath($path)->addViolation();
             }
+        }
+
+        // Designer son propre nom comme adherent principal est une erreur quelle que
+        // soit l'origine de la fiche : c'est une valeur fausse, pas un oubli.
+        if (MembershipType::Family === $this->membershipType && $this->principalMemberName && $this->designatesSelfAsPrincipal()) {
+            // L'adhesion famille a 5 € se greffe sur une adhesion
+            // individuelle a 10 € deja prise par quelqu'un d'autre du
+            // foyer. Se designer soi-meme, c'est declarer une famille d'une
+            // seule personne : l'association encaisserait 5 € la ou elle
+            // doit en encaisser 10.
+            $context->buildViolation("L'adhérent principal est la personne de votre foyer qui a déjà pris l'adhésion individuelle à 10 € : ce ne peut pas être vous.")
+                ->atPath('principalMemberName')
+                ->addViolation();
         }
 
         // L'avantage Philibert fait partie de l'adhesion annuelle : la formule
@@ -536,9 +544,28 @@ class MembershipApplication
                 ->atPath('philibertConsent')
                 ->addViolation();
         }
+    }
+
+    /**
+     * Ce que la formule exige et que la fiche ne donne pas encore, par champ :
+     * l'adherent principal d'une famille ; pour un mineur, une formule qui n'est
+     * pas l'individuelle et un responsable legal complet.
+     *
+     * Un bulletin saisi doit n'en avoir aucun (validateConditionalFields). Une fiche
+     * reprise d'un fichier peut en avoir : l'importeur les liste comme avertissements.
+     *
+     * @return array<string, string> chemin du champ => message
+     */
+    public function formulaIssues(): array
+    {
+        $issues = [];
+
+        if (MembershipType::Family === $this->membershipType && !$this->principalMemberName) {
+            $issues['principalMemberName'] = "Indiquez le prénom et le nom de l'adhérent principal de la famille.";
+        }
 
         if (!$this->isMinor()) {
-            return;
+            return $issues;
         }
 
         // Un mineur n'adhere jamais pour son propre compte : il se rattache a
@@ -546,9 +573,7 @@ class MembershipApplication
         // famille. L'adhesion individuelle engage son titulaire aupres de
         // l'association, ce qu'un mineur ne peut pas faire seul.
         if (MembershipType::Individual === $this->membershipType) {
-            $context->buildViolation("Un mineur ne peut pas prendre l'adhésion individuelle : choisissez l'adhésion famille, rattachée à l'adulte de votre foyer qui a déjà adhéré.")
-                ->atPath('membershipType')
-                ->addViolation();
+            $issues['membershipType'] = "Un mineur ne peut pas prendre l'adhésion individuelle : choisissez l'adhésion famille, rattachée à l'adulte de votre foyer qui a déjà adhéré.";
         }
 
         foreach ([
@@ -557,9 +582,11 @@ class MembershipApplication
             'guardianEmail' => "Indiquez l'adresse e-mail du responsable légal.",
         ] as $field => $message) {
             if (!$this->{$field}) {
-                $context->buildViolation($message)->atPath($field)->addViolation();
+                $issues[$field] = $message;
             }
         }
+
+        return $issues;
     }
 
     /**

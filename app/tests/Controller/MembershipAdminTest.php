@@ -191,6 +191,41 @@ final class MembershipAdminTest extends WebTestCase
     }
 
     /**
+     * Une fiche Famille importee sans adherent principal se corrige : l'import
+     * l'accepte avec un avertissement, la correction ne doit pas la bloquer.
+     */
+    public function testAnImportedFamilyFicheWithoutPrincipalCanBeCorrected(): void
+    {
+        $application = $this->create('famille@example.test', validated: true, type: MembershipType::Family);
+        $application->enterFromImport(null);
+        $this->entityManager->flush();
+        $id = $application->getId();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $id));
+        $this->client->submit($crawler->selectButton('Enregistrer la correction')->form(['edit_membership[phone]' => '06 11 22 33 44']));
+
+        self::assertResponseRedirects('/admin/adhesions/'.$id);
+        $this->entityManager->clear();
+        self::assertSame('06 11 22 33 44', $this->entityManager->find(MembershipApplication::class, $id)->getPhone());
+    }
+
+    /**
+     * Pour une saisie a la main, l'adherent principal reste obligatoire.
+     */
+    public function testAPaperFamilyFicheStillRequiresAPrincipal(): void
+    {
+        $application = $this->create('famille-papier@example.test', validated: true, type: MembershipType::Family);
+        $application->enterFromPaper(null);
+        $this->entityManager->flush();
+
+        $crawler = $this->client->request('GET', sprintf('/admin/adhesions/%d/modifier', $application->getId()));
+        $this->client->submit($crawler->selectButton('Enregistrer la correction')->form(['edit_membership[phone]' => '06 11 22 33 44']));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', "adhérent principal");
+    }
+
+    /**
      * La date reste obligatoire pour une fiche saisie a la main.
      */
     public function testAPaperFicheStillRequiresABirthDate(): void

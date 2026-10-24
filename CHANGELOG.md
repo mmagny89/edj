@@ -49,6 +49,11 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Corriger une fiche **importee** de formule Famille sans « adherent principal » (ou un mineur sans
+  responsable legal) etait refuse, alors que l'import l'acceptait avec un avertissement. Ces regles de
+  formule ne bloquent plus une fiche reprise d'un fichier ; elles restent obligatoires pour un bulletin
+  en ligne ou une fiche papier saisie a la main.
+
 - Administration : « Confirmer » dans une boite de confirmation n'envoyait rien apres une navigation
   interne. Le script etait charge dans le corps de la page, que Turbo reexecute a chaque navigation : les
   controleurs s'empilaient sur le meme formulaire et l'un d'eux rouvrait une boite. Le script est
