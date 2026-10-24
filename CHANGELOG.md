@@ -31,6 +31,14 @@ GitHub, par `.github/workflows/publication.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Ajoute (application)
+
+- **Le site s'installe comme une application** sur l'ecran d'accueil (comme BG TCG) : manifeste, icones
+  generees depuis la mascotte, service worker minimal, et un encart « Le site sur votre telephone » dans le
+  pied de page, qui propose un bouton la ou le navigateur le permet (Chrome, Edge) et le geste a faire
+  ailleurs (iPhone, Samsung Internet, autres navigateurs Android). Aucun cache, aucune notification : le
+  site reste toujours a jour et ne s'affiche pas hors connexion. L'administration utilise le meme manifeste.
+
 ### Ajoute (mot de passe oublie)
 
 - **Mot de passe oublie** pour la connexion a l'administration : lien « Mot de passe oublie ? » sur la page

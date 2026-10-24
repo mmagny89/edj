@@ -30,7 +30,11 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="/img/edj-mascotte-transparent.png">
-    <link rel="apple-touch-icon" href="/img/edj-mascotte-transparent.png">
+    {# Application installable (ecran d'accueil) : manifeste, icone iPhone (carre
+       plein : iOS noircit la transparence), titre court sous l'icone. #}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Envie de Jouer">
     {% block structured_data %}{% endblock %}
     {% block stylesheets %}
         {{ encore_entry_link_tags('site') }}
@@ -111,6 +115,30 @@
 {% block main %}{% endblock %}
 
     <footer class="site-footer">
+        {# Cache tant que le JavaScript n'a pas dit comment installer ici : un
+           seul des paragraphes s'affiche, selon le navigateur (assets/pwa.js).
+           Sans JavaScript, ou une fois installee, l'encart n'existe pas. #}
+        <div class="install-app" data-install-app hidden>
+            <strong>Le site sur votre téléphone</strong>
+            <p data-install-mode="prompt" hidden>
+                Ajoutez Envie de Jouer à votre écran d'accueil : le calendrier s'ouvre en plein écran, comme une application.
+            </p>
+            <button type="button" class="button button--join" data-install-button data-install-mode="prompt" hidden>
+                <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+                Installer l'application
+            </button>
+            <p data-install-mode="ios" hidden>
+                Dans Safari, touchez <strong>Partager</strong>, puis <strong>Sur l'écran d'accueil</strong>.
+            </p>
+            <p data-install-mode="samsung" hidden>
+                Dans Samsung Internet, touchez l'icône d'installation dans la barre d'adresse si elle apparaît ;
+                sinon, ouvrez le menu <strong>≡</strong>, puis <strong>Ajouter la page à</strong> et <strong>Écran d'accueil</strong>.
+            </p>
+            <p data-install-mode="android" hidden>
+                Ouvrez le menu du navigateur (<strong>⋮</strong>), puis <strong>Installer l'application</strong>
+                ou <strong>Ajouter à l'écran d'accueil</strong>.
+            </p>
+        </div>
         <span>© {{ "now" | date('Y') }} Envie de Jouer - Joigny</span>
         <a href="{{ path('member_access_request') }}">Ma fiche d'adhérent</a>
         <a href="{{ path('site_legal_notice') }}">Mentions légales</a>

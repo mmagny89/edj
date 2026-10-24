@@ -65,6 +65,12 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   par une forced command SSH. Le workflow n'envoie aucune commande — l'argument
   est fixe par `authorized_keys`. Le serveur porte le clone, construit l'image
   et garde `.env.prod.local` ; aucune valeur applicative n'est un secret GitHub.
+- Le site est installable comme application (`public/manifest.webmanifest`, `public/icons/`, `public/sw.js`,
+  `app/assets/pwa.js` charge par `site.js` et `app.js`) : **sans cache hors ligne** ni notification, le service
+  worker ne repond a aucune requete. Les icones sont generees depuis la mascotte (fond `#a8b7df`, celui de
+  `theme_color`) ; si la mascotte change, les regenerer et garder `InstallableAppTest` vert. En
+  developpement, le certificat auto-signe empeche l'enregistrement du service worker : seule la production
+  (certificat reel) l'enregistre.
 - Une etiquette `v*` publie une release GitHub dont le corps est la section
   correspondante de `CHANGELOG.md` (`publication.yml`). Completer la section
   « Non publie » fait partie d'un changement visible de l'utilisateur.

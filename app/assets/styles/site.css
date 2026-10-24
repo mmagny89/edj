@@ -1005,6 +1005,33 @@ h1 {
     font-weight: 700;
 }
 
+/* Pleine largeur du pied de page : sans flex-basis a 100 % et sans plafond sur
+   le bloc lui-meme, les liens du pied de page se rangent a sa droite. Le plafond
+   porte sur le texte, pour qu'il reste lisible sur un grand ecran. */
+.install-app {
+    display: flex;
+    flex: 0 0 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.18);
+    text-align: center;
+}
+
+.install-app > * {
+    max-width: 52rem;
+}
+
+.install-app[hidden],
+.install-app [hidden] {
+    display: none;
+}
+
+.install-app p {
+    margin: 0;
+}
+
 .site-footer a {
     color: var(--yellow);
     text-decoration: underline;

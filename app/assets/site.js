@@ -1,4 +1,5 @@
 import './bootstrap.js';
+import './pwa.js';
 // Polices et icones servies par le site : plus de Google Fonts ni de CDN. Un
 // visiteur ne transmet donc plus son adresse IP a un tiers pour lire cette
 // page (RGPD), le site s'affiche sans acces externe, et la page « Donnees

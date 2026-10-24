@@ -11,6 +11,10 @@
     <meta name="csp-nonce" content="{{ csp_nonce() }}">
     <title>{% block title %}Administration - Envie de Jouer{% endblock %}</title>
     <link rel="icon" href="/img/edj-mascotte-transparent.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Envie de Jouer">
+    <meta name="theme-color" content="#a8b7df">
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
     {% endblock %}
