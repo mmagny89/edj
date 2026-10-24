@@ -14,11 +14,18 @@
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
     {% endblock %}
+    {# Dans le <head>, jamais dans le <body> : Turbo remplace le corps a chaque
+       navigation et reexecute les scripts qu'il y trouve. Le script de
+       l'application demarrerait alors une nouvelle application Stimulus a
+       chaque clic sur un lien, et les controleurs s'empileraient sur le meme
+       element — une boite de confirmation s'ouvre, et « Confirmer » en rouvre
+       une autre au lieu d'envoyer le formulaire. Le <head> n'est pas rejoue ;
+       « defer » (pose par Encore) l'execute apres l'analyse du document. #}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
 </head>
 <body class="min-h-screen">
 {% block body %}{% endblock %}
-{% block javascripts %}
-    {{ encore_entry_script_tags('app') }}
-{% endblock %}
 </body>
 </html>

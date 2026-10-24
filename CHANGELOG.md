@@ -44,6 +44,11 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Administration : « Confirmer » dans une boite de confirmation n'envoyait rien apres une navigation
+  interne. Le script etait charge dans le corps de la page, que Turbo reexecute a chaque navigation : les
+  controleurs s'empilaient sur le meme formulaire et l'un d'eux rouvrait une boite. Le script est
+  desormais dans l'en-tete.
+
 - Import : un en-tete present etait annonce « manquant » quand le fichier venait d'Excel ou de Google
   Sheets (espace insecable, accent decompose, caractere invisible). La comparaison des en-tetes les
   ignore desormais, et le message d'erreur liste les en-tetes reellement lus.
