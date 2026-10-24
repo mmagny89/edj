@@ -381,6 +381,38 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Les consommateurs a jour d'une saison, classes par nom : la liste que
+     * l'on pointe a l'entree d'une seance.
+     *
+     * Un bulletin valide, de la formule consommateur, non anonymise. Les
+     * bulletins en attente n'y sont pas : on ne fait pas payer un euro a
+     * quelqu'un dont l'adhesion n'est pas encore actee.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findConsumers(int $season): array
+    {
+        [$from, $to] = self::seasonBounds($season);
+
+        /** @var list<MembershipApplication> $rows */
+        $rows = $this->createQueryBuilder('a')
+            ->andWhere('a.status = :validated')
+            ->andWhere('a.membershipType = :consumer')
+            ->andWhere('a.anonymizedAt IS NULL')
+            ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
+            ->setParameter('validated', MembershipStatus::Validated)
+            ->setParameter('consumer', MembershipType::Consumer)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('a.lastName', 'ASC')
+            ->addOrderBy('a.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $rows;
+    }
+
+    /**
      * Du 1er octobre de l'annee precedente (inclus) au 1er octobre du
      * millesime (exclu) : la saison 2027 va du 1er octobre 2026 au 30
      * septembre 2027.

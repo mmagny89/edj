@@ -1,0 +1,142 @@
+{% extends 'app/layout.html.twig' %}
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}Comptabilité - Envie de Jouer{% endblock %}
+
+{% macro euros(cents) %}{{ (cents / 100)|number_format(2, ',', ' ') }} €{% endmacro %}
+
+{% block content %}
+    {% import _self as money %}
+
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-ink">Comptabilité</h1>
+            <p class="mt-1 text-slate-600">
+                Les recettes de la saison : cotisations encaissées à la validation d'un bulletin,
+                et l'euro que paie un consommateur à chaque séance.
+            </p>
+        </div>
+        <a href="{{ path('app_accounting_export', {saison: season}) }}" class="btn btn-primary">{{ ui.icon('download') }} Exporter en CSV</a>
+    </div>
+
+    <form method="get" action="{{ path('app_accounting') }}" class="mt-8 flex flex-wrap items-end gap-3" aria-label="Saison affichée">
+        <div>
+            <label for="c-saison" class="mb-1.5 block text-sm font-semibold text-slate-800">Saison</label>
+            <select name="saison" id="c-saison" class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
+                {% for s in seasons %}
+                    <option value="{{ s }}" {{ s == season ? 'selected' }}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">{{ ui.icon('eye') }} Afficher</button>
+        <p class="pb-2 text-sm text-slate-600">Du 1<sup>er</sup> octobre {{ season - 1 }} au 30 septembre {{ season }}.</p>
+    </form>
+
+    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Totaux de la saison">
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-600">Total encaissé</p>
+            <p class="mt-1 text-3xl font-bold text-ink">{{ money.euros(summary.totalCents) }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-600">Cotisations</p>
+            <p class="mt-1 text-3xl font-bold text-ink">{{ money.euros(summary.cotisationsCents) }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-600">Passages consommateurs</p>
+            <p class="mt-1 text-3xl font-bold text-ink">{{ money.euros(summary.passagesCents) }}</p>
+            <p class="mt-1 text-sm text-slate-600">{{ summary.passages }} passage{{ summary.passages > 1 ? 's' }} pointé{{ summary.passages > 1 ? 's' }}</p>
+        </div>
+        <div class="card p-5">
+            <p class="text-sm font-semibold text-slate-600">Reste à encaisser</p>
+            <p class="mt-1 text-3xl font-bold {{ summary.unpaidCents > 0 ? 'text-danger' : 'text-ink' }}">{{ money.euros(summary.unpaidCents) }}</p>
+            <p class="mt-1 text-sm text-slate-600">{{ summary.unpaidCount }} ligne{{ summary.unpaidCount > 1 ? 's' }}</p>
+        </div>
+    </section>
+
+    <section class="card mt-8" aria-labelledby="titre-moyens">
+        <h2 id="titre-moyens" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">Par moyen de règlement</h2>
+        <dl class="grid gap-4 px-5 py-4 sm:grid-cols-3">
+            {% for method, cents in summary.byMethod %}
+                <div>
+                    <dt class="text-sm font-semibold text-slate-600">{{ enum('App\\Enum\\PaymentMethod').from(method).label }}</dt>
+                    <dd class="text-xl font-bold text-ink">{{ money.euros(cents) }}</dd>
+                </div>
+            {% endfor %}
+        </dl>
+    </section>
+
+    {% if unpaid is not empty %}
+        <section class="card mt-8 border-danger/40" aria-labelledby="titre-impayes">
+            <h2 id="titre-impayes" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
+                À relancer <span class="font-medium text-slate-500">{{ unpaid|length }}</span>
+            </h2>
+            <ul class="divide-y divide-slate-100">
+                {% for line in unpaid %}
+                    <li class="flex flex-wrap items-baseline justify-between gap-3 px-5 py-3">
+                        <span class="font-semibold text-ink">{{ line.person }}</span>
+                        <span class="text-sm text-slate-600">
+                            {{ line.kind == 'passage' ? 'Passage' : 'Cotisation' }} ·
+                            {{ line.date|format_date(pattern: 'd MMMM y') }} ·
+                            {{ money.euros(line.cents) }}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    <section class="card mt-8" aria-labelledby="titre-journal">
+        <h2 id="titre-journal" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
+            Journal <span class="font-medium text-slate-500">{{ entries|length }}</span>
+        </h2>
+
+        {% if entries is empty %}
+            <p class="px-5 py-8 text-slate-600">Aucune recette sur cette saison.</p>
+        {% else %}
+            {# Tableau sur grand ecran, cartes sur telephone : cinq colonnes ne
+               tiennent pas a 390 px. Un seul des deux est affiche. #}
+            <div class="relative hidden overflow-x-auto md:block">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+                        <tr>
+                            <th scope="col" class="px-5 py-3 font-semibold">Date</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Nature</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Personne</th>
+                            <th scope="col" class="px-3 py-3 font-semibold">Règlement</th>
+                            <th scope="col" class="px-5 py-3 text-right font-semibold">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for line in entries %}
+                            <tr class="{{ not line.paid and line.cents > 0 ? 'bg-amber-50' }}">
+                                <td class="whitespace-nowrap px-5 py-3">{{ line.date|format_date(pattern: 'd/MM/y') }}</td>
+                                <td class="px-3 py-3">{{ line.kind == 'passage' ? 'Passage' : 'Cotisation' }} — {{ line.label }}</td>
+                                <td class="px-3 py-3">{{ line.person }}{% if line.number %} <span class="text-slate-500">({{ line.number }})</span>{% endif %}</td>
+                                <td class="px-3 py-3">{{ line.method ? line.method.label : (line.cents > 0 ? 'Non encaissé' : 'Gratuit') }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right font-semibold">{{ money.euros(line.cents) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <ul class="divide-y divide-slate-100 md:hidden">
+                {% for line in entries %}
+                    <li class="px-5 py-3">
+                        <p class="font-semibold text-ink">{{ line.person }}</p>
+                        <dl class="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-slate-600">
+                            <dt class="sr-only">Date</dt>
+                            <dd>{{ line.date|format_date(pattern: 'd/MM/y') }}</dd>
+                            <dt class="sr-only">Montant</dt>
+                            <dd class="text-right font-semibold text-ink">{{ money.euros(line.cents) }}</dd>
+                            <dt class="sr-only">Nature</dt>
+                            <dd>{{ line.kind == 'passage' ? 'Passage' : 'Cotisation' }}</dd>
+                            <dt class="sr-only">Règlement</dt>
+                            <dd class="text-right">{{ line.method ? line.method.label : (line.cents > 0 ? 'Non encaissé' : 'Gratuit') }}</dd>
+                        </dl>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+{% endblock %}

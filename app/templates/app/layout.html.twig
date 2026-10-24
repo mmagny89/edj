@@ -45,6 +45,10 @@
                          icon: 'calendar'},
                         {route: 'app_membership_applications', label: 'Adhésions', active: route starts with 'app_membership',
                          icon: 'users'},
+                        {route: 'app_attendance_log', label: 'Pointage', active: route starts with 'app_attendance_log',
+                         icon: 'check'},
+                        {route: 'app_accounting', label: 'Comptabilité', active: route starts with 'app_accounting',
+                         icon: 'banknotes'},
                         {route: 'app_attendance', label: 'Émargement', active: route == 'app_attendance', icon: 'users'},
                     ] %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}

@@ -20,6 +20,16 @@ GitHub, par `.github/workflows/publication.yml`.
 - Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur
   exacte de la fenetre : le calendrier commence juste sous le pli.
 
+### Ajoute (comptabilite et pointage)
+
+- **Pointage** (`/admin/pointage`) : la liste des consommateurs d'une saison, et un bouton par personne pour
+  noter qu'elle est venue a une seance et qu'elle a paye son euro (ou, a part, qu'elle est venue sans
+  payer). Chaque geste s'enregistre au clic ; un pointage saisi par erreur se retire. Une seance est un
+  evenement du calendrier.
+- **Comptabilite** (`/admin/comptabilite`) : par saison, le total encaisse, les cotisations, les euros de
+  seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
+  export CSV pour le tableur de la tresorerie.
+
 ### Corrige
 
 - Sur telephone, le libelle du filtre « Manifestations » debordait de son bouton une fois coche.

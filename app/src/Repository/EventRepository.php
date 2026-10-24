@@ -52,6 +52,29 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
+     * Les evenements d'une saison, du plus recent au plus ancien : la page de
+     * pointage s'ouvre sur la derniere seance passee, qui est celle qu'on
+     * vient de tenir.
+     *
+     * @return list<Event>
+     */
+    public function findForSeason(int $season): array
+    {
+        [$from, $to] = MembershipApplicationRepository::seasonBounds($season);
+
+        /** @var list<Event> $rows */
+        $rows = $this->createQueryBuilder('e')
+            ->andWhere('e.startsAt >= :from AND e.startsAt < :to')
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('e.startsAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $rows;
+    }
+
+    /**
      * Cles "type|date" des evenements deja presents sur une periode, sous
      * forme de tableau indexe : la generation d'une saison teste chaque date
      * contre cet ensemble plutot que d'interroger la base des centaines de
