@@ -72,7 +72,7 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   developpement, le certificat auto-signe empeche l'enregistrement du service worker : seule la production
   (certificat reel) l'enregistre.
 - Une etiquette `v*` publie une release GitHub dont le corps est la section
-  correspondante de `CHANGELOG.md` (`publication.yml`). Completer la section
+  correspondante de `CHANGELOG.md` (`release.yml`). Completer la section
   « Non publie » fait partie d'un changement visible de l'utilisateur.
 
 ## Pieges connus

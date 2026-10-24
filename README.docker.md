@@ -23,7 +23,7 @@ publie aucun port : il sert en clair sur son `:80` interne.
 | `compose.staging.yml` / `compose.prod.yml` | Traefik, stage d'image fige |
 | `docker/php/**` | Dockerfile multi-stage, Caddyfile nominal et de secours, entrypoint, healthcheck, scripts |
 | `.github/workflows/qualite.yml` | Portes qualite sur chaque PR et push, puis deploiement sur `main` |
-| `.github/workflows/publication.yml` | Release GitHub sur etiquette `v*`, corps repris de `CHANGELOG.md` |
+| `.github/workflows/release.yml` | Release GitHub sur etiquette `v*`, corps repris de `CHANGELOG.md` |
 | `.github/dependabot.yml` | Surveillance des dependances Composer, npm, Docker et Actions |
 | `outils/` | Outillage d'exploitation versionne, joue sur le serveur (voir plus bas) |
 | `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` | Gouvernance du depot public |
@@ -293,7 +293,7 @@ git tag -a v1.1.0 -m "v1.1.0"
 git push origin v1.1.0
 ```
 
-`publication.yml` cree alors la release GitHub, avec pour corps la section du
+`release.yml` cree alors la release GitHub, avec pour corps la section du
 journal. Une etiquette posee sans section correspondante fait echouer le
 workflow plutot que de publier une release vide.
 

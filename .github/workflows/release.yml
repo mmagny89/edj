@@ -4,7 +4,7 @@
 # Le journal reste ecrit a la main — c'est lui qui dit ce qui change pour un
 # visiteur, ce qu'aucune liste de commits ne dit. Ce workflow ne fait que le
 # recopier, pour qu'une release ne puisse pas diverger du fichier.
-name: publication
+name: Release
 
 on:
   push:
