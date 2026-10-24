@@ -2,8 +2,13 @@
 # installer-deploiement.sh — pose les acces necessaires au deploiement continu.
 # A lancer SUR LE SERVEUR.
 #
-#   sh outils/installer-deploiement.sh serveur              # une fois par serveur
-#   sh outils/installer-deploiement.sh projet prod|staging  # une fois par projet, depuis sa racine
+#   sh outils/installer-deploiement.sh utilisateur [nom]    # par root, une fois par serveur (defaut : deploy)
+#   sh outils/installer-deploiement.sh serveur              # une fois par serveur, EN TANT QUE l'utilisateur de deploiement
+#   sh outils/installer-deploiement.sh projet prod|staging  # une fois par projet, depuis sa racine, meme utilisateur
+#
+# Deploiement sous root : a eviter. Le volet utilisateur cree le compte dedie
+# (conventions, section ci/hote) ; les deux autres volets se lancent ensuite sous
+# ce compte, car ils ecrivent dans $HOME/.ssh.
 #
 # Deux directions, deux portees, et c'est voulu (conventions, section ci/portage) :
 #
@@ -21,8 +26,98 @@ titre() {
 	echo "=== $* ==="
 }
 
+avertir_root() {
+	[ "$(id -u)" = "0" ] || return 0
+	echo
+	echo "AVERTISSEMENT : ces acces sont poses pour root."
+	echo "  La forced command empeche d'obtenir un shell, mais une cle qui"
+	echo "  fuite s'executerait avec les droits les plus eleves de la machine."
+	echo "  Creer un utilisateur dedie, puis relancer ce script sous son compte :"
+	echo
+	echo "    sh $0 utilisateur"
+	echo
+}
+
+# ------------------------------------------------------------- volet utilisateur
+# Par root, une fois par serveur, AVANT les deux autres volets. Il cree le
+# compte et l'ajoute au groupe docker, rien d'autre : donner un clone a ce
+# compte (chown) deplace des fichiers que des conteneurs ecrivent, ce qui se
+# fait projet par projet, en connaissance de cause. Il est donc imprime.
+installer_utilisateur() {
+	NOM=${1:-deploy}
+
+	if [ "$(id -u)" != "0" ]; then
+		echo "ECHEC : ce volet cree un compte, il se lance par root." >&2
+		exit 1
+	fi
+	if ! getent group docker > /dev/null 2>&1; then
+		echo "ECHEC : groupe docker introuvable. Docker est-il installe ?" >&2
+		exit 1
+	fi
+
+	if id "$NOM" > /dev/null 2>&1; then
+		echo "Utilisateur deja present : $NOM"
+	else
+		adduser --disabled-password --gecos "" "$NOM" > /dev/null
+		echo "Utilisateur cree : $NOM"
+	fi
+	usermod -aG docker "$NOM"
+
+	DOSSIER=$(getent passwd "$NOM" | cut -d: -f6)
+	install -d -m 700 -o "$NOM" -g "$NOM" "$DOSSIER/.ssh"
+
+	titre "SUITE, A LA MAIN"
+	echo "1. Un acces d'administration AVANT de fermer root : un compte avec sudo et"
+	echo "   votre cle personnelle. Ce compte-ci n'a ni mot de passe ni sudo."
+	echo
+	echo "2. Donner chaque clone a $NOM (UID $(id -u "$NOM")) :"
+	echo
+	echo "     chown -R $NOM:$NOM <racine>/<projet>-prod"
+	echo
+	echo "   Les conteneurs ecrivent avec l'UID 1000 dans les dossiers montes : si"
+	echo "   $NOM n'a pas cet UID, remettre ces dossiers a 1000:1000 apres le chown."
+	echo
+	echo "3. Poser les acces SOUS ce compte (ils ecrivent dans son ~/.ssh) :"
+	echo
+	echo "     su - $NOM"
+	echo "     sh <clone>/outils/installer-deploiement.sh serveur"
+	echo "     cd <clone> && sh outils/installer-deploiement.sh projet prod"
+	echo
+	echo "4. Remplacer ${NOM} dans le secret DEPLOIEMENT_UTILISATEUR de chaque depot,"
+	echo "   puis la cle privee affichee par le volet projet."
+	echo
+	echo "5. Verifier chaque projet de l'exterieur avant de retirer les anciens"
+	echo "   acces de root (conventions, section ci/hote)."
+}
+
+# Un remote en alias (git@github-<projet>:...) n'est resolu que par le
+# ~/.ssh/config de celui qui l'a ecrit. Quand on change d'utilisateur, il echoue sur
+# « Could not resolve hostname » — apres que le deploiement a pourtant commence.
+verifier_origine() {
+	ORIGINE=$(git -C "$PROJET_CHEMIN" remote get-url origin 2> /dev/null || true)
+	case "$ORIGINE" in
+		*@*:*) ;;
+		*) return 0 ;;
+	esac
+
+	HOTE=${ORIGINE#*@}
+	CHEMIN=${HOTE#*:}
+	HOTE=${HOTE%%:*}
+	[ "$HOTE" = "github.com" ] && return 0
+	grep -qE "^Host[[:space:]]+$HOTE\$" "$HOME/.ssh/config" 2> /dev/null && return 0
+
+	titre "REMOTE A CORRIGER"
+	echo "origin pointe vers l'hote « $HOTE », inconnu du ~/.ssh/config de $(id -un) :"
+	echo "  $ORIGINE"
+	echo "Le git pull du deploiement echouera. Avec la cle du compte machine :"
+	echo
+	echo "  git -C $PROJET_CHEMIN remote set-url origin git@github.com:$CHEMIN"
+}
+
 # ---------------------------------------------------------------- volet serveur
 installer_serveur() {
+	avertir_root
+
 	CLE="$HOME/.ssh/github_machine"
 
 	mkdir -p "$HOME/.ssh"
@@ -249,14 +344,8 @@ installer_projet() {
 	echo "secrets ni au workflow."
 	echo
 
-	if [ "$(id -u)" = "0" ]; then
-		echo
-		echo "AVERTISSEMENT : ce deploiement tournera sous root."
-		echo "  La forced command empeche d'obtenir un shell, mais une cle qui"
-		echo "  fuite s'executerait avec les droits les plus eleves de la machine."
-		echo "  Un utilisateur dedie, membre du groupe docker et proprietaire du"
-		echo "  clone, limiterait la portee. A envisager hors periode sensible."
-	fi
+	verifier_origine
+	avertir_root
 
 	titre "VERIFIER"
 	echo "Depuis un autre poste, la cle ne doit rien pouvoir faire d'autre :"
@@ -269,10 +358,12 @@ installer_projet() {
 }
 
 case "$MODE" in
+	utilisateur) shift; installer_utilisateur "$@" ;;
 	serveur) installer_serveur ;;
 	projet)  shift; installer_projet "$@" ;;
 	*)
 		echo "Usage :" >&2
+		echo "  sh $0 utilisateur [nom]    # par root, une fois par serveur (defaut : deploy)" >&2
 		echo "  sh $0 serveur              # une fois par serveur (lecture des depots)" >&2
 		echo "  sh $0 projet prod|staging  # une fois par projet, depuis sa racine" >&2
 		exit 1
