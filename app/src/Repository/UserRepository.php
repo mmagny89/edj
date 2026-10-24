@@ -34,6 +34,20 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
+     * Le compte portant cette adresse, sans tenir compte de la casse : une
+     * personne qui retape son adresse en majuscules doit retrouver son compte.
+     */
+    public function findOneByEmailIgnoringCase(string $email): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('LOWER(u.email) = :email')
+            ->setParameter('email', mb_strtolower(trim($email)))
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * @return list<User>
      */
     public function findAllOrdered(): array

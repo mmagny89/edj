@@ -31,6 +31,15 @@ GitHub, par `.github/workflows/publication.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Ajoute (mot de passe oublie)
+
+- **Mot de passe oublie** pour la connexion a l'administration : lien « Mot de passe oublie ? » sur la page
+  de connexion, courriel a l'adresse du compte avec un lien valable 30 minutes et a usage unique
+  (`symfonycasts/reset-password-bundle`). La reponse est la meme que le compte existe, soit bloque, ou
+  n'existe pas ; les demandes sont limitees (par compte et par adresse IP) ; le changement coupe les
+  sessions ouvertes et revoque tous les liens du compte. **Necessite un transport de courriel reel** :
+  avec `MAILER_DSN=null://null` (valeur actuelle de la production), le lien ne part pas.
+
 ### Modifie (import et fiches)
 
 - **Import plus tolerant** : les lignes valides s'importent meme quand d'autres sont rejetees ; le compte

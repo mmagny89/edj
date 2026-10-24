@@ -51,6 +51,7 @@ security:
     # la premiere regle qui correspond s'applique.
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/mot-de-passe-oublie, roles: PUBLIC_ACCESS }
         - { path: ^/adhesion, roles: PUBLIC_ACCESS }
         - { path: ^/admin/utilisateurs, roles: ROLE_SUPER_ADMIN }
         - { path: ^/admin/import, roles: ROLE_SUPER_ADMIN }

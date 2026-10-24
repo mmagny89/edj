@@ -51,6 +51,7 @@
         "symfony/web-link": "8.1.*",
         "symfony/webpack-encore-bundle": "^2.4.2",
         "symfony/yaml": "8.1.*",
+        "symfonycasts/reset-password-bundle": "^1.25",
         "twig/extra-bundle": "^3.24",
         "twig/intl-extra": "^3.26",
         "twig/twig": "^3.30"

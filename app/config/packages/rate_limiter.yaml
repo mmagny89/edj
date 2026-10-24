@@ -52,6 +52,17 @@ framework:
             limit: 12
             interval: '1 hour'
 
+        # Demande de mot de passe oublie de l'administration. Le formulaire est
+        # public et envoie un courriel a chaque compte existant : sans plafond,
+        # il permet d'ecrire en rafale aux administrateurs depuis une seule
+        # connexion. Le delai propre a chaque compte (reset_password.yaml) borne
+        # la personne visee ; celui-ci borne l'expediteur. Cinq par heure et par
+        # adresse IP laissent la place a qui se trompe d'adresse.
+        admin_password_reset_request:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+
 # Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
 # (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
 # le plafond horaire est atteint apres quelques suites, et les pages du bulletin
@@ -75,3 +86,7 @@ when@test:
                 policy: 'sliding_window'
                 limit: 100000
                 interval: '1 day'
+            admin_password_reset_request:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
