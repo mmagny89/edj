@@ -31,6 +31,11 @@ GitHub, par `.github/workflows/publication.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Modifie (site public)
+
+- La signature « Site cree par Mylene Magny » est plus discrete : une ligne a part en bas du pied de
+  page, plus petite et plus claire, toujours soulignee, et pleinement contrastee en mode contraste renforce.
+
 ### Ajoute (application)
 
 - **Le site s'installe comme une application** sur l'ecran d'accueil (comme BG TCG) : manifeste, icones

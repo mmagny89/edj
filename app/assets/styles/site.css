@@ -1008,6 +1008,42 @@ h1 {
 /* Pleine largeur du pied de page : sans flex-basis a 100 % et sans plafond sur
    le bloc lui-meme, les liens du pied de page se rangent a sa droite. Le plafond
    porte sur le texte, pour qu'il reste lisible sur un grand ecran. */
+/* Signature du site : une ligne a part, discrete. Plus petite, plus claire que
+   les liens du pied de page, et sans le jaune reserve a ce qui compte pour le
+   visiteur. Le lien reste souligne — c'est ce qui le distingue du texte sans
+   passer par la couleur — et son contraste reste superieur a 7:1 sur le fond. */
+.site-footer__credit {
+    flex: 0 0 100%;
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.78rem;
+    font-weight: 400;
+    text-align: center;
+}
+
+.site-footer .site-footer__credit a {
+    color: inherit;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+/* Contraste renforce : la signature perd sa discretion, qui n'a de sens que
+   pour qui voit bien. */
+html[data-contrast="high"] .site-footer__credit {
+    color: white;
+}
+
+@media (prefers-contrast: more) {
+    .site-footer__credit {
+        color: white;
+    }
+}
+
+.site-footer .site-footer__credit a:hover,
+.site-footer .site-footer__credit a:focus-visible {
+    color: white;
+}
+
 .install-app {
     display: flex;
     flex: 0 0 100%;
