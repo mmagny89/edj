@@ -17,6 +17,7 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Tableau de bord : le bloc « Adherents a l'annee » donne le total de la saison choisie, consommateurs compris, avec « dont N adherents consommateurs » ; l'ecart avec la saison precedente se calcule sur le meme total.
 - Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur
   exacte de la fenetre : le calendrier commence juste sous le pli.
 

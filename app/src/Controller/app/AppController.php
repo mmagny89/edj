@@ -41,7 +41,7 @@ final class AppController extends AbstractController
         $previous = null;
         foreach ($trend as $row) {
             if ($row['season'] === $season - 1) {
-                $previous = $row['active'];
+                $previous = $row['active'] + $row['consumers'];
             }
         }
 
