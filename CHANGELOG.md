@@ -31,6 +31,14 @@ GitHub, par `.github/workflows/release.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Modifie (menu de l'administration)
+
+- **Menu regroupe en blocs** : le tableau de bord, puis « Adherents » (adhesions, emargement, courriels),
+  « Seances et caisse » (evenements, pointage, comptabilite) et, pour les seuls super-administrateurs,
+  « Administration » (saisons, import, administrateurs). Un contributeur ne voit ni l'intitule ni les liens
+  du dernier bloc. Chaque bloc est une liste nommee pour les lecteurs d'ecran ; l'emargement a une icone
+  d'imprimante.
+
 ### Modifie (pointage)
 
 - **Pointage par date** : plus de choix d'evenement ni de saison. La page s'ouvre sur aujourd'hui ; pour

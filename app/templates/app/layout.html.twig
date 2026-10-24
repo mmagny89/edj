@@ -37,40 +37,53 @@
                     <span class="sr-only">(nouvel onglet)</span>{{ ui.icon('external', 'size-4') }}
                 </a>
 
+                {# Quatre blocs, dans l'ordre ou on s'en sert : le tableau de bord seul, puis
+                   les adherents, puis les seances et la caisse, puis — pour les seuls
+                   super-administrateurs — la configuration. Un bloc sans entree visible
+                   n'existe pas : un contributeur ne voit ni son intitule ni sa place. #}
                 <nav aria-label="Administration" class="mt-6">
-                    {% set items = [
-                        {route: 'app_index', label: 'Tableau de bord', active: route == 'app_index',
-                         icon: 'home'},
-                        {route: 'app_events', label: 'Évènements', active: route starts with 'app_event',
-                         icon: 'calendar'},
-                        {route: 'app_membership_applications', label: 'Adhésions', active: route starts with 'app_membership',
-                         icon: 'users'},
-                        {route: 'app_mailing', label: 'Courriels', active: route starts with 'app_mailing',
-                         icon: 'envelope'},
-                        {route: 'app_attendance_log', label: 'Pointage', active: route starts with 'app_attendance_log',
-                         icon: 'check'},
-                        {route: 'app_accounting', label: 'Comptabilité', active: route starts with 'app_accounting',
-                         icon: 'banknotes'},
-                        {route: 'app_attendance', label: 'Émargement', active: route == 'app_attendance', icon: 'users'},
+                    {% set groups = [
+                        {title: null, items: [
+                            {route: 'app_index', label: 'Tableau de bord', active: route == 'app_index', icon: 'home'},
+                        ]},
+                        {title: 'Adhérents', items: [
+                            {route: 'app_membership_applications', label: 'Adhésions', active: route starts with 'app_membership', icon: 'users'},
+                            {route: 'app_attendance', label: 'Émargement', active: route == 'app_attendance', icon: 'printer'},
+                            {route: 'app_mailing', label: 'Courriels', active: route starts with 'app_mailing', icon: 'envelope'},
+                        ]},
+                        {title: 'Séances et caisse', items: [
+                            {route: 'app_events', label: 'Évènements', active: route starts with 'app_event', icon: 'calendar'},
+                            {route: 'app_attendance_log', label: 'Pointage', active: route starts with 'app_attendance_log', icon: 'check'},
+                            {route: 'app_accounting', label: 'Comptabilité', active: route starts with 'app_accounting', icon: 'banknotes'},
+                        ]},
                     ] %}
                     {% if is_granted('ROLE_SUPER_ADMIN') %}
-                        {% set items = items|merge([{route: 'app_seasons', label: 'Saisons', active: route starts with 'app_season', icon: 'sparkles'}]) %}
-                        {% set items = items|merge([{route: 'app_import', label: 'Import', active: route starts with 'app_import', icon: 'users'}]) %}
-                        {% set items = items|merge([{route: 'app_users', label: 'Administrateurs', active: route starts with 'app_user', icon: 'shield'}]) %}
+                        {% set groups = groups|merge([{title: 'Administration', items: [
+                            {route: 'app_seasons', label: 'Saisons', active: route starts with 'app_season', icon: 'sparkles'},
+                            {route: 'app_import', label: 'Import', active: route starts with 'app_import', icon: 'users'},
+                            {route: 'app_users', label: 'Administrateurs', active: route starts with 'app_user', icon: 'shield'},
+                        ]}]) %}
                     {% endif %}
 
-                    <ul class="space-y-1">
-                        {% for item in items %}
-                            <li>
-                                <a href="{{ path(item.route) }}"
-                                   class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold {{ item.active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"
-                                   {{ item.active ? 'aria-current="page"' }}>
-                                    {{ ui.icon(item.icon) }}
-                                    {{ item.label }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                    {% for group in groups %}
+                        <div class="{{ loop.first ? '' : 'mt-6' }}">
+                            {% if group.title %}
+                                <p id="menu-groupe-{{ loop.index }}" class="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{{ group.title }}</p>
+                            {% endif %}
+                            <ul class="space-y-1"{% if group.title %} aria-labelledby="menu-groupe-{{ loop.index }}"{% endif %}>
+                                {% for item in group.items %}
+                                    <li>
+                                        <a href="{{ path(item.route) }}"
+                                           class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold {{ item.active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"
+                                           {{ item.active ? 'aria-current="page"' }}>
+                                            {{ ui.icon(item.icon) }}
+                                            {{ item.label }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
                 </nav>
 
                 {# En bas de la barre : qui est connecte, et la deconnexion. #}
