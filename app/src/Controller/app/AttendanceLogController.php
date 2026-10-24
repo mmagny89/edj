@@ -2,7 +2,6 @@
 
 namespace App\Controller\app;
 
-use App\Entity\Event;
 use App\Entity\EventAttendance;
 use App\Entity\MembershipApplication;
 use App\Entity\User;
@@ -10,7 +9,7 @@ use App\Enum\PaymentMethod;
 use App\Repository\EventAttendanceRepository;
 use App\Repository\EventRepository;
 use App\Repository\MembershipApplicationRepository;
-use App\Service\MembershipStatistics;
+use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,23 +20,29 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Le pointage d'une seance : qui est venu, et qui a paye son euro.
+ * Le pointage d'un jour : qui est venu, et qui a paye son euro.
+ *
+ * On pointe pour la seance du jour, ou pour une seance passee dont on saisit la
+ * date : la page s'ouvre sur aujourd'hui, et un champ date permet de reculer. Pas
+ * de choix d'evenement — une seance n'a pas besoin d'etre au calendrier —, et pas
+ * de choix de saison : elle se deduit de la date. On ne pointe pas dans l'avenir.
  *
  * Pense pour etre tenu a l'entree, souvent sur un telephone, pendant que les
- * gens arrivent : une seance choisie une fois, puis un bouton par personne.
- * Chaque geste est un POST qui revient sur la meme page — pas de formulaire a
- * valider, rien a enregistrer a la fin, rien a perdre si l'on ferme l'onglet.
+ * gens arrivent : un bouton par personne. Chaque geste est un POST qui revient
+ * sur la meme page — pas de formulaire a valider, rien a enregistrer a la fin,
+ * rien a perdre si l'on ferme l'onglet.
  */
 #[Route('/admin/pointage')]
 #[IsGranted('ROLE_CONTRIBUTOR')]
 final class AttendanceLogController extends AbstractController
 {
+    private const DATE_FORMAT = '!Y-m-d';
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventRepository $events,
         private readonly EventAttendanceRepository $attendances,
         private readonly MembershipApplicationRepository $applications,
-        private readonly MembershipStatistics $statistics,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,
     ) {
@@ -46,12 +51,21 @@ final class AttendanceLogController extends AbstractController
     #[Route('', name: 'app_attendance_log', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $season = $this->season($request);
-        $events = $this->events->findForSeason($season);
-        $event = $this->chosenEvent($request, $events);
+        $today = new \DateTimeImmutable('today');
+        $requested = (string) $request->query->get('date', '');
+        $day = $this->parseDay($requested) ?? $today;
 
+        // Une date dans l'avenir ne se pointe pas : on revient a aujourd'hui, et on le dit.
+        if ($day > $today) {
+            $this->addFlash('error', 'On ne pointe pas dans l\'avenir : la page est revenue à aujourd\'hui.');
+            $day = $today;
+        } elseif ('' !== $requested && null === $this->parseDay($requested)) {
+            $this->addFlash('error', 'Cette date n\'est pas valide : la page est revenue à aujourd\'hui.');
+        }
+
+        $season = MembershipSeasons::of($day);
         $consumers = $this->applications->findConsumers($season);
-        $pointed = null !== $event ? $this->attendances->indexedByApplication($event) : [];
+        $pointed = $this->attendances->indexedByApplication($day);
 
         $paid = 0;
         foreach ($pointed as $attendance) {
@@ -59,10 +73,11 @@ final class AttendanceLogController extends AbstractController
         }
 
         return $this->render('app/attendance_log/index.html.twig', [
-            'seasons' => $this->statistics->availableSeasons(),
+            'day' => $day,
+            'today' => $today,
+            'isToday' => $day == $today,
             'season' => $season,
-            'events' => $events,
-            'event' => $event,
+            'event' => $this->events->findOnDate($day),
             'consumers' => $consumers,
             'pointed' => $pointed,
             'present' => \count($pointed),
@@ -79,19 +94,24 @@ final class AttendanceLogController extends AbstractController
      * personne qui pointe — elle corrige en appuyant ailleurs, pas en
      * cherchant une autre page.
      */
-    #[Route('/{event}/{application}', name: 'app_attendance_log_toggle', methods: ['POST'], requirements: ['event' => '\d+', 'application' => '\d+'])]
-    public function toggle(Request $request, Event $event, MembershipApplication $application): Response
+    #[Route('/{date}/{application}', name: 'app_attendance_log_toggle', methods: ['POST'], requirements: ['date' => '\d{4}-\d{2}-\d{2}', 'application' => '\d+'])]
+    public function toggle(Request $request, string $date, MembershipApplication $application): Response
     {
-        $action = (string) $request->request->get('action', 'paye');
-
-        if (!$this->isCsrfTokenValid('pointage'.$event->getId().'-'.$application->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Action expirée, recommencez.');
-
-            return $this->back($event);
+        $day = $this->parseDay($date);
+        if (null === $day || $day > new \DateTimeImmutable('today')) {
+            throw $this->createNotFoundException('Date de pointage invalide.');
         }
 
-        $attendance = $this->attendances->findOneBy(['event' => $event, 'application' => $application])
-            ?? new EventAttendance($event, $application, $this->currentUserId());
+        if (!$this->isCsrfTokenValid('pointage'.$date.'-'.$application->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Action expirée, recommencez.');
+
+            return $this->back($day);
+        }
+
+        $action = (string) $request->request->get('action', 'paye');
+
+        $attendance = $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])
+            ?? new EventAttendance($day, $application, $this->events->findOnDate($day), $this->currentUserId());
 
         match ($action) {
             'retirer' => $this->entityManager->remove($attendance),
@@ -108,56 +128,36 @@ final class AttendanceLogController extends AbstractController
         $this->securityLogger->info('Pointage consommateur', [
             'event' => 'attendance_log',
             'user' => $this->getUser()?->getUserIdentifier(),
-            'seance' => $event->getId(),
+            'date' => $date,
             'action' => $action,
         ]);
 
-        return $this->back($event);
+        return $this->back($day);
     }
 
     /**
-     * Retour sur la seance que l'on vient de pointer, et non sur la seance
-     * par defaut : sans le parametre, chaque clic ramenerait a la derniere
-     * seance passee.
+     * Retour sur le jour que l'on vient de pointer, et non sur aujourd'hui :
+     * sans le parametre, chaque clic sur une date passee ramenerait au jour meme.
      */
-    private function back(Event $event): Response
+    private function back(\DateTimeImmutable $day): Response
     {
-        return $this->redirectToRoute('app_attendance_log', ['seance' => $event->getId()]);
-    }
-
-    private function season(Request $request): int
-    {
-        $seasons = $this->statistics->availableSeasons();
-        $season = $request->query->getInt('saison') ?: $this->statistics->currentSeason();
-
-        return \in_array($season, $seasons, true) ? $season : $this->statistics->currentSeason();
+        return $this->redirectToRoute('app_attendance_log', ['date' => $day->format('Y-m-d')]);
     }
 
     /**
-     * La seance demandee ; a defaut la derniere seance qui a eu lieu, parce
-     * que l'on pointe pendant ou juste apres. Si la saison n'a encore que des
-     * dates a venir, la plus proche.
-     *
-     * @param list<Event> $events les evenements de la saison, les plus recents d'abord
+     * La date « AAAA-MM-JJ », ou null si elle n'en est pas une : « 2026-02-30 »
+     * est refusee, pas reportee au 2 mars.
      */
-    private function chosenEvent(Request $request, array $events): ?Event
+    private function parseDay(string $value): ?\DateTimeImmutable
     {
-        $wanted = $request->query->getInt('seance');
+        $day = \DateTimeImmutable::createFromFormat(self::DATE_FORMAT, $value);
+        $errors = \DateTimeImmutable::getLastErrors();
 
-        foreach ($events as $event) {
-            if ($event->getId() === $wanted) {
-                return $event;
-            }
+        if (false === $day || (false !== $errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+            return null;
         }
 
-        $today = new \DateTimeImmutable('today');
-        foreach ($events as $event) {
-            if (($event->getStartsAt() ?? $today) <= $today) {
-                return $event;
-            }
-        }
-
-        return $events[\count($events) - 1] ?? null;
+        return $day;
     }
 
     private function currentUserId(): ?int

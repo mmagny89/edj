@@ -169,7 +169,7 @@ final class AccountingTest extends KernelTestCase
             ->setTimeLabel('18h30 - 00h');
         $this->em->persist($event);
 
-        $attendance = new EventAttendance($event, $consumer, null);
+        $attendance = new EventAttendance(new \DateTimeImmutable('today'), $consumer, $event);
         if ($paid) {
             $attendance->markPaid(PaymentMethod::Cash);
         }

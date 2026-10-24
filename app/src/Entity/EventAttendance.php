@@ -7,7 +7,12 @@ use App\Repository\EventAttendanceRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Le passage d'un consommateur a un evenement, et le reglement qui va avec.
+ * Le passage d'un consommateur un jour donne, et le reglement qui va avec.
+ *
+ * Un pointage se rattache a une date, pas a un evenement : on pointe pour la
+ * seance du jour, ou pour une seance passee dont on saisit la date. Un evenement
+ * du calendrier tombant ce jour-la, s'il existe, ne fournit que le libelle.
+ * Une personne n'a qu'un pointage par jour.
  *
  * La formule consommateur est gratuite a l'annee et se paie 1 € par
  * evenement : c'est ici que cet euro est enregistre, et c'est la seule trace
@@ -20,7 +25,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: EventAttendanceRepository::class)]
 #[ORM\Table(name: 'event_attendance')]
-#[ORM\UniqueConstraint(name: 'uniq_event_attendance_personne', columns: ['event_id', 'application_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_event_attendance_jour', columns: ['application_id', 'occurred_on'])]
 #[ORM\Index(name: 'idx_event_attendance_event', columns: ['event_id'])]
 #[ORM\Index(name: 'idx_event_attendance_occurred_on', columns: ['occurred_on'])]
 class EventAttendance
@@ -34,10 +39,11 @@ class EventAttendance
     private ?int $id = null;
 
     /**
-     * La seance, tant qu'elle existe. La purge nocturne supprime les
-     * evenements passes : le lien se vide alors (SET NULL) et le pointage
-     * reste, porteur de sa propre date et de son propre libelle. Sans cela, la
-     * purge emporterait des encaissements que la tresorerie doit garder.
+     * L'evenement du calendrier de ce jour-la, quand il y en a un, tant qu'il
+     * existe. La purge nocturne supprime les evenements passes : le lien se vide
+     * alors (SET NULL) et le pointage reste, porteur de sa propre date et de son
+     * propre libelle. Sans cela, la purge emporterait des encaissements que la
+     * tresorerie doit garder.
      */
     #[ORM\ManyToOne(targetEntity: Event::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -82,15 +88,20 @@ class EventAttendance
     #[ORM\Column(nullable: true)]
     private ?int $recordedById = null;
 
+    /** Libelle d'une seance qui n'est pas au calendrier. */
+    public const DEFAULT_LABEL = 'Séance';
+
     public function __construct(
-        Event $event,
+        \DateTimeImmutable $occurredOn,
         MembershipApplication $application,
+        ?Event $event = null,
         ?int $recordedById = null,
         ?\DateTimeImmutable $recordedAt = null,
     ) {
         $this->event = $event;
-        $this->occurredOn = $event->getStartsAt() ?? new \DateTimeImmutable('today');
-        $this->label = (string) ($event->getTitle() ?? 'Séance');
+        // Le jour, sans l'heure : c'est ce que compare l'index unique.
+        $this->occurredOn = $occurredOn->setTime(0, 0);
+        $this->label = (string) ($event?->getTitle() ?? self::DEFAULT_LABEL);
         $this->application = $application;
         $this->recordedById = $recordedById;
         $this->recordedAt = $recordedAt ?? new \DateTimeImmutable();

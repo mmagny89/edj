@@ -36,6 +36,27 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
+     * L'evenement du calendrier qui a lieu ce jour-la, s'il y en a un : celui qui
+     * commence ce jour, ou un evenement de plusieurs jours qui le couvre.
+     *
+     * Sert a nommer un pointage. Si deux evenements tombent le meme jour, le
+     * premier saisi l'emporte : le libelle n'est qu'une indication.
+     */
+    public function findOnDate(\DateTimeImmutable $day): ?Event
+    {
+        $day = $day->setTime(0, 0);
+
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.startsAt <= :day AND COALESCE(e.endsAt, e.startsAt) >= :day')
+            ->setParameter('day', $day)
+            ->orderBy('e.startsAt', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Tous les evenements, les plus proches d'abord : la liste du
      * back-office, ou l'on veut aussi voir ce qui vient de passer.
      *

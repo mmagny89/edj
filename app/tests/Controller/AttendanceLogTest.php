@@ -15,20 +15,23 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * Le pointage d'une seance, de bout en bout : la page, les trois gestes, et
- * ce qu'ils laissent en base.
+ * Le pointage d'un jour, de bout en bout : la page, les trois gestes, la date
+ * passee, et ce qu'ils laissent en base.
+ *
+ * On pointe pour aujourd'hui ou pour une date passee, sans choisir d'evenement.
+ * Les jours de test (2020-12-05) sont passes — on ne pointe pas dans l'avenir — et
+ * tombent dans la saison 2021, qui n'appartient a aucun autre test.
  */
 final class AttendanceLogTest extends WebTestCase
 {
     private const MAIL_SUFFIX = '@pointage.example.test';
+    private const PAST = '2020-12-05';
 
     private KernelBrowser $client;
     private EntityManagerInterface $em;
 
     protected function setUp(): void
     {
-        // Le noyau peut rester debout d'un test a l'autre : createClient le
-        // refuse, et l'echec ne parle pas du test qui l'a laisse ouvert.
         self::ensureKernelShutdown();
         $this->client = static::createClient();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
@@ -48,50 +51,117 @@ final class AttendanceLogTest extends WebTestCase
         self::assertResponseRedirects();
     }
 
-    public function testTheSessionListsItsConsumers(): void
+    public function testThePageOpensOnTodayWithItsConsumers(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $this->consumer('Alix', 'Consommatrice', 'now');
         $this->logIn();
 
-        $this->client->request('GET', '/admin/pointage?seance='.$event->getId());
+        $this->client->request('GET', '/admin/pointage');
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#titre-pointage', 'Aujourd\'hui');
         self::assertSelectorTextContains('body', 'Alix Consommatrice');
+        self::assertInputValueSame('date', (new \DateTimeImmutable('today'))->format('Y-m-d'));
     }
 
-    public function testAnnualMembersAreNotListed(): void
+    /**
+     * Plus de choix d'evenement ni de saison : le jour suffit.
+     */
+    public function testThereIsNoEventNorSeasonSelector(): void
     {
-        [$event] = $this->fixtures();
-        $this->annual('Berthe', 'Annuelle');
         $this->logIn();
 
-        $this->client->request('GET', '/admin/pointage?seance='.$event->getId());
+        $this->client->request('GET', '/admin/pointage');
 
-        self::assertSelectorTextNotContains('body', 'Berthe Annuelle');
+        self::assertSelectorNotExists('select[name="seance"]');
+        self::assertSelectorNotExists('select[name="saison"]');
+        self::assertSelectorExists('input[type="date"][name="date"]');
     }
 
-    public function testOneClickRecordsThePresenceAndTheEuro(): void
+    public function testAPastDateListsTheConsumersOfItsSeasonAndSaysSo(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $this->consumer('Alix', 'Consommatrice', self::PAST);
+        $this->consumer('Berthe', 'Autresaison', '2019-12-05');
         $this->logIn();
 
-        $this->press($event, $consumer, 'paye');
+        $this->client->request('GET', '/admin/pointage?date='.self::PAST);
 
-        $attendance = $this->attendance($event, $consumer);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#titre-pointage', 'Séance passée');
+        self::assertSelectorTextContains('body', 'Alix Consommatrice');
+        self::assertSelectorTextNotContains('body', 'Berthe Autresaison');
+        self::assertSelectorTextContains('body', '05/12/2020');
+    }
+
+    public function testAFutureDateIsRefusedAndTheDayBecomesToday(): void
+    {
+        $this->logIn();
+
+        $this->client->request('GET', '/admin/pointage?date='.(new \DateTimeImmutable('+3 days'))->format('Y-m-d'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'On ne pointe pas dans l\'avenir');
+        self::assertInputValueSame('date', (new \DateTimeImmutable('today'))->format('Y-m-d'));
+    }
+
+    public function testAnInvalidDateFallsBackToToday(): void
+    {
+        $this->logIn();
+
+        $this->client->request('GET', '/admin/pointage?date=2026-02-30');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Cette date n\'est pas valide');
+    }
+
+    public function testOneClickRecordsThePresenceAndTheEuroOnThatDate(): void
+    {
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
+        $this->logIn();
+
+        $this->press(self::PAST, $consumer, 'paye');
+
+        $attendance = $this->attendance(self::PAST, $consumer);
         self::assertNotNull($attendance);
         self::assertTrue($attendance->isPaid());
         self::assertSame(EventAttendance::PRICE_CENTS, $attendance->collectedCents());
         self::assertSame(PaymentMethod::Cash, $attendance->getPaymentMethod());
+        self::assertSame(self::PAST, $attendance->getOccurredOn()->format('Y-m-d'));
+        self::assertNull($attendance->getEvent(), 'Une seance hors calendrier n\'a pas besoin d\'evenement.');
+        self::assertSame(EventAttendance::DEFAULT_LABEL, $attendance->getLabel());
+    }
+
+    /**
+     * Un evenement du calendrier tombant ce jour-la fournit le libelle, sans etre
+     * demande : on ne le choisit pas.
+     */
+    public function testAnEventOnThatDateNamesTheAttendance(): void
+    {
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
+        $event = (new Event())->setTitle('Soirée de test')->setType(EventType::Special)
+            ->setStartsAt(new \DateTimeImmutable(self::PAST))->setTimeLabel('18h30 - 00h');
+        $this->em->persist($event);
+        $this->em->flush();
+        $this->logIn();
+
+        $this->client->request('GET', '/admin/pointage?date='.self::PAST);
+        self::assertSelectorTextContains('#titre-pointage', 'Soirée de test');
+
+        $this->press(self::PAST, $consumer, 'paye');
+
+        $attendance = $this->attendance(self::PAST, $consumer);
+        self::assertSame('Soirée de test', $attendance->getLabel());
+        self::assertSame($event->getId(), $attendance->getEvent()?->getId());
     }
 
     public function testAPresenceWithoutPaymentCollectsNothing(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->logIn();
 
-        $this->press($event, $consumer, 'present');
+        $this->press(self::PAST, $consumer, 'present');
 
-        $attendance = $this->attendance($event, $consumer);
+        $attendance = $this->attendance(self::PAST, $consumer);
         self::assertNotNull($attendance);
         self::assertFalse($attendance->isPaid());
         self::assertSame(0, $attendance->collectedCents());
@@ -99,52 +169,75 @@ final class AttendanceLogTest extends WebTestCase
 
     public function testPressingTwiceDoesNotCreateASecondLine(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->logIn();
 
-        $this->press($event, $consumer, 'present');
-        $this->press($event, $consumer, 'paye');
+        $this->press(self::PAST, $consumer, 'present');
+        $this->press(self::PAST, $consumer, 'paye');
 
-        self::assertCount(1, $this->repository()->findBy(['event' => $event]));
-        self::assertTrue($this->attendance($event, $consumer)?->isPaid());
+        self::assertCount(1, $this->repository()->findBy(['application' => $consumer]));
+        self::assertTrue($this->attendance(self::PAST, $consumer)?->isPaid());
+    }
+
+    public function testTheSamePersonCanBePointedOnTwoDays(): void
+    {
+        $consumer = $this->consumer('Alix', 'Consommatrice', '2020-11-01');
+        $this->logIn();
+
+        $this->press('2020-11-05', $consumer, 'paye');
+        $this->press('2020-12-05', $consumer, 'paye');
+
+        self::assertCount(2, $this->repository()->findBy(['application' => $consumer]));
     }
 
     public function testAMistakeIsRemoved(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->logIn();
 
-        $this->press($event, $consumer, 'paye');
-        $this->press($event, $consumer, 'retirer');
+        $this->press(self::PAST, $consumer, 'paye');
+        $this->press(self::PAST, $consumer, 'retirer');
 
-        self::assertNull($this->attendance($event, $consumer));
+        self::assertNull($this->attendance(self::PAST, $consumer));
     }
 
     public function testAnInvalidTokenChangesNothing(): void
     {
-        [$event, $consumer] = $this->fixtures();
+        $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->logIn();
 
-        $this->client->request('POST', sprintf('/admin/pointage/%d/%d', $event->getId(), $consumer->getId()), [
+        $this->client->request('POST', sprintf('/admin/pointage/%s/%d', self::PAST, $consumer->getId()), [
             'action' => 'paye',
             '_token' => 'faux',
         ]);
 
         self::assertResponseRedirects();
-        self::assertNull($this->attendance($event, $consumer));
+        self::assertNull($this->attendance(self::PAST, $consumer));
+    }
+
+    public function testAFutureOrImpossibleDateCannotBePointed(): void
+    {
+        $consumer = $this->consumer('Alix', 'Consommatrice', 'now');
+        $this->logIn();
+
+        foreach ([(new \DateTimeImmutable('+2 days'))->format('Y-m-d'), '2026-02-30'] as $date) {
+            $this->client->request('POST', sprintf('/admin/pointage/%s/%d', $date, $consumer->getId()), ['action' => 'paye']);
+            self::assertResponseStatusCodeSame(404);
+        }
+        self::assertSame([], $this->repository()->findBy(['application' => $consumer]), 'Rien ne doit etre enregistre.');
     }
 
     /**
-     * Le geste tel qu'il se fait : on ouvre la page, on appuie sur le bouton.
-     * Le jeton se lit sur le formulaire plutot que de se fabriquer a cote —
-     * hors requete, il n'y a pas de session ou le poser.
+     * Le geste tel qu'il se fait : on ouvre la page du jour, on appuie sur le bouton.
+     * Le jeton se lit sur le formulaire plutot que de se fabriquer a cote — hors
+     * requete, il n'y a pas de session ou le poser.
      */
-    private function press(Event $event, MembershipApplication $consumer, string $action): void
+    private function press(string $date, MembershipApplication $consumer, string $action): void
     {
-        $crawler = $this->client->request('GET', '/admin/pointage?seance='.$event->getId());
+        $crawler = $this->client->request('GET', '/admin/pointage?date='.$date);
         $selector = sprintf(
-            'form[action$="/admin/pointage/%d/%d"] input[name="action"][value="%s"]',
-            $event->getId(),
+            'form[action$="/admin/pointage/%s/%d"] input[name="action"][value="%s"]',
+            $date,
             $consumer->getId(),
             $action,
         );
@@ -159,9 +252,9 @@ final class AttendanceLogTest extends WebTestCase
         $this->em->clear();
     }
 
-    private function attendance(Event $event, MembershipApplication $consumer): ?EventAttendance
+    private function attendance(string $date, MembershipApplication $consumer): ?EventAttendance
     {
-        return $this->repository()->findOneBy(['event' => $event, 'application' => $consumer]);
+        return $this->repository()->findOneBy(['occurredOn' => new \DateTimeImmutable($date), 'application' => $consumer]);
     }
 
     private function repository(): EventAttendanceRepository
@@ -175,33 +268,7 @@ final class AttendanceLogTest extends WebTestCase
         $this->client->loginUser($provider->loadUserByIdentifier('contributeur@example.test'));
     }
 
-    /**
-     * @return array{Event, MembershipApplication}
-     */
-    private function fixtures(): array
-    {
-        $event = (new Event())
-            ->setTitle('Soirée de test')
-            ->setType(EventType::Weekly)
-            ->setStartsAt(new \DateTimeImmutable('today'))
-            ->setTimeLabel('18h30 - 00h');
-        $this->em->persist($event);
-
-        $consumer = $this->application('Alix', 'Consommatrice', MembershipType::Consumer);
-        $this->em->flush();
-
-        return [$event, $consumer];
-    }
-
-    private function annual(string $firstName, string $lastName): MembershipApplication
-    {
-        $application = $this->application($firstName, $lastName, MembershipType::Individual, PaymentMethod::Cheque);
-        $this->em->flush();
-
-        return $application;
-    }
-
-    private function application(string $firstName, string $lastName, MembershipType $type, ?PaymentMethod $method = null): MembershipApplication
+    private function consumer(string $firstName, string $lastName, string $submittedAt): MembershipApplication
     {
         $member = new Member('EDJ-'.random_int(1000, 9999));
         $this->em->persist($member);
@@ -213,12 +280,16 @@ final class AttendanceLogTest extends WebTestCase
             ->setPostalCode('89300')
             ->setCity('Joigny')
             ->setEmail(mb_strtolower($lastName).self::MAIL_SUFFIX)
-            ->setMembershipType($type)
+            ->setMembershipType(MembershipType::Consumer)
+            ->setStatutesAccepted(true)
+            ->setRulesAccepted(true)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($firstName.' '.$lastName)
+            ->setSubmittedAt(new \DateTimeImmutable($submittedAt))
             ->setMember($member);
-        $application->validate($method, null);
+        $application->validate(null, null, new \DateTimeImmutable($submittedAt));
         $this->em->persist($application);
+        $this->em->flush();
 
         return $application;
     }

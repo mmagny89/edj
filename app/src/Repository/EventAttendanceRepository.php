@@ -2,7 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Event;
 use App\Entity\EventAttendance;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,17 +17,17 @@ class EventAttendanceRepository extends ServiceEntityRepository
     }
 
     /**
-     * Les pointages d'un evenement, indexes par identifiant de bulletin : la
-     * page de pointage teste chaque ligne de sa liste contre ce tableau
-     * plutot que d'interroger la base une fois par personne.
+     * Les pointages d'un jour, indexes par identifiant de bulletin : la page de
+     * pointage teste chaque ligne de sa liste contre ce tableau plutot que
+     * d'interroger la base une fois par personne.
      *
      * @return array<int, EventAttendance>
      */
-    public function indexedByApplication(Event $event): array
+    public function indexedByApplication(\DateTimeImmutable $day): array
     {
         $indexed = [];
 
-        foreach ($this->findBy(['event' => $event]) as $attendance) {
+        foreach ($this->findBy(['occurredOn' => $day->setTime(0, 0)]) as $attendance) {
             $indexed[(int) $attendance->getApplication()->getId()] = $attendance;
         }
 
@@ -60,24 +59,5 @@ class EventAttendanceRepository extends ServiceEntityRepository
             ->addOrderBy('a.lastName', 'ASC')
             ->getQuery()
             ->getResult();
-    }
-
-    /**
-     * Nombre de passages pointes sur un evenement, et combien sont regles.
-     *
-     * @return array{total: int, paid: int}
-     */
-    public function tallyFor(Event $event): array
-    {
-        $rows = $this->findBy(['event' => $event]);
-        $paid = 0;
-
-        foreach ($rows as $row) {
-            if ($row->isPaid()) {
-                ++$paid;
-            }
-        }
-
-        return ['total' => \count($rows), 'paid' => $paid];
     }
 }

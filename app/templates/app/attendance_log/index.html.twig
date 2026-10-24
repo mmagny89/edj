@@ -15,103 +15,91 @@
         <a href="{{ path('app_accounting', {saison: season}) }}" class="btn btn-secondary">{{ ui.icon('download') }} Voir la comptabilité</a>
     </div>
 
-    {# La seance et la saison dans le meme formulaire : on change de seance
-       vingt fois pour une saison qu'on ne change presque jamais. #}
-    <form method="get" action="{{ path('app_attendance_log') }}" class="mt-8 flex flex-wrap items-end gap-3" aria-label="Séance pointée">
+    {# Le jour pointe : aujourd'hui par defaut, une date passee a la demande. Pas de choix
+       d'evenement ni de saison : le jour suffit, la saison s'en deduit. #}
+    <form method="get" action="{{ path('app_attendance_log') }}" class="mt-8 flex flex-wrap items-end gap-3" aria-label="Jour pointé">
         <div>
-            <label for="p-saison" class="mb-1.5 block text-sm font-semibold text-slate-800">Saison</label>
-            <select name="saison" id="p-saison" class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
-                {% for s in seasons %}
-                    <option value="{{ s }}" {{ s == season ? 'selected' }}>{{ s }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label for="p-seance" class="mb-1.5 block text-sm font-semibold text-slate-800">Séance</label>
-            <select name="seance" id="p-seance" class="block min-h-11 w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
-                {% for e in events %}
-                    <option value="{{ e.id }}" {{ event and e.id == event.id ? 'selected' }}>
-                        {{ e.startsAt|format_date(pattern: 'EEEE d MMMM y')|capitalize }} · {{ e.title }}
-                    </option>
-                {% else %}
-                    <option value="">Aucune séance sur cette saison</option>
-                {% endfor %}
-            </select>
+            <label for="p-date" class="mb-1.5 block text-sm font-semibold text-slate-800">Date de la séance</label>
+            <input type="date" name="date" id="p-date" value="{{ day|date('Y-m-d') }}" max="{{ today|date('Y-m-d') }}" required
+                   class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
         </div>
         <button type="submit" class="btn btn-secondary">{{ ui.icon('eye') }} Afficher</button>
+        {% if not isToday %}
+            <a href="{{ path('app_attendance_log') }}" class="btn btn-secondary">Revenir à aujourd'hui</a>
+        {% endif %}
     </form>
 
-    {% if event is null %}
-        <p class="card mt-8 px-5 py-8 text-slate-600">
-            Aucune séance n'est enregistrée pour cette saison. Les soirées du mardi et les après-midi
-            du 1<sup>er</sup> samedi se créent d'un coup depuis
-            <a href="{{ path('app_event_generate') }}" class="font-semibold text-brand underline">Générer la saison</a> :
-            c'est à une séance que se rattache un passage.
-        </p>
-    {% else %}
-        <section class="card mt-8" aria-labelledby="titre-pointage">
-            <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-4">
-                <h2 id="titre-pointage" class="text-lg font-bold text-ink">
-                    {{ event.startsAt|format_date(pattern: 'EEEE d MMMM y')|capitalize }} · {{ event.title }}
-                </h2>
-                <p class="text-sm text-slate-600">
-                    <strong>{{ present }}</strong> présent{{ present > 1 ? 's' }},
-                    <strong>{{ paid }}</strong> réglé{{ paid > 1 ? 's' }} —
-                    {{ (paid * priceCents / 100)|number_format(2, ',', ' ') }} €
-                </p>
-            </div>
+    <section class="card mt-8" aria-labelledby="titre-pointage">
+        <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <h2 id="titre-pointage" class="text-lg font-bold text-ink">
+                {{ isToday ? 'Aujourd\'hui' : 'Séance passée' }} · {{ day|format_date(pattern: 'EEEE d MMMM y')|capitalize }}
+                {% if event %}<span class="font-medium text-slate-600">· {{ event.title }}</span>{% endif %}
+            </h2>
+            <p class="text-sm text-slate-600">
+                <strong>{{ present }}</strong> présent{{ present > 1 ? 's' }},
+                <strong>{{ paid }}</strong> réglé{{ paid > 1 ? 's' }} —
+                {{ (paid * priceCents / 100)|number_format(2, ',', ' ') }} €
+            </p>
+        </div>
 
-            {% if consumers is empty %}
-                <p class="px-5 py-8 text-slate-600">
-                    Aucun consommateur validé sur la saison {{ season }}. La formule se choisit sur le
-                    bulletin d'adhésion : gratuite à l'année, 1 € par séance.
-                </p>
-            {% else %}
-                <ul class="divide-y divide-slate-100">
-                    {% for consumer in consumers %}
-                        {% set mark = pointed[consumer.id] ?? null %}
-                        <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-                            <div class="min-w-0">
-                                <p class="font-semibold text-ink">
-                                    {{ consumer.firstName }} {{ consumer.lastName }}
-                                    {% if mark and mark.paid %}
-                                        <span class="badge bg-emerald-100 text-emerald-800">{{ ui.icon('check', 'size-4') }} 1 € réglé</span>
-                                    {% elseif mark %}
-                                        <span class="badge bg-amber-100 text-amber-900">Présent, à régler</span>
-                                    {% endif %}
-                                </p>
-                                <p class="text-sm text-slate-500">{{ consumer.member ? consumer.member.number : 'Sans numéro' }}</p>
-                            </div>
+        {% if not isToday %}
+            <p class="border-b border-slate-100 bg-amber-50 px-5 py-3 text-sm text-amber-900" role="note">
+                Séance passée : les pointages s'enregistrent à la date du {{ day|date('d/m/Y') }}
+                et apparaissent à cette date dans la comptabilité.
+            </p>
+        {% endif %}
 
-                            {# Trois boutons, trois POST : le geste courant d'abord, et le retrait
-                               en dernier pour qu'un pouce ne l'atteigne pas par accident. #}
-                            <div class="flex flex-wrap gap-2">
-                                {% if not (mark and mark.paid) %}
-                                    <form method="post" action="{{ path('app_attendance_log_toggle', {event: event.id, application: consumer.id}) }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('pointage' ~ event.id ~ '-' ~ consumer.id) }}">
-                                        <input type="hidden" name="action" value="paye">
-                                        <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Présent · 1 € payé</button>
-                                    </form>
+        {% if consumers is empty %}
+            <p class="px-5 py-8 text-slate-600">
+                Aucun consommateur validé sur la saison {{ season - 1 }}-{{ season }}. La formule se choisit sur le
+                bulletin d'adhésion : gratuite à l'année, 1 € par séance.
+            </p>
+        {% else %}
+            <ul class="divide-y divide-slate-100">
+                {% for consumer in consumers %}
+                    {% set mark = pointed[consumer.id] ?? null %}
+                    {% set token = 'pointage' ~ day|date('Y-m-d') ~ '-' ~ consumer.id %}
+                    <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-ink">
+                                {{ consumer.firstName }} {{ consumer.lastName }}
+                                {% if mark and mark.paid %}
+                                    <span class="badge bg-emerald-100 text-emerald-800">{{ ui.icon('check', 'size-4') }} 1 € réglé</span>
+                                {% elseif mark %}
+                                    <span class="badge bg-amber-100 text-amber-900">Présent, à régler</span>
                                 {% endif %}
-                                {% if mark is null %}
-                                    <form method="post" action="{{ path('app_attendance_log_toggle', {event: event.id, application: consumer.id}) }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('pointage' ~ event.id ~ '-' ~ consumer.id) }}">
-                                        <input type="hidden" name="action" value="present">
-                                        <button type="submit" class="btn btn-secondary">Présent, sans payer</button>
-                                    </form>
-                                {% endif %}
-                                {% if mark %}
-                                    <form method="post" action="{{ path('app_attendance_log_toggle', {event: event.id, application: consumer.id}) }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('pointage' ~ event.id ~ '-' ~ consumer.id) }}">
-                                        <input type="hidden" name="action" value="retirer">
-                                        <button type="submit" class="btn btn-danger">{{ ui.icon('x') }} <span class="sr-only">Retirer le pointage de {{ consumer.firstName }} {{ consumer.lastName }}</span><span aria-hidden="true">Retirer</span></button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </section>
-    {% endif %}
+                            </p>
+                            <p class="text-sm text-slate-500">{{ consumer.member ? consumer.member.number : 'Sans numéro' }}</p>
+                        </div>
+
+                        {# Trois boutons, trois POST : le geste courant d'abord, et le retrait
+                           en dernier pour qu'un pouce ne l'atteigne pas par accident. #}
+                        <div class="flex flex-wrap gap-2">
+                            {% if not (mark and mark.paid) %}
+                                <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
+                                    <input type="hidden" name="action" value="paye">
+                                    <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Présent · 1 € payé</button>
+                                </form>
+                            {% endif %}
+                            {% if mark is null %}
+                                <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
+                                    <input type="hidden" name="action" value="present">
+                                    <button type="submit" class="btn btn-secondary">Présent, sans payer</button>
+                                </form>
+                            {% endif %}
+                            {% if mark %}
+                                <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
+                                    <input type="hidden" name="action" value="retirer">
+                                    <button type="submit" class="btn btn-danger">{{ ui.icon('x') }} <span class="sr-only">Retirer le pointage de {{ consumer.firstName }} {{ consumer.lastName }}</span><span aria-hidden="true">Retirer</span></button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
 {% endblock %}

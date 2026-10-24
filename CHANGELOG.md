@@ -31,6 +31,13 @@ GitHub, par `.github/workflows/release.yml`.
   seance, le detail par moyen de reglement, ce qui reste a encaisser, le journal ligne a ligne, et un
   export CSV pour le tableur de la tresorerie.
 
+### Modifie (pointage)
+
+- **Pointage par date** : plus de choix d'evenement ni de saison. La page s'ouvre sur aujourd'hui ; pour
+  une seance passee, on saisit sa date (jamais dans l'avenir). La saison se deduit de la date, et un
+  evenement du calendrier tombant ce jour-la ne sert plus qu'a nommer le pointage. Une personne n'a
+  qu'un pointage par jour.
+
 ### Ajoute (courriels aux adherents)
 
 - **Courriels aux adherents** (`/admin/courriels`) : ecrire aux adherents d'une saison, choisie dans un
