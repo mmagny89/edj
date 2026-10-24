@@ -33,6 +33,10 @@ GitHub, par `.github/workflows/publication.yml`.
 
 ### Corrige
 
+- Import : un en-tete present etait annonce « manquant » quand le fichier venait d'Excel ou de Google
+  Sheets (espace insecable, accent decompose, caractere invisible). La comparaison des en-tetes les
+  ignore desormais, et le message d'erreur liste les en-tetes reellement lus.
+
 - Sur telephone, le libelle du filtre « Manifestations » debordait de son bouton une fois coche.
 
 ### Ajoute

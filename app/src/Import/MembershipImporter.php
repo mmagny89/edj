@@ -209,7 +209,15 @@ final class MembershipImporter
 
         $missing = array_diff(self::REQUIRED, $columns);
         if ([] !== $missing) {
-            throw new ImportException('Colonne(s) manquante(s) : '.implode(', ', array_map(static fn (string $f) => self::LABELS[$f], $missing)).'.');
+            // Les en-tetes lus, tels que le fichier les porte : quand l'un est
+            // annonce manquant alors qu'il s'affiche, c'est ici qu'on voit
+            // ce que le programme a reellement recu.
+            $read = array_map(static fn (string|int|float $title) => '« '.trim((string) $title).' »', array_filter($sheet[$headerLine], static fn ($t) => '' !== trim((string) $t)));
+
+            throw new ImportException(
+                'Colonne(s) manquante(s) : '.implode(', ', array_map(static fn (string $f) => self::LABELS[$f], $missing)).'.'
+                .' En-têtes lus : '.implode(', ', $read).'.'
+            );
         }
 
         return [$headerLine, $columns];
@@ -375,12 +383,26 @@ final class MembershipImporter
 
     // ------------------------------------------------------------------
 
+    /**
+     * Ramene un en-tete ou une valeur a une forme comparable : minuscules, sans
+     * accents, espaces simples.
+     *
+     * Les caracteres invisibles qu'Excel et Google Sheets laissent dans une
+     * cellule sont traites ici, et non a la lecture du fichier : espace
+     * insecable et autres espaces Unicode (que trim() et \s ne voient pas sans
+     * /u), espace de largeur nulle, marque d'ordre des octets, accents
+     * decomposes (e suivi de U+0301). Sans cela, un en-tete bien present etait
+     * annonce « manquant » alors qu'il s'affichait correctement a l'ecran.
+     */
     private static function normalize(string $value): string
     {
-        $value = mb_strtolower(trim($value));
-        $value = strtr($value, ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'î' => 'i', 'ï' => 'i', 'ô' => 'o', 'ù' => 'u', 'û' => 'u', 'ç' => 'c', '’' => ' ', "'" => ' ']);
+        $value = (string) preg_replace('/[\x{200B}-\x{200D}\x{2060}\x{FEFF}]/u', '', $value);
+        $value = \Normalizer::normalize($value, \Normalizer::FORM_D) ?: $value;
+        $value = (string) preg_replace('/\p{Mn}+/u', '', $value);
+        $value = mb_strtolower($value);
+        $value = strtr($value, ['’' => ' ', "'" => ' ']);
 
-        return preg_replace('/\s+/', ' ', $value) ?? '';
+        return trim((string) preg_replace('/[\s\p{Z}]+/u', ' ', $value));
     }
 
     private static function blank(string|int|float|null $value): bool

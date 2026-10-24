@@ -12,6 +12,7 @@ use App\Import\ImportOptions;
 use App\Import\MembershipImporter;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -239,6 +240,37 @@ final class MembershipImporterTest extends KernelTestCase
 
         self::assertSame(1, $report->importable());
         self::assertSame('Zoé', $report->rows[0]->application->getFirstName());
+    }
+
+    /**
+     * Excel et Google Sheets laissent derriere eux des caracteres qu'un oeil ne
+     * voit pas : espace insecable (U+00A0), accents decomposes (e + U+0301),
+     * espace de largeur nulle, espace en fin de cellule. Un en-tete present
+     * etait alors annonce « manquant ».
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invisibleHeaderNoise(): iterable
+    {
+        yield 'espace insecable en fin' => ["NAISSANCE\u{00A0}", 'birthDate'];
+        yield 'espace insecable au milieu' => ["DATE\u{00A0}ADHESION", 'date'];
+        yield 'accent decompose' => ["DATE ADHE\u{0301}SION", 'date'];
+        yield 'espace de largeur nulle' => ["NAIS\u{200B}SANCE", 'birthDate'];
+        yield 'marque d\'ordre des octets' => ["\u{FEFF}NAISSANCE", 'birthDate'];
+        yield 'espaces doubles et fin' => ['  DATE   ADHESION  ', 'date'];
+    }
+
+    #[DataProvider('invisibleHeaderNoise')]
+    public function testHeadersSurviveInvisibleCharacters(string $title, string $field): void
+    {
+        $header = ['NOM', 'PRENOM', 'NAISSANCE', 'CP', 'VILLE', 'EMAIL', 'TYPE', 'DATE ADHESION'];
+        $row = ['Dupont', 'Zoé', self::serial('1985-03-02'), 89300, 'Joigny', 'bruit@import.example.test', 'individuelle', self::serial('now')];
+        $target = 'birthDate' === $field ? 2 : 7;
+        $header[$target] = $title;
+
+        $report = $this->importer->analyze($this->files[] = XlsxFixture::build([$header, $row]), $this->options());
+
+        self::assertSame(1, $report->importable());
     }
 
     // ------------------------------------------------------------------
