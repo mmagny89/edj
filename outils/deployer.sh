@@ -7,7 +7,7 @@
 #
 #   command="/docker/<projet>-prod/outils/deployer.sh prod",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding ssh-ed25519 AAAA... deploiement-github-<projet>
 #
-# La logique reste ici et non dans le workflow (conventions, section 22) : les
+# La logique reste ici et non dans le workflow (conventions, section ci/qualite) : les
 # chemins et les secrets ne quittent pas le serveur, et la cle confiee a GitHub
 # ne peut rien lancer d'autre.
 set -eu
@@ -25,7 +25,7 @@ esac
 
 # Le projet se deduit de l'emplacement du script, jamais d'un chemin en dur :
 # renommer ou deplacer le clone ne casse alors que la forced command, qui porte
-# de toute facon le chemin absolu (conventions, section 22b).
+# de toute facon le chemin absolu (conventions, section ci/deploiement).
 PROJET=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 SECRETS="$PROJET/.env.${ENVIRONNEMENT}.local"
 COMPOSE="docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml --env-file $SECRETS"
@@ -36,10 +36,6 @@ journal() {
 	echo "[$(date '+%F %T')] $*"
 }
 
-lire_secret() {
-	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
-}
-
 journal "Deploiement $ENVIRONNEMENT depuis $BRANCHE, dans $PROJET"
 
 if [ ! -f "$SECRETS" ]; then
@@ -47,33 +43,8 @@ if [ ! -f "$SECRETS" ]; then
 	exit 1
 fi
 
-# Le reseau de Traefik est externe : Compose ne le cree pas et ne le verifie
-# qu'au moment d'y attacher un service. Sans ce controle, l'erreur « network ...
-# declared as external, but could not be found » ne tombe qu'APRES la
-# construction de l'image — plusieurs minutes plus tard — et au premier service
-# qui le rejoint. Le nom vient de PROXY_NETWORK, qui doit etre celui du reseau
-# REEL de Traefik sur cet hote (docker network ls ; outils/diagnostic-traefik.sh),
-# et non la valeur d'exemple du modele de secrets.
-RESEAU_PROXY=$(lire_secret PROXY_NETWORK)
-if [ -n "$RESEAU_PROXY" ] && ! docker network inspect "$RESEAU_PROXY" >/dev/null 2>&1; then
-	journal "ECHEC : le reseau Docker « $RESEAU_PROXY » (PROXY_NETWORK dans $SECRETS) n'existe pas sur ce serveur."
-	journal "Reseaux presents :"
-	docker network ls --format '    {{.Name}}' | grep -v -E '^    (bridge|host|none)$' || true
-	journal "Reperer celui de Traefik : sh outils/diagnostic-traefik.sh — puis corriger PROXY_NETWORK."
-	exit 1
-fi
-
 # Se deployer depuis la mauvaise branche passerait inapercu : la verification
 # coute une ligne et evite de livrer la recette en production.
-# Changement de domaine : tant que ANCIEN_DOMAINE est renseigne dans les secrets,
-# l'ancienne adresse redirige (301) vers le domaine principal. Retirer la ligne
-# pour supprimer la redirection au deploiement suivant.
-ANCIEN=$(lire_secret ANCIEN_DOMAINE)
-if [ -n "$ANCIEN" ]; then
-	COMPOSE="$COMPOSE -f compose.redirection.yml"
-	journal "Redirection de $ANCIEN vers le domaine principal"
-fi
-
 ACTUELLE=$(git rev-parse --abbrev-ref HEAD)
 if [ "$ACTUELLE" != "$BRANCHE" ]; then
 	journal "ECHEC : ce clone est sur '$ACTUELLE', or $ENVIRONNEMENT se deploie depuis '$BRANCHE'."
@@ -88,33 +59,18 @@ git fetch --quiet origin "$BRANCHE"
 git merge --ff-only "origin/$BRANCHE"
 journal "Version deployee : $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
-# Les migrations passent AVANT la bascule du code, pas apres. Le code neuf lit
-# et ecrit des colonnes que l'ancien schema n'a pas : entre « up » et
-# « migrate », chaque depot de bulletin ou page d'administration touchant la
-# colonne manquante repondait 500, et le worker traitait ses messages avec un
-# schema en retard. Ici l'ancien code continue de servir pendant que le schema
-# avance, puis le nouveau prend la main sur un schema deja a jour.
-#
-# Consequence a respecter : une migration doit rester compatible avec le code
-# precedent (ajouter, ne pas retirer ni renommer d'un seul coup). Une
-# suppression se fait en deux livraisons.
-#
-# RUN_MIGRATIONS=0 en production (section 8) : la mise a jour de schema est une
+# --pull always : sans lui, `--build` reutilise l'image de base presente dans
+# le cache du serveur. Un deploiement rebuildait donc l'application sur un
+# FrankenPHP/PHP telecharge des semaines plus tot, et un correctif PHP publie
+# entre-temps n'arrivait jamais en production — sans que ni le code ni le .env
+# ne changent, donc sans rien a voir dans le diff (CERTFR-2026-ALE-014).
+journal "Construction et demarrage"
+$COMPOSE up -d --build --pull always --wait
+
+# RUN_MIGRATIONS=0 en production (section env/schema) : la mise a jour de schema est une
 # etape explicite, jamais le demarrage du conteneur.
-# --pull : sans lui, `build` reutilise l'image de base presente dans le cache du
-# serveur, et un correctif PHP publie entre-temps n'arrive jamais en production
-# — sans que ni le code ni le .env ne changent (CERTFR-2026-ALE-014).
-journal "Construction de l'image"
-$COMPOSE build --pull
-
-journal "Base de donnees"
-$COMPOSE up -d --wait database
-
-journal "Mise a jour du schema, avant la bascule du code"
-$COMPOSE run --rm --no-deps -e RUN_MIGRATIONS=0 php php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-
-journal "Demarrage"
-$COMPOSE up -d --wait
+journal "Mise a jour du schema"
+$COMPOSE exec -T php php bin/console doctrine:migrations:migrate --no-interaction
 
 # Sans lui, chaque deploiement laisse l'image precedente sans etiquette et le
 # disque du serveur se remplit en silence.
@@ -128,16 +84,13 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # derriere le proxy : le controle qui compte se fait depuis l'exterieur.
 #
 # En prod, SERVER_NAME est fige a ":80" (Traefik termine le TLS) et le domaine
-# vit ailleurs : SERVER_HOST, ou APP_DOMAIN selon la convention du projet. En
-# staging sur serveur dedie, Caddy sert le domaine lui-meme et c'est
-# SERVER_NAME qui le porte. On lit donc les trois, dans cet ordre.
-#
-# Sans APP_DOMAIN dans cette liste, un projet qui nomme ainsi son domaine
-# (cas de edj) voyait la verification externe silencieusement ignoree — soit
-# exactement le controle pour lequel ce bloc existe.
+# vit dans SERVER_HOST ; en staging, Caddy sert le domaine lui-meme et c'est
+# SERVER_NAME qui le porte. On lit donc l'un puis l'autre.
+lire_secret() {
+	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
+}
 
 DOMAINE=$(lire_secret SERVER_HOST)
-[ -n "$DOMAINE" ] || DOMAINE=$(lire_secret APP_DOMAIN)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret SERVER_NAME)
 
 case "$DOMAINE" in
