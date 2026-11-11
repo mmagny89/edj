@@ -1,0 +1,4 @@
+# Variantes propres à ce projet : jamais écrasées par synchroniser-outils.sh
+deployer.sh
+sauvegarder.sh
+tester-restauration.sh
