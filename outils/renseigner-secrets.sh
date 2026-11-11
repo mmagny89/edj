@@ -4,10 +4,10 @@
 #   sh outils/renseigner-secrets.sh prod      # ou staging
 #
 # Les variables obligatoires sont declarees ${VAR:?} dans les overrides
-# (conventions, section 5) : tant que l'une d'elles est vide, "docker compose
+# (conventions, section manifeste/versions) : tant que l'une d'elles est vide, "docker compose
 # build" lui-meme refuse de demarrer. Elles doivent donc etre produites AVANT le
 # premier build — et par des outils qui ne doivent rien au projet, sans quoi
-# l'instruction serait circulaire (section 22b).
+# l'instruction serait circulaire (section ci/deploiement).
 #
 # Ce script ne connait pas les variables d'un stack donne : il lit celles que le
 # modele laisse vides et deduit de leur nom comment les produire.
@@ -23,8 +23,11 @@ case "$ENVIRONNEMENT" in
 		;;
 esac
 
-# Le conteneur jetable qui hache les mots de passe tourne sur le MEME correctif
-# PHP que le stack, lu dans le .env racine, jamais une version ecrite en dur.
+# Le conteneur jetable qui hache les mots de passe doit tourner sur le MEME
+# correctif PHP que le stack, pas sur une version ecrite en dur ici : trois
+# mentions a `php:8.4-cli` avaient survecu au passage a la branche 8.5, et une
+# image CLI figee reste exposee aux CVE corrigees entre-temps
+# (CERTFR-2026-ALE-014). Source de verite : PHP_VERSION du `.env` racine.
 php_cli_tag() {
 	tag=$(sed -n 's/^PHP_VERSION=\([0-9][0-9.]*\).*/\1/p' .env 2>/dev/null | head -n1)
 	if [ -z "$tag" ]; then
@@ -71,7 +74,8 @@ produire() {
 			# prendre le plus large ne coute rien.
 			openssl rand -hex 32
 			;;
-		*PASSWORD)
+		*PASSWORD | *TOKEN)
+			# Jeton d'API : aussi sensible qu'un mot de passe, jamais affiche a la saisie.
 			printf '  %s (saisie masquee) : ' "$nom" >&2
 			stty -echo 2>/dev/null || true
 			read -r valeur

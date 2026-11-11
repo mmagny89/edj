@@ -1,19 +1,25 @@
 #!/bin/sh
-# verifier-site.sh — controle de recette d'un site en ligne, depuis N'IMPORTE OU.
+# verifier-site — contrôle de recette d'un site en ligne, depuis N'IMPORTE OÙ.
 #
-#   sh outils/verifier-site.sh edj.mmagny.fr                # domaine provisoire : site non indexable
-#   sh outils/verifier-site.sh enviedejouer89.fr --indexable # domaine definitif : site ouvert aux moteurs
-#   sh outils/verifier-site.sh localhost --insecure          # certificat auto-signe (developpement)
+#   sh outils/verifier-site.sh exemple.fr                  # domaine provisoire : site non indexable
+#   sh outils/verifier-site.sh exemple.fr --indexable      # domaine définitif : site ouvert aux moteurs
+#   sh outils/verifier-site.sh localhost --insecure        # certificat auto-signé (développement)
 #
-# Derriere Traefik, un conteneur « healthy » ne prouve rien : seule la reponse
-# vue de l'exterieur compte (conventions, section 4). Ce script rejoue ce que
-# l'on controlerait a la main apres une mise en production — HTTPS, redirection,
-# en-tetes de securite, indexation, pages privees, cookies, certificat — et sort
-# avec un code non nul si un controle echoue.
+# Derrière Traefik, un conteneur « healthy » ne prouve rien : seule la réponse vue de
+# l'extérieur compte. Ce script rejoue ce que l'on contrôlerait à la main après une mise en
+# production — HTTPS, redirection, en-têtes de sécurité, indexation, pages privées, cookies,
+# certificat — et sort avec un code non nul si un contrôle échoue.
 #
-# En developpement (APP_DEBUG actif), la politique de contenu et HSTS ne sont
-# pas poses : leur echec y est normal, et c'est ce qui le distingue d'un serveur
-# de production.
+# Généralisé à partir du script d'un projet : les pages et les hôtes qui n'appartiennent qu'à
+# un site se déclarent dans outils/verifier-site.conf (facultatif), jamais dans ce fichier :
+#
+#   PAGES_PUBLIQUES="/ /mentions-legales /politique-de-confidentialite"   # doivent répondre 200
+#   PAGES_PRIVEES="/admin /admin/utilisateurs"                            # inaccessibles sans connexion
+#   PAGE_CONNEXION="/login"                                               # vide : contrôle ignoré
+#   HOTES_EXTERNES_AUTORISES="exemple-partenaire.fr"                      # ressources tierces tolérées
+#
+# En développement (APP_DEBUG actif), la politique de contenu et HSTS ne sont pas posés : leur
+# échec y est normal, et c'est ce qui le distingue d'un serveur de production.
 set -u
 
 DOMAINE=${1:-}
@@ -30,6 +36,19 @@ for option in "$@"; do
 	esac
 done
 
+# Réglages du projet (valeurs par défaut valables pour le stack de l'agence).
+PAGES_PUBLIQUES="/ /mentions-legales"
+PAGES_PRIVEES="/admin"
+PAGE_CONNEXION="/login"
+HOTES_EXTERNES_AUTORISES=""
+CONF="$(dirname "$0")/verifier-site.conf"
+# shellcheck disable=SC1090
+[ -f "$CONF" ] && . "$CONF"
+PRIVEE=${PAGES_PRIVEES%% *}
+# Hôtes tolérés, sous-domaines compris (www.exemple.fr pour exemple.fr), points échappés.
+AUTORISES="$DOMAINE schema.org $HOTES_EXTERNES_AUTORISES"
+AUTORISES=$(printf '%s' "$AUTORISES" | tr -s ' ' '\n' | sed 's/\./\\./g' | paste -sd '|' -)
+
 BASE="https://$DOMAINE"
 ECHECS=0
 
@@ -41,7 +60,8 @@ http() { curl -sS $CURL_TLS --max-time 20 "$@"; }
 
 en_tetes() { http -D - -o /dev/null "$1" 2>/dev/null | tr -d '\r'; }
 corps()    { http "$1" 2>/dev/null; }
-code()     { http -o /dev/null -w '%{http_code}' "$1" 2>/dev/null || echo 000; }
+# Toujours trois chiffres : `|| echo 000` après un -w qui a déjà imprimé 000 donnait « 000000 ».
+code()     { c=$(http -o /dev/null -w '%{http_code}' "$1" 2>/dev/null) || true; printf '%s' "${c:-000}" | tail -c 3; }
 
 echo "== $BASE"
 
@@ -75,10 +95,10 @@ echo "$HTML" | grep -q "<link rel=\"canonical\" href=\"$BASE/\"" && ok "URL cano
 echo "$HTML" | grep -q 'property="og:image"'                    && ok "balises Open Graph presentes"  || ko "balises Open Graph absentes"
 echo "$HTML" | grep -q 'application/ld+json'                    && ok "donnees structurees presentes" || ko "donnees structurees absentes"
 
-EXTERNES=$(echo "$HTML" | grep -oE '(src|href)="https?://[^"]+"' | grep -vE "https?://$DOMAINE|schema.org|facebook.com|instagram.com|myludo.fr|ville-joigny.fr|sensludique.com|ludipassion.fr|crique-aux-jeux.fr" || true)
+EXTERNES=$(echo "$HTML" | grep -oE '(src|href)="https?://[^"]+"' | grep -vE "https?://([A-Za-z0-9-]+\.)*($AUTORISES)([/:?#\"]|$)" || true)
 [ -z "$EXTERNES" ] && ok "aucune ressource externe chargee par la page" || ko "ressources externes : $(echo "$EXTERNES" | head -3 | tr '\n' ' ')"
 
-for chemin in /adhesion/bulletin /mentions-legales /donnees-personnelles; do
+for chemin in $PAGES_PUBLIQUES; do
 	[ "$(code "$BASE$chemin")" = 200 ] && ok "$chemin repond 200" || ko "$chemin ne repond pas 200"
 done
 
@@ -89,7 +109,7 @@ ROBOTS=$(corps "$BASE/robots.txt")
 META=$(echo "$HTML" | grep -o '<meta name="robots" content="[^"]*"' | head -1)
 if [ "$INDEXABLE" = 1 ]; then
 	echo "$ROBOTS" | grep -q "^Sitemap: $BASE/sitemap.xml" && ok "robots.txt annonce le plan du site" || ko "robots.txt n'annonce pas le plan du site"
-	echo "$ROBOTS" | grep -q '^Disallow: /admin'           && ok "robots.txt ferme /admin"              || ko "robots.txt ne ferme pas /admin"
+	echo "$ROBOTS" | grep -q "^Disallow: $PRIVEE"           && ok "robots.txt ferme $PRIVEE"             || ko "robots.txt ne ferme pas $PRIVEE"
 	echo "$ROBOTS" | grep -qx 'Disallow: /'                && ko "robots.txt interdit tout le site, alors qu'il doit etre indexable" || ok "robots.txt n'interdit pas le site"
 	echo "$META" | grep -q 'index, follow'                 && ok "pages en « index, follow »"           || ko "pages non indexables : $META"
 else
@@ -98,21 +118,22 @@ else
 fi
 [ "$(code "$BASE/sitemap.xml")" = 200 ] && ok "sitemap.xml repond 200" || ko "sitemap.xml ne repond pas 200"
 
-echo "-- administration"
-ADMIN=$(en_tetes "$BASE/admin")
-echo "$ADMIN" | head -1 | grep -qE ' 30[0-9]' && ok "/admin redirige un visiteur anonyme" || ko "/admin ne redirige pas un visiteur anonyme : $(echo "$ADMIN" | head -1)"
-echo "$ADMIN" | grep -i '^location:' | grep -q '/login'   && ok "... vers /login"            || ko "... pas vers /login"
-for chemin in /admin/adhesions /admin/utilisateurs /admin/adhesions/philibert.csv; do
+echo "-- pages privees"
+for chemin in $PAGES_PRIVEES; do
 	CODE_ANONYME=$(code "$BASE$chemin")
 	case "$CODE_ANONYME" in
 		30*|401|403) ok "$chemin inaccessible sans connexion ($CODE_ANONYME)" ;;
 		*) ko "$chemin ACCESSIBLE sans connexion (code $CODE_ANONYME)" ;;
 	esac
 done
-LOGIN=$(en_tetes "$BASE/login")
-echo "$LOGIN" | grep -qi '^cache-control:.*no-store'      && ok "/login interdit le cache"         || ko "/login n'interdit pas le cache"
-echo "$LOGIN" | grep -qi '^x-robots-tag:.*noindex'        && ok "/login interdit l'indexation"     || ko "/login n'interdit pas l'indexation"
-[ "$(code "$BASE/login")" = 200 ] && ok "/login repond 200" || ko "/login ne repond pas 200"
+if [ -n "$PAGE_CONNEXION" ]; then
+	PRIV=$(en_tetes "$BASE$PRIVEE")
+	echo "$PRIV" | grep -i '^location:' | grep -q "$PAGE_CONNEXION" && ok "$PRIVEE renvoie un visiteur anonyme vers $PAGE_CONNEXION" || ko "$PRIVEE ne renvoie pas un visiteur anonyme vers $PAGE_CONNEXION"
+	LOGIN=$(en_tetes "$BASE$PAGE_CONNEXION")
+	echo "$LOGIN" | grep -qi '^cache-control:.*no-store' && ok "$PAGE_CONNEXION interdit le cache"     || ko "$PAGE_CONNEXION n'interdit pas le cache"
+	echo "$LOGIN" | grep -qi '^x-robots-tag:.*noindex'   && ok "$PAGE_CONNEXION interdit l'indexation" || ko "$PAGE_CONNEXION n'interdit pas l'indexation"
+	[ "$(code "$BASE$PAGE_CONNEXION")" = 200 ] && ok "$PAGE_CONNEXION repond 200" || ko "$PAGE_CONNEXION ne repond pas 200"
+fi
 
 echo "-- certificat"
 if command -v openssl >/dev/null 2>&1 && [ -z "$CURL_TLS" ]; then

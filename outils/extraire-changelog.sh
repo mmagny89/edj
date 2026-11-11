@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 # extraire-changelog — isole la section d'une version dans CHANGELOG.md.
 #
 #   Usage : sh outils/extraire-changelog.sh 0.12.0
