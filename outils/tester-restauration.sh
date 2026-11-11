@@ -1,106 +1,86 @@
 #!/bin/sh
-# tester-restauration.sh — prouve qu'une sauvegarde se restaure, SANS toucher a
-# la base en service.
+# tester-restauration.sh — prouve qu'une sauvegarde se restaure.
 #
-#   sh outils/tester-restauration.sh prod                  # la plus recente
-#   sh outils/tester-restauration.sh prod fichier.sql.gz   # une sauvegarde precise
+#   sh outils/tester-restauration.sh sauvegardes/<fichier>.dump|.sql.gz
 #
-# Une sauvegarde chiffree (.sql.gz.enc) se restaure avec la meme phrase que celle qui
-# l'a produite : BACKUP_PASSPHRASE_FILE=/chemin/phrase sh outils/tester-restauration.sh prod
+# Restaure le fichier dans une base jetable (conteneur ephemere, aucun port
+# publie, aucun lien avec la base du projet) puis controle qu'elle est
+# exploitable : tables presentes et, quand l'application tient un journal de
+# migrations Doctrine, dernier jalon identique a celui du code. Le conteneur est
+# supprime a la sortie, succes ou non. Le moteur se deduit du fichier.
 #
-# Un dump jamais restaure n'est pas une sauvegarde : c'est un fichier dont on
-# espere qu'il marche. Ce script restaure dans une base JETABLE, au nom
-# distinct, sur le meme serveur PostgreSQL, compte les lignes des tables qui
-# comptent, puis supprime la base d'essai. La base en service n'est ni lue en
-# ecriture ni modifiee.
-#
-# A rejouer apres chaque changement de version majeure de PostgreSQL et, au
-# moins, tous les trimestres.
+# A rejouer apres chaque changement de version du moteur et regulierement sur
+# une sauvegarde de production : une sauvegarde jamais restauree n'est qu'une
+# hypothese.
 set -eu
 
-ENVIRONNEMENT=${1:-}
-case "$ENVIRONNEMENT" in
-	prod|staging) COMPOSE="docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml --env-file .env.${ENVIRONNEMENT}.local" ;;
-	dev)          COMPOSE="docker compose" ;;
+FICHIER=${1:-}
+[ -n "$FICHIER" ] && [ -f "$FICHIER" ] || { echo "Usage : sh $0 <fichier.dump|fichier.sql.gz>" >&2; exit 1; }
+
+RACINE=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$RACINE"
+
+NOM="restauration-test-$$"
+trap 'docker rm -f "$NOM" > /dev/null 2>&1 || true' EXIT
+
+# Meme version majeure que la base du projet : le .env racine en est la source.
+case "$FICHIER" in
+	*.dump)
+		VERSION=$(sed -n 's/^POSTGRES_VERSION=//p' .env)
+		[ -n "$VERSION" ] || { echo "POSTGRES_VERSION introuvable dans .env." >&2; exit 1; }
+		docker run -d --name "$NOM" -e POSTGRES_PASSWORD=jetable -e POSTGRES_USER=app -e POSTGRES_DB=restauration \
+			"postgres:${VERSION}-alpine" > /dev/null
+		attente=0
+		until docker exec "$NOM" pg_isready -U app -d restauration > /dev/null 2>&1; do
+			attente=$((attente + 1))
+			[ "$attente" -le 60 ] || { echo "PostgreSQL jetable ne demarre pas." >&2; exit 1; }
+			sleep 1
+		done
+		# Le premier demarrage de l'image redemarre le serveur apres l'initialisation.
+		sleep 2
+		docker exec "$NOM" pg_isready -U app -d restauration > /dev/null
+		docker exec -i "$NOM" pg_restore --exit-on-error --no-owner --username app --dbname restauration < "$FICHIER"
+		sql() { docker exec "$NOM" psql -U app -d restauration -tA -c "$1"; }
+		TABLES=$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+		JOURNAL=$(sql "SELECT to_regclass('public.doctrine_migration_versions') IS NOT NULL")
+		[ "$JOURNAL" = t ] && DERNIERE=$(sql "SELECT version FROM doctrine_migration_versions ORDER BY version DESC LIMIT 1") || DERNIERE=""
+		;;
+	*.sql.gz)
+		VERSION=$(sed -n 's/^MARIADB_VERSION=//p' .env)
+		[ -n "$VERSION" ] || { echo "MARIADB_VERSION introuvable dans .env." >&2; exit 1; }
+		docker run -d --name "$NOM" -e MARIADB_ROOT_PASSWORD=jetable -e MARIADB_DATABASE=restauration "mariadb:${VERSION}" > /dev/null
+		attente=0
+		until docker exec "$NOM" mariadb -uroot -pjetable -e 'SELECT 1' > /dev/null 2>&1; do
+			attente=$((attente + 1))
+			[ "$attente" -le 90 ] || { echo "MariaDB jetable ne demarre pas." >&2; exit 1; }
+			sleep 1
+		done
+		gzip -dc "$FICHIER" | docker exec -i "$NOM" mariadb -uroot -pjetable restauration
+		sql() { docker exec "$NOM" mariadb -uroot -pjetable restauration -N -B -e "$1"; }
+		TABLES=$(sql "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'restauration'")
+		DERNIERE=""
+		;;
 	*)
-		echo "Usage : $0 prod|staging|dev [fichier.sql.gz]" >&2
+		echo "Extension inconnue : attendu .dump (PostgreSQL) ou .sql.gz (MariaDB)." >&2
 		exit 1
 		;;
 esac
 
-PROJET=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-cd "$PROJET"
+[ "$TABLES" -gt 0 ] || { echo "Aucune table restauree." >&2; exit 1; }
+echo "Tables restaurees : $TABLES"
 
-DOSSIER=/srv/sauvegardes/edj-$ENVIRONNEMENT
-FICHIER=${2:-}
-if [ -z "$FICHIER" ]; then
-	FICHIER=$(ls -1t "$DOSSIER"/edj-"$ENVIRONNEMENT"-*.sql.gz "$DOSSIER"/edj-"$ENVIRONNEMENT"-*.sql.gz.enc 2>/dev/null | head -n 1 || true)
-fi
-if [ -z "$FICHIER" ] || [ ! -f "$FICHIER" ]; then
-	echo "Aucune sauvegarde a restaurer (cherche dans $DOSSIER)." >&2
-	exit 1
-fi
-
-journal() {
-	echo "[$(date '+%F %T')] $*"
-}
-
-# Lit l'archive, chiffree ou non, et ecrit le SQL sur la sortie standard.
-lire() {
-	case "$1" in
-		*.enc)
-			if [ -z "${BACKUP_PASSPHRASE_FILE:-}" ] || [ ! -s "$BACKUP_PASSPHRASE_FILE" ]; then
-				echo "Cette sauvegarde est chiffree : indiquer BACKUP_PASSPHRASE_FILE=/chemin/phrase." >&2
-				return 1
-			fi
-			openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass "file:$BACKUP_PASSPHRASE_FILE" -in "$1" | gzip -dc
+# Alignement avec le code : seulement si la base tient un journal Doctrine ET que le code porte des migrations.
+if [ -n "$DERNIERE" ] && ls app/migrations/Version*.php > /dev/null 2>&1; then
+	ATTENDUE=$(ls app/migrations/Version*.php | sed 's#.*/##; s#\.php$##' | sort | tail -n 1)
+	echo "Derniere migration restauree : $DERNIERE"
+	case "$DERNIERE" in
+		*"$ATTENDUE") echo "Restauration reussie : la base correspond au code." ;;
+		*)
+			echo "ATTENTION : la sauvegarde est anterieure au code (attendue : $ATTENDUE)." >&2
+			echo "Elle est restaurable mais ne contient pas les dernieres migrations." >&2
+			exit 2
 			;;
-		*) gzip -dc "$1" ;;
 	esac
-}
-
-# L'archive doit d'abord se lire : une mauvaise phrase ou un fichier abime produit
-# un flux vide, que psql accepterait sans rien restaurer — et l'erreur serait
-# alors « la table manque », loin de sa cause.
-if ! lire "$FICHIER" | head -c 64 | grep -q .; then
-	journal "ECHEC : l'archive est illisible (mauvaise phrase de chiffrement, ou fichier abime)."
-	exit 1
+else
+	echo "Restauration reussie."
 fi
-
-UTILISATEUR=$($COMPOSE exec -T database printenv POSTGRES_USER)
-BASE=$($COMPOSE exec -T database printenv POSTGRES_DB)
-ESSAI="${BASE}_restauration_essai"
-
-psql_admin() {
-	$COMPOSE exec -T database psql -U "$UTILISATEUR" -d postgres -v ON_ERROR_STOP=1 "$@"
-}
-
-# Quoi qu'il arrive, la base d'essai disparait.
-nettoyer() {
-	psql_admin -c "DROP DATABASE IF EXISTS \"$ESSAI\"" >/dev/null 2>&1 || true
-}
-trap nettoyer EXIT
-
-journal "Restauration de $FICHIER dans la base jetable $ESSAI"
-psql_admin -c "DROP DATABASE IF EXISTS \"$ESSAI\"" >/dev/null
-psql_admin -c "CREATE DATABASE \"$ESSAI\"" >/dev/null
-
-if ! lire "$FICHIER" | $COMPOSE exec -T database psql -U "$UTILISATEUR" -d "$ESSAI" -v ON_ERROR_STOP=1 -q >/dev/null; then
-	journal "ECHEC : la restauration a rencontre une erreur."
-	exit 1
-fi
-
-compter() {
-	$COMPOSE exec -T database psql -U "$UTILISATEUR" -d "$ESSAI" -At -c "SELECT count(*) FROM $1"
-}
-
-journal "Contenu restaure :"
-for table in event membership_application '"user"'; do
-	nombre=$(compter "$table") || { journal "ECHEC : la table $table manque."; exit 1; }
-	journal "  $table : $nombre ligne(s)"
-done
-
-versions=$($COMPOSE exec -T database psql -U "$UTILISATEUR" -d "$ESSAI" -At -c "SELECT count(*) FROM doctrine_migration_versions")
-journal "  migrations enregistrees : $versions"
-
-journal "OK : la sauvegarde se restaure. Base d'essai supprimee."
