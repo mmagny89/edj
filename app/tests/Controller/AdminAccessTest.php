@@ -164,6 +164,8 @@ final class AdminAccessTest extends WebTestCase
             $last = (string) $client->getResponse()->getContent();
         }
 
-        self::assertStringContainsString('Plusieurs tentatives de connexion ont échoué', $last);
+        // Symfony choisit la formulation selon le delai restant (« Plusieurs
+        // tentatives... » pour une minute, « Trop de tentatives... » au-dela).
+        self::assertMatchesRegularExpression('/(Plusieurs|Trop de) tentatives de connexion/u', $last);
     }
 }
