@@ -37,6 +37,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Bulletin d'adhesion et modification de la fiche : l'encart « Responsable legal » n'apparait que si l'adherent
+  est mineur, calcule a la volee sur la date de naissance ; pour un adulte, le serveur n'enregistre aucun
+  responsable legal.
 - Partenaires de l'accueil : chaque carte est un bouton anime (ombre qui s'enfonce au survol, au focus
   clavier et au clic).
 - Les Nuits du Jeu durent de 15h a 3h du matin (douze heures).
