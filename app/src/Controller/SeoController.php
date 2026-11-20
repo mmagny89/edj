@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\EventRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,9 +16,12 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class SeoController extends AbstractController
 {
+    private const MAX_EVENTS = 12;
+
     public function __construct(
         #[Autowire('%app.seo.indexable%')]
         private readonly bool $indexable,
+        private readonly EventRepository $events,
     ) {
     }
 
@@ -52,10 +56,18 @@ final class SeoController extends AbstractController
         // page de limitation, qui sont en noindex, ni l'administration.
         $pages = [
             ['/', 'weekly', '1.0'],
+            ['/rendez-vous', 'weekly', '0.8'],
             ['/adhesion/bulletin', 'monthly', '0.8'],
             ['/mentions-legales', 'yearly', '0.2'],
             ['/donnees-personnelles', 'yearly', '0.2'],
         ];
+
+        // Les prochains evenements seulement : le calendrier en compte une
+        // cinquantaine, aux pages quasi identiques, qui noieraient les pages
+        // utiles. Une page sort du plan quand l'evenement est passe.
+        foreach (\array_slice($this->events->findUpcoming(), 0, self::MAX_EVENTS) as $event) {
+            $pages[] = [$this->generateUrl('site_event', ['id' => $event->getId()]), 'weekly', '0.6'];
+        }
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
         foreach ($pages as [$path, $frequency, $priority]) {

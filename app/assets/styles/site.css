@@ -1699,11 +1699,16 @@ html[data-contrast="high"] .site-footer__credit {
 /* Les titres de section reprennent la police d'affichage du site : sans
    cela, un h3 sort a la taille par defaut du navigateur et se confond avec
    le paragraphe qui le suit. */
-.legal-block h3 {
+.legal-block h2 {
     margin: 0 0 14px;
     font-family: "Akaya Kanadaka", cursive;
     font-size: clamp(1.6rem, 3vw, 2.1rem);
     line-height: 1.05;
+}
+
+.legal-block h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
 }
 
 .legal-block p,
