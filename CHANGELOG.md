@@ -14,6 +14,9 @@ GitHub, par `.github/workflows/release.yml`.
   evenements ; dimensions explicites sur les images de la mascotte ; hierarchie de titres des pages
   « Mentions legales » et « Donnees personnelles » (h1, h2, h3, sans saut) ; description de la page
   « Mentions legales » plus complete.
+- **Accessibilite** : les fonds rouges a texte blanc (bouton principal, rythme annuel, date de diaporama,
+  commandes du carrousel) passent au rouge `--red-aa` (contraste AA) ; le nom accessible du lien
+  d'accueil contient son texte visible.
 
 ## [1.5.0] - 2026-11-20
 
