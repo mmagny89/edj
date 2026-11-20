@@ -64,6 +64,7 @@ final class SeoTest extends WebTestCase
 
         self::assertContains('http://localhost/', $all);
         self::assertContains('http://localhost/adhesion/bulletin', $all);
+        self::assertContains('http://localhost/rendez-vous', $all);
         foreach ($all as $url) {
             self::assertStringNotContainsString('/admin', $url);
             self::assertStringNotContainsString('/login', $url);

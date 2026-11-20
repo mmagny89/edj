@@ -8,6 +8,13 @@ GitHub, par `.github/workflows/release.yml`.
 
 ## [Non publie]
 
+### Modifie
+
+- **Referencement** : le plan du site (`sitemap.xml`) liste aussi `/rendez-vous` et les douze prochains
+  evenements ; dimensions explicites sur les images de la mascotte ; hierarchie de titres des pages
+  « Mentions legales » et « Donnees personnelles » (h1, h2, h3, sans saut) ; description de la page
+  « Mentions legales » plus complete.
+
 ## [1.5.0] - 2026-11-20
 
 ### Securite
