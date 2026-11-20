@@ -77,13 +77,12 @@ final class MemberEditTest extends WebTestCase
 
     public function testTheChoiceOffersTwoWays(): void
     {
-        $this->client->request('GET', '/adhesion/renouvellement');
+        $this->client->request('GET', '/adhesion/modification');
 
         self::assertResponseIsSuccessful();
         self::assertCount(2, $this->client->getCrawler()->filter('nav.membership-choice a'));
         self::assertSelectorTextContains('nav.membership-choice', 'Nouvelle adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler ou modifier mon adhésion');
-        self::assertSelectorNotExists('a[href="/adhesion/modification"]');
+        self::assertSelectorTextContains('nav.membership-choice', 'Modifier ou renouveler mon adhésion');
     }
 
     /**
@@ -181,7 +180,7 @@ final class MemberEditTest extends WebTestCase
     public function testTheRenewalLinkOpensTheEditionWhenTheSeasonIsCovered(): void
     {
         $application = $this->create(MembershipType::Individual);
-        $link = static::getContainer()->get(MemberAccessLink::class)->renewalUrl($application->getMember());
+        $link = static::getContainer()->get(MemberAccessLink::class)->changeUrl($application->getMember());
 
         $this->client->request('GET', $link);
         self::assertResponseRedirects();

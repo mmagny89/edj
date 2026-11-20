@@ -51,9 +51,9 @@ final class MemberAccessLink
         return $this->sign('member_card', $member, $expiresAt);
     }
 
-    public function renewalUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
+    public function changeUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
     {
-        return $this->sign('membership_renewal', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
+        return $this->sign('membership_change', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
     }
 
     /**

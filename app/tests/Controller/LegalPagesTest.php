@@ -97,7 +97,7 @@ final class LegalPagesTest extends WebTestCase
         $client = static::createClient();
         $crawler = $client->request('GET', '/donnees-personnelles');
 
-        foreach (['/adhesion/bulletin', '/adhesion/renouvellement', '/adhesion/ma-fiche'] as $path) {
+        foreach (['/adhesion/bulletin', '/adhesion/modification', '/adhesion/ma-fiche'] as $path) {
             self::assertCount(1, $crawler->filter(sprintf('main a[href="%s"]', $path)), $path);
         }
     }

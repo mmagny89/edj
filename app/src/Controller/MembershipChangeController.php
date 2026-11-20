@@ -34,7 +34,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * attente comme tous les autres : il ne vaut rien tant que le bureau n'a pas
  * encaisse la cotisation.
  */
-final class MembershipRenewalController extends AbstractController
+final class MembershipChangeController extends AbstractController
 {
     public function __construct(
         private readonly MemberRepository $members,
@@ -47,7 +47,7 @@ final class MembershipRenewalController extends AbstractController
     ) {
     }
 
-    #[Route('/adhesion/renouvellement', name: 'membership_renewal_request', methods: ['GET', 'POST'])]
+    #[Route('/adhesion/modification', name: 'membership_change_request', methods: ['GET', 'POST'])]
     public function request(Request $request): Response
     {
         $form = $this->createForm(MemberAccessRequestType::class);
@@ -62,19 +62,19 @@ final class MembershipRenewalController extends AbstractController
 
             // Meme reponse numero connu ou non : sinon le formulaire dirait qui
             // est adherent.
-            return $this->redirectToRoute('membership_renewal_sent');
+            return $this->redirectToRoute('membership_change_sent');
         }
 
-        return $this->render('site/membership_renewal_request.html.twig', ['form' => $form]);
+        return $this->render('site/membership_change_request.html.twig', ['form' => $form]);
     }
 
-    #[Route('/adhesion/renouvellement/envoye', name: 'membership_renewal_sent', methods: ['GET'])]
+    #[Route('/adhesion/modification/envoye', name: 'membership_change_sent', methods: ['GET'])]
     public function sent(): Response
     {
-        return $this->render('site/membership_renewal_sent.html.twig');
+        return $this->render('site/membership_change_sent.html.twig');
     }
 
-    #[Route('/adhesion/renouvellement/{number}', name: 'membership_renewal', methods: ['GET', 'POST'], requirements: ['number' => Member::PREFIX.'\d+'])]
+    #[Route('/adhesion/modification/{number}', name: 'membership_change', methods: ['GET', 'POST'], requirements: ['number' => Member::PREFIX.'\d+'])]
     public function renew(Request $request, string $number): Response
     {
         if (!$this->links->isValid($request)) {
@@ -140,16 +140,19 @@ final class MembershipRenewalController extends AbstractController
             return;
         }
 
-        $this->notifier->sendRenewalLink($application, $this->links->renewalUrl($member));
+        // Le courriel dit ce que le lien ouvre : renouvellement si la saison en
+        // cours n'a pas d'adhesion, modification sinon.
+        $renewal = null === $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
+        $this->notifier->sendChangeLink($application, $this->links->changeUrl($member), $renewal);
     }
 
     private function expired(int $status): Response
     {
-        return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_renewal_request'], new Response('', $status));
+        return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_change_request'], new Response('', $status));
     }
 
     private function alreadyRenewed(int $season): Response
     {
-        return $this->render('site/membership_renewal_done.html.twig', ['season' => $season]);
+        return $this->render('site/membership_change_done.html.twig', ['season' => $season]);
     }
 }
