@@ -48,9 +48,9 @@ final class EventPageTest extends WebTestCase
         $this->client->request('GET', '/evenements/'.$event->getId());
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.info-tiles', 'Sera présent');
-        self::assertSelectorTextContains('.raffle-panel', '1,5 €');
-        self::assertSelectorTextContains('.raffle-panel', '200');
+        self::assertSelectorTextContains('.info-tiles', 'sera présent');
+        self::assertSelectorTextContains('.info-tiles', 'ticket à 1,5 €');
+        self::assertSelectorTextContains('.info-tiles', '200 tickets');
         self::assertSelectorTextContains('.raffle-panel', "Un bon d'achat");
         self::assertSelectorExists('a[href$="/apports"]');
         self::assertSelectorNotExists('form');

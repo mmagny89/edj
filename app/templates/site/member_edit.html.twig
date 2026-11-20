@@ -11,10 +11,10 @@
             <p class="eyebrow">Adhésion</p>
             <h1>Modifier mon adhésion</h1>
             <p>
-                {{ application.firstName }}, votre numéro d'adhérent est
-                <strong class="member-number">{{ application.memberNumber }}</strong>. Corrigez vos
-                coordonnées ci-dessous{% if canUpgrade %}, ou passez à une adhésion annuelle : vos autres informations et
-                vos signatures sont déjà enregistrées{% endif %}.
+                {{ application.firstName }}, votre adhésion de la saison est en cours
+                (numéro <strong class="member-number">{{ application.memberNumber }}</strong>). Corrigez
+                ce qui a changé dans votre fiche{% if canUpgrade %}, ou passez à une adhésion annuelle{% endif %} :
+                votre signature est déjà enregistrée.
             </p>
         </div>
 
@@ -29,7 +29,16 @@
             {% endif %}
 
             <fieldset>
-                <legend>Mes coordonnées</legend>
+                <legend>Identité</legend>
+                <div class="form-grid">
+                    {{ form_row(form.lastName) }}
+                    {{ form_row(form.firstName) }}
+                    {{ form_row(form.birthDate) }}
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Coordonnées</legend>
                 <div class="form-grid">
                     <div class="form-grid__wide">{{ form_row(form.address) }}</div>
                     {{ form_row(form.postalCode) }}
@@ -40,6 +49,24 @@
                 <p class="form-note">
                     Si vous changez d'adresse e-mail, les prochains liens seront envoyés à la nouvelle.
                 </p>
+            </fieldset>
+
+            <fieldset>
+                <legend>Responsable légal</legend>
+                <p class="form-note">
+                    <strong>Obligatoire si l'adhérent a moins de 18 ans.</strong> À laisser vide pour un adulte.
+                </p>
+                <div class="form-grid">
+                    {{ form_row(form.guardianLastName) }}
+                    {{ form_row(form.guardianFirstName) }}
+                    <div class="form-grid__wide">{{ form_row(form.guardianEmail) }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Autorisations</legend>
+                {{ form_row(form.philibertConsent) }}
+                {{ form_row(form.imageRightsRefused) }}
             </fieldset>
 
             {% if canUpgrade %}

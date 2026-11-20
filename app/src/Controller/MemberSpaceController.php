@@ -83,46 +83,17 @@ final class MemberSpaceController extends AbstractController
             'cardUrl' => $application->getMember()
                 ? $this->links->cardUrl($application->getMember(), $this->links->expirationOf($request))
                 : null,
-            'editUrl' => $application->getMember()
-                ? $this->links->editUrl($application->getMember(), $this->links->expirationOf($request))
-                : null,
-            'canUpgrade' => $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable())),
         ]);
     }
 
     /**
-     * Demande du lien « Modifier mon adhesion » : meme parcours que le
-     * renouvellement — numero, puis lien signe envoye a l'adresse du bulletin —,
-     * et meme reponse que le numero existe ou non.
-     */
-    #[Route('/adhesion/modification', name: 'membership_edit_request', methods: ['GET', 'POST'])]
-    public function editRequest(Request $request): Response
-    {
-        $form = $this->createForm(MemberAccessRequestType::class);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            if (!$this->memberAccessRequestLimiter->create($request->getClientIp())->consume()->isAccepted()) {
-                return $this->render('site/membership_throttled.html.twig', [], new Response('', Response::HTTP_TOO_MANY_REQUESTS));
-            }
-
-            $this->sendEditLink(mb_strtoupper(trim((string) $form->get('number')->getData())));
-
-            return $this->redirectToRoute('membership_edit_sent');
-        }
-
-        return $this->render('site/membership_edit_request.html.twig', ['form' => $form]);
-    }
-
-    #[Route('/adhesion/modification/envoye', name: 'membership_edit_sent', methods: ['GET'])]
-    public function editSent(): Response
-    {
-        return $this->render('site/membership_edit_sent.html.twig');
-    }
-
-    /**
-     * Modifier ses coordonnees et, pour un consommateur de la saison en cours,
-     * passer a une formule annuelle sans attendre la saison suivante.
+     * Modifier sa fiche (coordonnees, responsable legal, autorisations) et, pour
+     * un consommateur de la saison en cours, passer a une formule annuelle sans
+     * attendre la saison suivante.
+     *
+     * On n'y arrive que par le lien du parcours « Renouveler ou modifier » : la
+     * page de renouvellement y redirige quand l'adhesion de la saison existe.
+     * L'espace « Ma fiche », lui, reste en lecture seule.
      *
      * Comme pour le bureau, une adhesion validee redevient « en attente » des
      * qu'une cotisation est a payer : la carte n'est plus delivree tant
@@ -131,9 +102,16 @@ final class MemberSpaceController extends AbstractController
     #[Route('/adhesion/espace/{number}/modifier', name: 'member_edit', methods: ['GET', 'POST'], requirements: ['number' => Member::PREFIX.'\\d+'])]
     public function edit(Request $request, string $number): Response
     {
-        $application = $this->resolve($request, $number);
-        if (!$application instanceof MembershipApplication) {
-            return $application;
+        $member = $this->members->findOneByNumber($number);
+        if (!$this->links->isValid($request) || !$member instanceof Member) {
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_renewal_request'], new Response('', Response::HTTP_FORBIDDEN));
+        }
+
+        // La fiche de la saison en cours, pas la derniere venue : c'est elle
+        // qu'on modifie.
+        $application = $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
+        if (!$application instanceof MembershipApplication || $application->isAnonymized()) {
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_renewal_request'], new Response('', Response::HTTP_NOT_FOUND));
         }
 
         $canUpgrade = $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable()));
@@ -215,17 +193,6 @@ final class MemberSpaceController extends AbstractController
      * Envoie le lien si le numero correspond a une adhesion consultable.
      * Silencieuse dans tous les autres cas : l'appelant repond pareil.
      */
-    private function sendEditLink(string $number): void
-    {
-        $member = $this->members->findOneByNumber($number);
-        $application = $member instanceof Member ? $this->applications->findLatestForMember($member) : null;
-        if (null === $application) {
-            return;
-        }
-
-        $this->notifier->sendEditLink($application, $this->links->editUrl($member));
-    }
-
     private function sendLink(string $number): void
     {
         $member = $this->members->findOneByNumber($number);
