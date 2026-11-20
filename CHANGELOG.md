@@ -37,6 +37,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Pointage des consommateurs : on ne pointe que pour un evenement du calendrier (aujourd'hui ou passe),
+  choisi dans une liste ; un jour sans evenement ne se pointe plus, et le pointage est toujours rattache
+  a son evenement.
 - Domaine definitif `enviedejouer89.fr` (sans www) : `REDIRIGER_WWW=1` redirige `www.` vers lui en 301
   (`compose.www.yml`). `deployer.sh` branche enfin `compose.redirection.yml` (`ANCIEN_DOMAINE`), documente
   mais jamais ajoute jusque-la.

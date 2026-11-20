@@ -2,6 +2,7 @@
 
 namespace App\Controller\app;
 
+use App\Entity\Event;
 use App\Entity\EventAttendance;
 use App\Entity\MembershipApplication;
 use App\Entity\User;
@@ -20,12 +21,12 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Le pointage d'un jour : qui est venu, et qui a paye son euro.
+ * Le pointage d'une seance du calendrier : qui est venu, et qui a paye son euro.
  *
- * On pointe pour la seance du jour, ou pour une seance passee dont on saisit la
- * date : la page s'ouvre sur aujourd'hui, et un champ date permet de reculer. Pas
- * de choix d'evenement — une seance n'a pas besoin d'etre au calendrier —, et pas
- * de choix de saison : elle se deduit de la date. On ne pointe pas dans l'avenir.
+ * On ne pointe que pour un evenement du calendrier, aujourd'hui ou deja passe : la
+ * page propose les seances recentes et s'ouvre sur celle du jour. Un jour sans
+ * evenement ne se pointe pas. La saison se deduit de la date, et on ne pointe pas
+ * dans l'avenir.
  *
  * Pense pour etre tenu a l'entree, souvent sur un telephone, pendant que les
  * gens arrivent : un bouton par personne. Chaque geste est un POST qui revient
@@ -52,19 +53,36 @@ final class AttendanceLogController extends AbstractController
     public function index(Request $request): Response
     {
         $today = new \DateTimeImmutable('today');
+        $sessions = $this->sessions($today);
         $requested = (string) $request->query->get('date', '');
-        $day = $this->parseDay($requested) ?? $today;
+        $day = $this->parseDay($requested);
 
-        // Une date dans l'avenir ne se pointe pas : on revient a aujourd'hui, et on le dit.
-        if ($day > $today) {
-            $this->addFlash('error', 'On ne pointe pas dans l\'avenir : la page est revenue à aujourd\'hui.');
-            $day = $today;
-        } elseif ('' !== $requested && null === $this->parseDay($requested)) {
-            $this->addFlash('error', 'Cette date n\'est pas valide : la page est revenue à aujourd\'hui.');
+        if ('' !== $requested) {
+            if (null === $day) {
+                $this->addFlash('error', 'Cette date n\'est pas valide.');
+            } elseif ($day > $today) {
+                $this->addFlash('error', 'On ne pointe pas dans l\'avenir.');
+            } elseif (!isset($sessions[$day->format('Y-m-d')])) {
+                $this->addFlash('error', 'Aucun événement ce jour-là : on ne pointe que pour un événement du calendrier.');
+            }
         }
 
+        // Seance demandee si elle existe, sinon celle du jour, sinon la plus recente.
+        $key = null !== $day ? $day->format('Y-m-d') : '';
+        if (!isset($sessions[$key])) {
+            $key = isset($sessions[$today->format('Y-m-d')]) ? $today->format('Y-m-d') : (array_key_first($sessions) ?? '');
+        }
+
+        if ('' === $key) {
+            return $this->render('app/attendance_log/index.html.twig', [
+                'day' => null,
+                'sessions' => [],
+                'season' => MembershipSeasons::of($today),
+            ]);
+        }
+
+        $day = $this->parseDay($key);
         $season = MembershipSeasons::of($day);
-        $consumers = $this->applications->findConsumers($season);
         $pointed = $this->attendances->indexedByApplication($day);
 
         $paid = 0;
@@ -77,13 +95,36 @@ final class AttendanceLogController extends AbstractController
             'today' => $today,
             'isToday' => $day == $today,
             'season' => $season,
-            'event' => $this->events->findOnDate($day),
-            'consumers' => $consumers,
+            'event' => $sessions[$key],
+            'sessions' => $sessions,
+            'consumers' => $this->applications->findConsumers($season),
             'pointed' => $pointed,
             'present' => \count($pointed),
             'paid' => $paid,
             'priceCents' => EventAttendance::PRICE_CENTS,
         ]);
+    }
+
+    /**
+     * Les seances pointables : un evenement par jour (le premier saisi l'emporte
+     * quand deux tombent le meme jour — un pointage est unique par personne et par
+     * jour), du plus recent au plus ancien, jusqu'a aujourd'hui.
+     *
+     * @return array<string, Event> indexe par jour AAAA-MM-JJ
+     */
+    private function sessions(\DateTimeImmutable $today): array
+    {
+        $sessions = [];
+        foreach ($this->events->findStartedBy($today) as $event) {
+            $last = $event->getEndsAt() ?? $event->getStartsAt();
+            $last = $last < $today->setTime(23, 59, 59) ? $last : $today;
+            for ($d = $event->getStartsAt()->setTime(0, 0); $d <= $last; $d = $d->modify('+1 day')) {
+                $sessions[$d->format('Y-m-d')] ??= $event;
+            }
+        }
+        krsort($sessions);
+
+        return $sessions;
     }
 
     /**
@@ -102,6 +143,12 @@ final class AttendanceLogController extends AbstractController
             throw $this->createNotFoundException('Date de pointage invalide.');
         }
 
+        // On ne pointe que pour un evenement du calendrier.
+        $event = $this->events->findOnDate($day);
+        if (null === $event) {
+            throw $this->createNotFoundException('Aucun événement ce jour-là.');
+        }
+
         if (!$this->isCsrfTokenValid('pointage'.$date.'-'.$application->getId(), (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Action expirée, recommencez.');
 
@@ -111,7 +158,7 @@ final class AttendanceLogController extends AbstractController
         $action = (string) $request->request->get('action', 'paye');
 
         $attendance = $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])
-            ?? new EventAttendance($day, $application, $this->events->findOnDate($day), $this->currentUserId());
+            ?? new EventAttendance($day, $application, $event, $this->currentUserId());
 
         match ($action) {
             'retirer' => $this->entityManager->remove($attendance),
