@@ -2318,13 +2318,51 @@ html[data-motion="reduce"] *::after {
     margin-inline: auto;
 }
 
+/* Le texte pose a nu sur le quadrillage du fond se lit mal : introductions et
+   liens de navigation recoivent un panneau blanc, comme les pages d'adhesion. */
+.intro-panel,
 .event-page__back,
-.event-page__more a {
-    font-weight: 800;
-    min-height: 44px;
+.event-page__more {
+    padding: clamp(14px, 2.5vw, 24px) clamp(16px, 3vw, 28px);
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: 5px 5px 0 rgba(23, 25, 34, 0.18);
+}
+
+.intro-panel {
+    margin: 0;
+}
+
+.intro-panel > :last-child {
+    margin-bottom: 0;
+}
+
+.intro-panel h1 {
+    margin-top: 0;
+}
+
+.event-page__back {
+    justify-self: start;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    min-height: 44px;
+    padding-block: 8px;
+    font-weight: 800;
+}
+
+.event-page__more {
+    justify-self: start;
+    margin: 0;
+    padding-block: 4px;
+    font-weight: 800;
+}
+
+.event-page__more a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
 }
 
 .event-hero {
@@ -2539,6 +2577,7 @@ html[data-motion="reduce"] *::after {
     font-weight: 700;
 }
 
+.bring-list,
 .bring-form {
     padding: 20px;
     border: 3px solid var(--ink);
@@ -2547,6 +2586,7 @@ html[data-motion="reduce"] *::after {
     box-shadow: 5px 5px 0 var(--ink);
 }
 
+.bring-list h2,
 .bring-form h2 {
     margin-top: 0;
 }

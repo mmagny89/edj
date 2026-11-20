@@ -11,14 +11,14 @@
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{ event.title }}
         </a>
 
-        <div class="section__intro">
+        <div class="section__intro intro-panel">
             <p class="eyebrow">{{ event.startsAt|format_date(pattern: 'EEEE d MMMM', locale: 'fr') }}</p>
             <h1>Qui apporte quoi ?</h1>
             <p>Pour éviter dix gâteaux au chocolat et zéro boisson : dites ce que vous ramenez.</p>
         </div>
 
         <div class="bring-layout">
-            <section aria-labelledby="t-liste">
+            <section class="bring-list" aria-labelledby="t-liste">
                 <h2 id="t-liste">Déjà prévu <span class="bring-count">{{ event.contributions|length }}</span></h2>
                 {% for message in app.flashes('success') %}
                     <p class="member-status member-status--valide" role="status">{{ message }}</p>
