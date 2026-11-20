@@ -37,6 +37,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Bulletin et modification de la fiche : l'« Avantage ludique » est masque par defaut et n'apparait que pour
+  une formule annuelle (masque pour la formule consommateur).
 - Modification de la fiche : l'enregistrement redirige vers une page de confirmation (le message d'erreur
   apparu au passage a l'annuel venait d'un double envoi), et les boutons d'envoi se desactivent pendant
   l'envoi. Le courriel « Passage a l'adhesion annuelle » est mis en forme comme les autres.
