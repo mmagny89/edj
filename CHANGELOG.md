@@ -17,6 +17,10 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute (preparation de la mise en production)
 
+- Courriels aux adherents : editeur de texte enrichi tres simple (gras, italique, souligne, lien, centrage, liste,
+  titre). Le HTML est nettoye cote serveur (symfony/html-sanitizer : balises, liens et styles autorises
+  seulement), la version texte du courriel est generee, et le message est habille aux couleurs de
+  l'association avec son logo joint au courriel.
 - **Modifier ou renouveler mon adhesion** (`/adhesion/modification`) : un seul parcours au bulletin en ligne (deux choix : « Nouvelle
   adhesion » et « Modifier ou renouveler mon adhesion »). Numero, puis lien signe envoye a l'adresse du
   bulletin (le courriel dit s'il s'agit d'un renouvellement ou d'une modification) : sans adhesion pour la saison, il ouvre le renouvellement ; avec une adhesion en cours, il ouvre sa

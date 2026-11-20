@@ -98,6 +98,7 @@ final class MailingController extends AbstractController
     {
         return $this->render('app/mailing/show.html.twig', [
             'campaign' => $campaign,
+            'bodyHtml' => MailingTemplate::normalize($campaign->getBody()),
             'actors' => $this->actorsOf([$campaign]),
         ]);
     }
@@ -119,7 +120,7 @@ final class MailingController extends AbstractController
                 'audience' => $audience,
                 'nonce' => $nonce,
                 'subject' => trim((string) preg_replace('/\s+/', ' ', MailingTemplate::render($draft->subject, $values))),
-                'body' => MailingTemplate::render($draft->body, $values),
+                'body' => MailingTemplate::renderHtml(MailingTemplate::normalize($draft->body), $values),
                 'sampleName' => null !== $sample ? trim($sample->application->getFirstName().' '.$sample->application->getLastName()) : null,
             ],
         ], new Response('', $status));

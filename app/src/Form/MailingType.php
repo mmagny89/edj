@@ -51,7 +51,7 @@ final class MailingType extends AbstractType
             ->add('body', TextareaType::class, [
                 'label' => 'Message',
                 'attr' => ['rows' => 14],
-                'help' => 'Texte simple : une ligne vide sépare les paragraphes, une adresse http(s) devient un lien.',
+                'help' => 'Gras, italique, souligné, lien, centrage et liste sont disponibles dans la barre au-dessus du texte. Le message est présenté avec le logo et les couleurs de l\'association.',
             ])
             ->add('expected', HiddenType::class, ['required' => false])
             ->add('nonce', HiddenType::class, ['mapped' => false, 'required' => false])
