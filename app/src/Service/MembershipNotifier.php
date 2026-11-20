@@ -64,6 +64,29 @@ final class MembershipNotifier
     }
 
     /**
+     * Previent le bureau qu'un adherent consommateur est passe a une formule
+     * annuelle depuis le site : il y a une cotisation a encaisser.
+     */
+    public function notifyUpgrade(MembershipApplication $application): void
+    {
+        $email = (new Email())
+            ->from(new Address($this->mailerFrom, 'Site Envie de Jouer'))
+            ->to($this->contactEmail)
+            ->subject(sprintf(
+                'Passage a l\'adhesion annuelle : %s %s',
+                (string) $application->getFirstName(),
+                (string) $application->getLastName(),
+            ))
+            ->html($this->twig->render('emails/membership_upgrade.html.twig', ['application' => $application]));
+
+        if ($application->getEmail()) {
+            $email->replyTo(new Address((string) $application->getEmail()));
+        }
+
+        $this->send($email);
+    }
+
+    /**
      * Accuse de reception envoye a l'adherent — et au responsable legal pour un
      * mineur : c'est lui qui a engage l'enfant, il doit en avoir trace.
      *

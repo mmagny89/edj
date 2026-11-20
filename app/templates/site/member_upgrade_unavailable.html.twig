@@ -1,0 +1,21 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Passage à l'annuel impossible - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Cette adhésion ne peut pas passer à l'annuel</h1>
+            <p>
+                Seule une adhésion consommateur de la saison en cours peut devenir annuelle. Si votre
+                adhésion date d'une saison passée, il faut la renouveler.
+            </p>
+        </div>
+        <div class="form-actions">
+            <a href="{{ path('membership_renewal_request') }}" class="button button--primary">Renouveler mon adhésion</a>
+            <a href="{{ path('site_index') }}" class="button button--quiet">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

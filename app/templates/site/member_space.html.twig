@@ -53,6 +53,20 @@
             {% endif %}
         </div>
 
+        {% if upgradeUrl %}
+            <div class="legal-block member-panel">
+                <h3>Passer à l'adhésion annuelle</h3>
+                <p>
+                    Vous êtes adhérent consommateur : 1 € par événement. Pour venir toute la saison
+                    {{ season }} sans rien payer de plus, passez à une formule annuelle, sans ressaisir
+                    vos informations.
+                </p>
+                <div class="form-actions">
+                    <a href="{{ upgradeUrl }}" class="button button--join">Passer à l'adhésion annuelle</a>
+                </div>
+            </div>
+        {% endif %}
+
         <p class="form-privacy">
             Ce lien expire trente minutes après son envoi. Passé ce délai,
             <a href="{{ path('member_access_request') }}">redemandez-en un</a> avec votre numéro.

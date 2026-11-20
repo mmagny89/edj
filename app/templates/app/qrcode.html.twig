@@ -1,0 +1,29 @@
+{% extends 'app/layout.html.twig' %}
+
+{% import 'app/_icons.html.twig' as ui %}
+
+{% block title %}QR code du site - Envie de Jouer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold text-ink">QR code du site</h1>
+    <p class="mt-1 max-w-3xl text-slate-600">
+        Un code par adresse du site, à imprimer sur une affiche ou un flyer. Le SVG reste net à
+        toutes les tailles (à préférer pour l'imprimeur) ; le PNG suffit pour un document ou un écran.
+        La correction d'erreur est élevée : le code se lit encore abîmé ou en petit.
+    </p>
+
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+        {% for variant, url in addresses %}
+            <section class="card p-6" aria-labelledby="qr-{{ variant }}">
+                <h2 id="qr-{{ variant }}" class="text-lg font-bold text-ink">{{ url|replace({'https://': ''}) }}</h2>
+                <div class="mx-auto mt-4 aspect-square w-full max-w-xs rounded-lg border border-slate-200 bg-white p-2" role="img" aria-label="QR code de {{ url }}">
+                    {{ codes[variant]|raw }}
+                </div>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <a href="{{ path('app_qrcode_download', {variant: variant, format: 'svg'}) }}" class="btn btn-primary">{{ ui.icon('download') }} SVG</a>
+                    <a href="{{ path('app_qrcode_download', {variant: variant, format: 'png'}) }}" class="btn btn-secondary">{{ ui.icon('download') }} PNG</a>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% endblock %}

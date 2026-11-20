@@ -590,7 +590,9 @@ h1 {
     background: var(--blue);
 }
 
-.event-slide--special .event-slide__date {
+.event-slide--special .event-slide__date,
+.event-slide--game_night .event-slide__date,
+.event-slide--game_weekend .event-slide__date {
     background: var(--yellow);
     color: var(--ink);
 }
@@ -931,7 +933,10 @@ h1 {
     gap: 12px;
 }
 
-.partners-list article {
+/* Chaque partenaire est un bouton, pas un texte souligne : toute la carte se
+   clique, et elle se comporte comme les boutons du site (ombre dure qui
+   s'enfonce au survol et au focus clavier, puis au clic). */
+.partner-button {
     display: grid;
     grid-template-columns: 54px minmax(0, 1fr);
     align-items: center;
@@ -941,7 +946,28 @@ h1 {
     border: 3px solid var(--ink);
     border-radius: 8px;
     background: white;
-    box-shadow: 4px 4px 0 rgba(23, 25, 34, 0.18);
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 5px 5px 0 var(--ink);
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.partner-button:hover,
+.partner-button:focus-visible {
+    background: var(--yellow);
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0 var(--ink);
+    outline: none;
+}
+
+.partner-button:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+}
+
+.partner-button:active {
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 var(--ink);
 }
 
 .partners-list img {
@@ -952,12 +978,6 @@ h1 {
 
 .partners-list span {
     font-weight: 900;
-}
-
-/* Le lien d'un partenaire reste lisible sur la carte blanche : le soulignement
-   le distingue du nom des partenaires qui n'ont pas de site. */
-.partners-list a {
-    color: inherit;
 }
 
 .contact-section {
@@ -2263,4 +2283,16 @@ html[data-motion="reduce"] *::after {
     .membership-choice {
         grid-template-columns: 1fr;
     }
+}
+
+/* Lien « en savoir plus » des cartes du calendrier et des rendez-vous. */
+.event-slide__more,
+.rdv-card__more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 800;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }

@@ -63,6 +63,14 @@ framework:
             limit: 5
             interval: '1 hour'
 
+        # Apports a une nuit du jeu : page publique sans compte, ouverte a l'ecriture.
+        # Vingt par heure et par adresse IP : un foyer qui liste tout ce qu'il
+        # apporte en depasse rarement six.
+        event_contribution:
+            policy: 'sliding_window'
+            limit: 20
+            interval: '1 hour'
+
 # Les tests rechargent le formulaire des centaines de fois depuis la meme adresse
 # (127.0.0.1), et les compteurs survivent entre deux lancements : sans ce relevement
 # le plafond horaire est atteint apres quelques suites, et les pages du bulletin
@@ -87,6 +95,10 @@ when@test:
                 limit: 100000
                 interval: '1 day'
             admin_password_reset_request:
+                policy: 'sliding_window'
+                limit: 100000
+                interval: '1 hour'
+            event_contribution:
                 policy: 'sliding_window'
                 limit: 100000
                 interval: '1 hour'

@@ -27,10 +27,49 @@
 
             {{ form_row(form.description) }}
 
+            <fieldset class="space-y-6 border-t border-slate-200 pt-6">
+                <legend class="text-lg font-bold text-ink">Nuit ou week-end du jeu</legend>
+                <p class="text-sm text-slate-600">
+                    À renseigner pour les types « Nuit du jeu » et « Week-end du jeu » : ces informations
+                    s'affichent sur la page publique de l'évènement.
+                </p>
+                {{ form_row(form.ludipassionPresent) }}
+                {{ form_row(form.raffleEnabled) }}
+                <div class="grid gap-6 sm:grid-cols-2">
+                    {{ form_row(form.raffleTicketPriceCents) }}
+                    {{ form_row(form.raffleTicketCount) }}
+                </div>
+                {{ form_row(form.rafflePrizes) }}
+            </fieldset>
+
+            {% if not isNew and event.contributions|length %}
+                <section class="border-t border-slate-200 pt-6" aria-labelledby="t-apports">
+                    <h2 id="t-apports" class="text-lg font-bold text-ink">Qui apporte quoi ({{ event.contributions|length }})</h2>
+                    <p class="mt-1 text-sm text-slate-600">Saisi par les visiteurs sur la page publique. Supprimez ce qui n'a pas sa place.</p>
+                    <ul class="mt-3 divide-y divide-slate-200">
+                        {% for contribution in event.contributions %}
+                            <li class="flex items-center justify-between gap-3 py-2">
+                                <span><strong>{{ contribution.name }}</strong> : {{ contribution.item }}</span>
+                                <button type="submit" form="supprimer-apport-{{ contribution.id }}" class="btn btn-danger">{{ ui.icon('trash', 'size-4') }} Supprimer</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+
             <div class="flex flex-wrap items-center gap-3 pt-2">
                 <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} {{ isNew ? "Ajouter l'évènement" : 'Enregistrer' }}</button>
                 <a href="{{ path('app_events') }}" class="btn btn-secondary">{{ ui.icon('x') }} Annuler</a>
             </div>
         {{ form_end(form) }}
+        {# Formulaires de suppression hors du formulaire principal : un formulaire
+           ne s'imbrique pas dans un autre. #}
+        {% if not isNew %}
+            {% for contribution in event.contributions %}
+                <form id="supprimer-apport-{{ contribution.id }}" method="post" action="{{ path('app_event_contribution_delete', {id: event.id, contribution: contribution.id}) }}" hidden>
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_contribution_' ~ contribution.id) }}">
+                </form>
+            {% endfor %}
+        {% endif %}
     </div>
 {% endblock %}

@@ -1,0 +1,13 @@
+<h1>Passage à l'adhésion annuelle</h1>
+<p>
+    <strong>{{ application.firstName }} {{ application.lastName }}</strong>
+    ({{ application.memberNumber }}) était adhérent consommateur et choisit depuis le site :
+    <strong>{{ application.membershipType.label }}</strong>.
+</p>
+{% if application.principalMemberName %}
+    <p><strong>Adhérent principal :</strong> {{ application.principalMemberName }}</p>
+{% endif %}
+<p>
+    Cotisation à encaisser : <strong>{{ application.amountDueLabel }}</strong>.
+    L'adhésion est repassée « en attente » tant qu'elle n'est pas encaissée.
+</p>

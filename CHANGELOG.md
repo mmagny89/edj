@@ -15,7 +15,27 @@ GitHub, par `.github/workflows/release.yml`.
   correctif PHP publie entre deux deploiements n'arrivait jamais en production. Un controle hebdomadaire
   (`.github/workflows/php-correctif.yml`) signale un PHP en retard sur le dernier correctif de sa branche.
 
+### Ajoute (preparation de la mise en production)
+
+- **Passage a l'adhesion annuelle** depuis l'espace adherent : un adherent consommateur choisit sa formule
+  annuelle sans ressaisir ses informations ; le bureau est prevenu et l'adhesion reste en attente jusqu'a
+  l'encaissement.
+- **QR code du site** (`/admin/qr-code`) : les deux adresses (avec et sans `www`), en SVG et en PNG, generes
+  sur le serveur.
+- **Nuits et week-ends du jeu** : deux types d'evenement, avec une page publique (`/evenements/{id}`) qui dit
+  si LudiPassion sera present, s'il y a une tombola (lots, prix du ticket, nombre de tickets) et ou chacun
+  indique ce qu'il apporte (prenom et objet, sans compte, avec les protections des formulaires publics ;
+  suppression possible depuis l'administration).
+- **Page « Nos rendez-vous »** (`/rendez-vous`) : le detail des mardis, des samedis, des nuits et du
+  week-end du jeu, avec un lien « En savoir plus » sur l'accueil et dans le calendrier.
+- Commande a usage unique `app:events:nuit-fin-3h` (`--dry-run` pour simuler) : ramene la fin des Nuits du Jeu
+  de 4h a 3h et range les « Nuit du Jeu » deja saisies dans le nouveau type.
+
 ### Modifie
+
+- Partenaires de l'accueil : chaque carte est un bouton anime (ombre qui s'enfonce au survol, au focus
+  clavier et au clic).
+- Les Nuits du Jeu durent de 15h a 3h du matin (douze heures).
 
 - Tableau de bord : le bloc « Adherents a l'annee » donne le total de la saison choisie, consommateurs compris, avec « dont N adherents consommateurs » ; l'ecart avec la saison precedente se calcule sur le meme total.
 - Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur

@@ -32,6 +32,7 @@ final class AdminAccessTest extends WebTestCase
     {
         yield 'tableau de bord' => ['/admin'];
         yield 'evenements' => ['/admin/evenements'];
+        yield 'qr code' => ['/admin/qr-code'];
         yield 'nouvel evenement' => ['/admin/evenements/nouveau'];
         yield 'generation' => ['/admin/evenements/generer'];
         yield 'adhesions' => ['/admin/adhesions'];

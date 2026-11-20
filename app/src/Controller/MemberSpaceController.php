@@ -3,6 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Member;
+use App\Enum\MembershipType;
+use App\Form\MemberUpgradeType;
+use App\Service\MembershipSeasons;
+use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\MembershipApplication;
 use App\Form\MemberAccessRequestType;
 use App\Repository\MemberRepository;
@@ -35,6 +39,7 @@ final class MemberSpaceController extends AbstractController
         private readonly MemberAccessLink $links,
         private readonly MembershipNotifier $notifier,
         private readonly RateLimiterFactoryInterface $memberAccessRequestLimiter,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -78,7 +83,55 @@ final class MemberSpaceController extends AbstractController
             'cardUrl' => $application->getMember()
                 ? $this->links->cardUrl($application->getMember(), $this->links->expirationOf($request))
                 : null,
+            'season' => MembershipSeasons::of(new \DateTimeImmutable()),
+            'upgradeUrl' => $application->getMember() && $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable()))
+                ? $this->links->upgradeUrl($application->getMember(), $this->links->expirationOf($request))
+                : null,
         ]);
+    }
+
+    /**
+     * Passer de la formule consommateur a une formule annuelle, sans attendre
+     * la saison suivante : l'adherent choisit, le bureau encaisse.
+     *
+     * Comme pour le bureau, une adhesion validee redevient « en attente » des
+     * qu'il y a une cotisation a payer : la carte n'est plus delivree tant
+     * qu'elle n'est pas encaissee.
+     */
+    #[Route('/adhesion/espace/{number}/passer-annuel', name: 'member_upgrade', methods: ['GET', 'POST'], requirements: ['number' => Member::PREFIX.'\\d+'])]
+    public function upgrade(Request $request, string $number): Response
+    {
+        $application = $this->resolve($request, $number);
+        if (!$application instanceof MembershipApplication) {
+            return $application;
+        }
+
+        $season = MembershipSeasons::of(new \DateTimeImmutable());
+        if (!$application->canBecomeAnnual($season)) {
+            return $this->render('site/member_upgrade_unavailable.html.twig', ['application' => $application]);
+        }
+
+        $from = $application->getMembershipType();
+        $form = $this->createForm(MemberUpgradeType::class, $application);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (MembershipType::Family !== $application->getMembershipType()) {
+                $application->setPrincipalMemberName(null);
+            }
+
+            $application->recordFormulaChange($from, null);
+            if (($application->amountDue() ?? 0) > 0 && $application->isValidated()) {
+                $application->reopen(null);
+            }
+            $this->entityManager->flush();
+
+            $this->notifier->notifyUpgrade($application);
+
+            return $this->render('site/member_upgrade_done.html.twig', ['application' => $application]);
+        }
+
+        return $this->render('site/member_upgrade.html.twig', ['form' => $form, 'application' => $application]);
     }
 
     /**

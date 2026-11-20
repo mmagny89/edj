@@ -4,11 +4,13 @@ namespace App\Controller\app;
 
 use App\Dto\SeasonGenerationRequest;
 use App\Entity\Event;
+use App\Entity\EventContribution;
 use App\Form\EventFormType;
 use App\Form\SeasonGenerationType;
 use App\Repository\EventRepository;
 use App\Service\SeasonGenerator;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -156,6 +158,20 @@ final class EventController extends AbstractController
         $this->addFlash('success', sprintf('« %s » a été supprimé.', $title));
 
         return $this->redirectToRoute('app_events');
+    }
+
+    #[Route('/{id}/apports/{contribution}/supprimer', name: 'app_event_contribution_delete', methods: ['POST'], requirements: ['id' => '\d+', 'contribution' => '\d+'])]
+    public function deleteContribution(Request $request, Event $event, #[MapEntity(id: 'contribution')] EventContribution $contribution): Response
+    {
+        if ($contribution->getEvent() !== $event || !$this->isCsrfTokenValid('delete_contribution_'.$contribution->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'La suppression a été refusée : jeton invalide.');
+        } else {
+            $this->entityManager->remove($contribution);
+            $this->entityManager->flush();
+            $this->addFlash('success', 'Cet apport a été supprimé.');
+        }
+
+        return $this->redirectToRoute('app_event_edit', ['id' => $event->getId()]);
     }
 
     private function handleForm(Request $request, Event $event): Response

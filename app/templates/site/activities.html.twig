@@ -1,0 +1,64 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Nos rendez-vous - Envie de Jouer{% endblock %}
+{% block description %}Soirées du mardi, après-midi du 1er samedi, Nuits du Jeu et week-end du Jeu : le déroulé de chaque rendez-vous d'Envie de Jouer à Joigny.{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section">
+        <div class="section__intro">
+            <p class="eyebrow">Rendez-vous</p>
+            <h1>Nos rendez-vous en détail</h1>
+            <p>
+                Tous ont lieu à la Maison des Associations de Joigny et reposent sur le même principe :
+                chacun apporte des jeux de sa collection, on les met en commun, on joue ensemble.
+            </p>
+            <p>
+                Adhésion à 10 € par an, ou formule consommateur : gratuite à l'année, 1 € par événement.
+                <a href="{{ path('membership_form') }}">Remplir le bulletin en ligne</a>.
+            </p>
+        </div>
+
+        <section id="mardis" class="rdv-card rdv-card--weekly" aria-labelledby="t-mardis">
+            <p class="rdv-card__rhythm"><i class="fa-solid fa-repeat" aria-hidden="true"></i> Chaque semaine</p>
+            <h2 id="t-mardis">Les soirées du mardi</h2>
+            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 18h30 – minuit</p>
+            <p>Tables ouvertes : on joue aux jeux que les membres ont apportés, on explique les règles, on essaie des nouveautés.</p>
+            <p>Venez seul ou à plusieurs : des joueurs vous expliquent les règles et vous trouvent une table.</p>
+        </section>
+
+        <section id="samedis" class="rdv-card rdv-card--monthly" aria-labelledby="t-samedis">
+            <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Chaque mois</p>
+            <h2 id="t-samedis">Les après-midi du 1<sup>er</sup> samedi</h2>
+            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 14h – 18h</p>
+            <p>Une après-midi pour jouer sans se presser, entre amis ou en famille.</p>
+        </section>
+
+        <section id="nuits-du-jeu" class="rdv-card rdv-card--yearly" aria-labelledby="t-nuits">
+            <p class="rdv-card__rhythm"><i class="fa-solid fa-moon" aria-hidden="true"></i> Quatre fois par an</p>
+            <h2 id="t-nuits">Les Nuits du Jeu</h2>
+            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> De 15h à 3h du matin</p>
+            <p>Douze heures de jeu d'affilée, pour les longues parties et les grosses tables. L'une des quatre nuits fête l'anniversaire de l'association.</p>
+            <p>
+                Chaque nuit a sa page, dans le calendrier : on y voit si LudiPassion sera présent, s'il y a
+                une tombola (lots, prix du ticket), et on peut dire ce qu'on apporte, jeux, boissons ou gâteaux.
+            </p>
+        </section>
+
+        <section id="week-end-du-jeu" class="rdv-card rdv-card--yearly" aria-labelledby="t-we">
+            <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-week" aria-hidden="true"></i> Une fois par an</p>
+            <h2 id="t-we">Le week-end du Jeu</h2>
+            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> Deux jours</p>
+            <p>Deux jours de jeu pour la Fête des Jeux : la nuit du samedi, puis on remet ça le dimanche.</p>
+        </section>
+
+        <section id="hors-les-murs" class="rdv-card rdv-card--outside" aria-labelledby="t-hors">
+            <p class="rdv-card__rhythm"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Hors de nos murs</p>
+            <h2 id="t-hors">Festival et fête des associations</h2>
+            <p>Le festival Le Sens du Jeu, à Sens, et la fête des associations, à Joigny, pour retrouver d'autres joueurs et rencontrer ceux qui ne nous connaissent pas encore.</p>
+        </section>
+
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}#calendrier" class="button button--primary">Voir le calendrier</a>
+        </div>
+    </main>
+{% endblock %}

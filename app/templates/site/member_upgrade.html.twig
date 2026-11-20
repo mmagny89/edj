@@ -1,0 +1,52 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Passer à l'adhésion annuelle - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Passer à l'adhésion annuelle</h1>
+            <p>
+                {{ application.firstName }}, vous êtes adhérent consommateur
+                (<strong class="member-number">{{ application.memberNumber }}</strong>) : vous payez 1 €
+                par événement. Avec une adhésion annuelle, vous venez à toutes les séances de la saison
+                sans rien payer de plus. Vos informations et vos signatures sont déjà enregistrées :
+                il suffit de choisir la formule.
+            </p>
+        </div>
+
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    Le changement n'a pas pu être enregistré : quelques champs demandent votre attention.
+                </p>
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Formule annuelle</legend>
+                {{ form_row(form.membershipType) }}
+                {{ form_row(form.principalMemberName) }}
+            </fieldset>
+
+            <p class="form-note">
+                La cotisation se règle à l'association, lors d'une de nos soirées. Tant qu'elle n'est pas
+                encaissée, votre adhésion annuelle reste « en attente » et la carte d'adhérent n'est pas
+                délivrée.
+            </p>
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    Passer à l'adhésion annuelle
+                </button>
+                <a href="{{ path('member_access_request') }}" class="button button--quiet">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </main>
+{% endblock %}
