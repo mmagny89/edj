@@ -17,9 +17,11 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute (preparation de la mise en production)
 
-- **Passage a l'adhesion annuelle** depuis l'espace adherent : un adherent consommateur choisit sa formule
-  annuelle sans ressaisir ses informations ; le bureau est prevenu et l'adhesion reste en attente jusqu'a
-  l'encaissement.
+- **Modifier mon adhesion** : troisieme choix du bulletin en ligne, a cote de « Nouvelle adhesion » et
+  « Renouveler mon adhesion » (« Changement d'adresse ou je souhaite passer en adhesion annuelle »). Numero,
+  lien signe envoye a l'adresse du bulletin, puis formulaire des coordonnees ; un adherent consommateur
+  peut y passer a une formule annuelle. Le bureau est prevenu ; apres un passage a l'annuel, l'adhesion
+  reste en attente jusqu'a l'encaissement.
 - **QR code du site** (`/admin/qr-code`) : les deux adresses (avec et sans `www`), en SVG et en PNG, generes
   sur le serveur.
 - **Nuits et week-ends du jeu** : deux types d'evenement, avec une page publique (`/evenements/{id}`) qui dit

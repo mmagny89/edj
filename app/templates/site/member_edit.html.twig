@@ -1,0 +1,70 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Modifier mon adhésion - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Modifier mon adhésion</h1>
+            <p>
+                {{ application.firstName }}, votre numéro d'adhérent est
+                <strong class="member-number">{{ application.memberNumber }}</strong>. Corrigez vos
+                coordonnées ci-dessous{% if canUpgrade %}, ou passez à une adhésion annuelle : vos autres informations et
+                vos signatures sont déjà enregistrées{% endif %}.
+            </p>
+        </div>
+
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    Le changement n'a pas pu être enregistré : quelques champs demandent votre attention.
+                </p>
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Mes coordonnées</legend>
+                <div class="form-grid">
+                    <div class="form-grid__wide">{{ form_row(form.address) }}</div>
+                    {{ form_row(form.postalCode) }}
+                    {{ form_row(form.city) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.email) }}
+                </div>
+                <p class="form-note">
+                    Si vous changez d'adresse e-mail, les prochains liens seront envoyés à la nouvelle.
+                </p>
+            </fieldset>
+
+            {% if canUpgrade %}
+                <fieldset>
+                    <legend>Ma formule</legend>
+                    <p class="form-note">
+                        Vous êtes adhérent consommateur : 1 € par événement. Choisissez une formule annuelle pour
+                        venir toute la saison sans rien payer de plus, ou gardez la formule actuelle.
+                    </p>
+                    {{ form_row(form.membershipType) }}
+                    {{ form_row(form.principalMemberName) }}
+                    <p class="form-note">
+                        La cotisation annuelle se règle à l'association, lors d'une de nos soirées. Tant qu'elle
+                        n'est pas encaissée, l'adhésion reste « en attente » et la carte n'est pas délivrée.
+                    </p>
+                </fieldset>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    Enregistrer
+                </button>
+                <a href="{{ path('site_index') }}" class="button button--quiet">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </main>
+{% endblock %}
