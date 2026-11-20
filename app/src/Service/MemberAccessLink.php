@@ -56,6 +56,15 @@ final class MemberAccessLink
         return $this->sign('membership_renewal', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
     }
 
+    /**
+     * Lien du formulaire de passage a l'adhesion annuelle : il ouvre un choix a
+     * faire et a relire, comme le renouvellement, d'ou la meme duree.
+     */
+    public function upgradeUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
+    {
+        return $this->sign('member_upgrade', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
+    }
+
     public function isValid(Request $request): bool
     {
         return $this->signer->checkRequest($request);
