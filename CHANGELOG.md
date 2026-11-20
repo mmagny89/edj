@@ -10,6 +10,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- **Courriels** : un gabarit commun (`emails/base.html.twig`) pour tous les messages du site, aux couleurs de
+  l'association, avec son nom et son logo en tete ; compatible Outlook et mobile, logo joint au message.
 - **Referencement** : le plan du site (`sitemap.xml`) liste aussi `/rendez-vous` et les douze prochains
   evenements ; dimensions explicites sur les images de la mascotte ; hierarchie de titres des pages
   « Mentions legales » et « Donnees personnelles » (h1, h2, h3, sans saut) ; description de la page

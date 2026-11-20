@@ -167,8 +167,8 @@ final class MailingTest extends WebTestCase
         self::assertSame(self::SEASON, $campaigns[0]->getSeason());
         self::assertStringContainsString('Bonjour {{prenom}} {{nom}}, n° {{numero}}.', $campaigns[0]->getBody(), 'Le texte garde ses variables.');
         self::assertStringContainsString('<p ', $campaigns[0]->getBody());
-        self::assertStringContainsString('cid:', (string) $mail->getHtmlBody(), 'Le logo est joint au message.');
-        self::assertNotEmpty($mail->getAttachments());
+        // Le logo est joint a l'envoi reel par MailLogoListener (EmailLayoutTest).
+        self::assertStringContainsString('cid:logo', (string) $mail->getHtmlBody());
     }
 
     public function testSomeoneWhoUnsubscribedReceivesNothing(): void

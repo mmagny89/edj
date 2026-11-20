@@ -57,6 +57,15 @@ final class NightEndsAtThreeCommandTest extends KernelTestCase
         self::assertSame(EventType::GameNight, $migrated->getType());
     }
 
+    public function testZeroPaddedFourIsHandled(): void
+    {
+        $night = $this->event('Nuit du Jeu', EventType::GameNight, '15h - 04h');
+
+        $this->applyCommand();
+
+        self::assertSame('15h - 03h', $this->entityManager->find(Event::class, $night)->getTimeLabel());
+    }
+
     public function testDryRunChangesNothing(): void
     {
         $night = $this->event('Nuit du Jeu', EventType::GameNight, '15h - 4h');

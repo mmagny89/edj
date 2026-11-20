@@ -32,7 +32,7 @@ final class UserCreationType extends AbstractType
             ->add('role', ChoiceType::class, [
                 'label' => 'Rôle',
                 'choices' => [
-                    'Contributeur — gère le calendrier des évènements' => User::ROLE_CONTRIBUTOR,
+                    'Contributeur — tout, sauf saisons, import et administrateurs' => User::ROLE_CONTRIBUTOR,
                     'Super-administrateur — tout, dont les adhésions et les comptes' => User::ROLE_SUPER_ADMIN,
                 ],
                 'expanded' => true,
