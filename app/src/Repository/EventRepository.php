@@ -57,6 +57,24 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
+     * Les evenements commences au plus tard a la date donnee (donc pointables),
+     * du plus ancien au plus recent. Les evenements passes sont purges : la liste
+     * reste courte d'elle-meme.
+     *
+     * @return list<Event>
+     */
+    public function findStartedBy(\DateTimeImmutable $today): array
+    {
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.startsAt <= :end')
+            ->setParameter('end', $today->setTime(23, 59, 59))
+            ->orderBy('e.startsAt', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Tous les evenements, les plus proches d'abord : la liste du
      * back-office, ou l'on veut aussi voir ce qui vient de passer.
      *
