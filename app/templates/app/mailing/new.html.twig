@@ -34,7 +34,9 @@
             <fieldset class="space-y-6">
                 <legend class="mb-4 text-lg font-bold text-ink">Message</legend>
                 {{ form_row(form.subject) }}
-                {{ form_row(form.body) }}
+                <div data-controller="richtext">
+                    {{ form_row(form.body, {attr: {'data-richtext-target': 'source'}}) }}
+                </div>
                 {# Les variables viennent du serveur : la liste de la page est celle que la validation accepte. #}
                 <p class="text-sm text-slate-600">
                     Variables, remplacées pour chaque personne :
@@ -64,7 +66,8 @@
                             {% if preview.sampleName %}Tel que le recevra {{ preview.sampleName }}{% else %}Avec des valeurs d'exemple{% endif %}
                         </p>
                         <p class="mt-2 font-semibold text-ink">{{ preview.subject }}</p>
-                        <div class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ preview.body }}</div>
+                        {# preview.body vient de MailingTemplate::normalize : HTML nettoye. #}
+                        <div class="mail-body mt-2 text-sm text-slate-800">{{ preview.body|raw }}</div>
                     </div>
 
                     {{ form_widget(form.expected, {value: audience.count}) }}

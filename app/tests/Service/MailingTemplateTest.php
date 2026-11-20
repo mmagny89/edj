@@ -90,4 +90,40 @@ final class MailingTemplateTest extends TestCase
     {
         self::assertSame('2026-2027', MailingTemplate::seasonLabel(2027));
     }
+
+    public function testTheEditorsHtmlIsCleaned(): void
+    {
+        $html = MailingTemplate::normalize('<p style="text-align:center;color:red"><strong>Bonjour</strong> <script>alert(1)</script><a href="javascript:alert(1)">piege</a> <a href="https://enviedejouer89.fr/">le site</a></p><img src=x onerror=alert(1)>');
+
+        self::assertStringContainsString('<strong>Bonjour</strong>', $html);
+        self::assertStringContainsString('text-align:center;', $html);
+        self::assertStringContainsString('href="https://enviedejouer89.fr/"', $html);
+        self::assertStringNotContainsString('script', $html);
+        self::assertStringNotContainsString('javascript:', $html);
+        self::assertStringNotContainsString('onerror', $html);
+        self::assertStringNotContainsString('<img', $html);
+        self::assertStringNotContainsString('color:red', $html);
+    }
+
+    public function testAPlainTextStillBecomesParagraphs(): void
+    {
+        self::assertSame(
+            '<p style="margin:0 0 14px;">Un</p>'."\n".'<p style="margin:0 0 14px;">Deux<br>'."\n".'trois</p>',
+            MailingTemplate::normalize("Un\n\nDeux\ntrois"),
+        );
+    }
+
+    public function testVariablesAreEscapedInHtml(): void
+    {
+        $html = MailingTemplate::renderHtml('<p>Bonjour {{prenom}}</p>', ['prenom' => '<b>Ada</b>']);
+
+        self::assertSame('<p>Bonjour &lt;b&gt;Ada&lt;/b&gt;</p>', $html);
+    }
+
+    public function testTheTextVersionKeepsParagraphsAndLinks(): void
+    {
+        $text = MailingTemplate::toText('<p>Salut <strong>toi</strong>,</p><p>Voir <a href="https://enviedejouer89.fr/">le site</a>.</p><ul><li>un</li><li>deux</li></ul>');
+
+        self::assertSame("Salut toi,\n\nVoir le site (https://enviedejouer89.fr/).\n\n- un\n- deux", $text);
+    }
 }

@@ -165,7 +165,10 @@ final class MailingTest extends WebTestCase
         self::assertCount(1, $campaigns);
         self::assertSame(2, $campaigns[0]->getRecipientCount());
         self::assertSame(self::SEASON, $campaigns[0]->getSeason());
-        self::assertSame("Bonjour {{prenom}} {{nom}}, n° {{numero}}.\n\nÀ mardi !", $campaigns[0]->getBody(), 'Le texte garde ses variables.');
+        self::assertStringContainsString('Bonjour {{prenom}} {{nom}}, n° {{numero}}.', $campaigns[0]->getBody(), 'Le texte garde ses variables.');
+        self::assertStringContainsString('<p ', $campaigns[0]->getBody());
+        self::assertStringContainsString('cid:', (string) $mail->getHtmlBody(), 'Le logo est joint au message.');
+        self::assertNotEmpty($mail->getAttachments());
     }
 
     public function testSomeoneWhoUnsubscribedReceivesNothing(): void
