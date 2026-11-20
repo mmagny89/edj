@@ -13,25 +13,6 @@
         <a href="{{ path('app_user_new') }}" class="btn btn-primary">{{ ui.icon('plus') }} Ajouter un administrateur</a>
     </div>
 
-    {% if credentials %}
-        {# Affiche une seule fois : le message est un flash, consomme a l'affichage. #}
-        <section class="mt-6 rounded-xl border-2 border-amber-400 bg-amber-50 p-5" role="alert" aria-labelledby="titre-identifiants">
-            <h2 id="titre-identifiants" class="text-lg font-bold text-amber-950">
-                {{ credentials.created ? 'Compte créé' : 'Mot de passe réinitialisé' }} : à transmettre maintenant
-            </h2>
-            <p class="mt-1 text-sm text-amber-900">
-                Ce mot de passe provisoire <strong>ne sera plus affiché</strong>. Notez-le ou transmettez-le maintenant ;
-                la personne devra le changer dès sa connexion.
-            </p>
-            <dl class="mt-4 grid gap-2 sm:grid-cols-[8rem_1fr]">
-                <dt class="font-semibold text-amber-950">Adresse</dt>
-                <dd>{{ credentials.email }}</dd>
-                <dt class="font-semibold text-amber-950">Mot de passe</dt>
-                <dd><code class="rounded bg-white px-2 py-1 text-lg font-bold tracking-wide text-ink select-all">{{ credentials.password }}</code></dd>
-            </dl>
-        </section>
-    {% endif %}
-
     <section class="card mt-8" aria-labelledby="titre-liste">
         <h2 id="titre-liste" class="border-b border-slate-100 px-5 py-4 text-lg font-bold text-ink">
             Comptes <span class="font-medium text-slate-600">{{ users|length }}</span>
@@ -98,7 +79,7 @@
 
                                         <form method="post" action="{{ path('app_user_reset_password', {id: user.id}) }}"
                                               data-controller="confirm"
-                                              data-confirm-message-value="Réinitialiser le mot de passe de {{ user.email }} ? Un mot de passe provisoire sera généré et son mot de passe actuel cessera de fonctionner."
+                                              data-confirm-message-value="Réinitialiser le mot de passe de {{ user.email }} ? Son mot de passe actuel cessera de fonctionner et un lien pour en choisir un nouveau lui sera envoyé par courriel."
                                               data-action="submit->confirm#ask">
                                             <input type="hidden" name="_token" value="{{ csrf_token('user_reset_' ~ user.id) }}">
                                             <button type="submit" class="btn btn-secondary">
@@ -122,6 +103,19 @@
                                                 <input type="hidden" name="_token" value="{{ csrf_token('user_block_' ~ user.id) }}">
                                                 <button type="submit" class="btn btn-danger">
                                                     {{ ui.icon('eye-slash') }} Bloquer<span class="sr-only"> {{ user.email }}</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+
+                                        {% if not user.superAdmin %}
+                                            <form method="post" action="{{ path('app_user_delete', {id: user.id}) }}"
+                                                  data-controller="confirm"
+                                                  data-confirm-message-value="Supprimer définitivement le compte de {{ user.email }} ? Cette action est irréversible."
+                                                  data-confirm-confirm-label-value="Supprimer"
+                                                  data-action="submit->confirm#ask">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('user_delete_' ~ user.id) }}">
+                                                <button type="submit" class="btn btn-danger">
+                                                    {{ ui.icon('trash') }} Supprimer<span class="sr-only"> {{ user.email }}</span>
                                                 </button>
                                             </form>
                                         {% endif %}

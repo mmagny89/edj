@@ -1,0 +1,14 @@
+Bonjour,
+
+{% if created %}Un compte d'administration du site d'Envie de Jouer vient d'être créé pour vous ({{ email }}).
+
+Pour l'activer, choisissez votre mot de passe en ouvrant ce lien :{% else %}Un administrateur a réinitialisé le mot de passe de votre compte d'administration ({{ email }}) : l'ancien ne fonctionne plus.
+
+Choisissez-en un nouveau en ouvrant ce lien :{% endif %}
+
+{{ url }}
+
+Ce lien est valable {{ hours }} heures et ne sert qu'une fois. Passé ce délai, utilisez « Mot de passe oublié » sur la page de connexion.
+Si vous n'attendiez pas ce message, ignorez-le : {{ created ? 'le compte restera inutilisable' : 'contactez un administrateur' }}.
+
+Envie de Jouer — Joigny

@@ -1,0 +1,28 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Votre accès à l'administration{% endblock %}
+{% block preheader %}Choisissez votre mot de passe.{% endblock %}
+
+{% block content %}
+    <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#171922;">{{ created ? "Bienvenue dans l'administration" : 'Choisir un nouveau mot de passe' }}</h1>
+    <p style="margin:0 0 12px;">Bonjour,</p>
+    <p style="margin:0 0 12px;">
+        {% if created %}
+            Un compte {{ super_admin ? 'de super-administrateur' : 'de contributeur' }} vient d'être créé pour vous sur le site d'Envie de Jouer.
+        {% else %}
+            Un administrateur a réinitialisé le mot de passe de votre compte : l'ancien ne fonctionne plus.
+        {% endif %}
+    </p>
+    <p style="margin:0 0 12px;">Votre identifiant est <strong>{{ email }}</strong>. {{ created ? 'Pour activer le compte, choisissez' : 'Choisissez' }} votre mot de passe :</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+        <tr>
+            <td align="center" bgcolor="#255db0" style="background-color:#255db0;border-radius:8px;">
+                <a href="{{ url }}" style="display:inline-block;padding:13px 22px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">Choisir mon mot de passe</a>
+            </td>
+        </tr>
+    </table>
+    <p style="margin:0;font-size:13px;color:#475569;">
+        Ce lien est valable {{ hours }} heures et ne sert qu'une fois. Passé ce délai, utilisez « Mot de passe oublié »
+        sur la page de connexion. Si vous n'attendiez pas ce message, ignorez-le : {{ created ? 'le compte restera inutilisable' : 'contactez un administrateur' }}.
+    </p>
+{% endblock %}
