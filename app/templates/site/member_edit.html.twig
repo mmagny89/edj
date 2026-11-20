@@ -67,10 +67,7 @@
 
             <fieldset>
                 <legend>Autorisations</legend>
-                {{ form_row(form.philibertConsent) }}
-                <p class="form-note" data-membership-type-target="philibertNote" role="status" hidden>
-                    Cet avantage est réservé aux adhérents à l'année : la formule consommateur n'y donne pas droit.
-                </p>
+                <div data-membership-type-target="philibert">{{ form_row(form.philibertConsent) }}</div>
                 {{ form_row(form.imageRightsRefused) }}
             </fieldset>
 
