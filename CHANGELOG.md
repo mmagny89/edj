@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ## [Non publie]
 
+## [1.5.0] - 2026-11-20
+
 ### Securite
 
 - **PHP 8.5.12** (correctifs de CVE-2026-109618 et CVE-2026-109619, execution de code a distance), en
@@ -644,6 +646,8 @@ depot public.
 - Metriques Caddy sur une ecoute interne `:2020`, pour une supervision d'hote.
 - Attrapeur de courriels Mailpit en developpement.
 
-[Non publie]: https://github.com/mmagny89/edj/compare/v1.1.0...HEAD
+[Non publie]: https://github.com/mmagny89/edj/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/mmagny89/edj/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/mmagny89/edj/compare/v1.3.0...v1.4.0
 [1.1.0]: https://github.com/mmagny89/edj/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mmagny89/edj/releases/tag/v1.0.0
