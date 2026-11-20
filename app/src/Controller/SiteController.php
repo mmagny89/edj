@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Event;
+use App\Enum\EventType;
 use App\Repository\EventRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -104,6 +105,23 @@ final class SiteController extends AbstractController
     }
 
     /**
+     * Page « en savoir plus » d'un evenement : sa propre page pour une nuit ou
+     * un week-end du jeu, la presentation du rendez-vous pour un mardi ou un
+     * samedi, rien pour une manifestation.
+     */
+    private function eventUrl(Event $event): string
+    {
+        $type = $event->getType();
+
+        return match (true) {
+            $type?->hasOwnPage() ?? false => $this->generateUrl('site_event', ['id' => $event->getId()]),
+            EventType::Weekly === $type => $this->generateUrl('site_activities').'#mardis',
+            EventType::Monthly === $type => $this->generateUrl('site_activities').'#samedis',
+            default => '',
+        };
+    }
+
+    /**
      * Les evenements sont remis au front dans la forme qu'attend le
      * carrousel de assets/site.js, qui les fusionne avec les mardis et les
      * 1ers samedis qu'il calcule lui-meme.
@@ -114,7 +132,7 @@ final class SiteController extends AbstractController
      *
      * @param list<Event> $events
      *
-     * @return list<array{date: string, type: string, title: string, time: string, description: string, location: string}>
+     * @return list<array{url: string, date: string, type: string, title: string, time: string, description: string, location: string}>
      */
     private function serializeEvents(array $events): array
     {
@@ -130,6 +148,7 @@ final class SiteController extends AbstractController
 
             while ($day <= $last) {
                 $serialized[] = [
+                    'url' => $this->eventUrl($event),
                     'date' => $day->format('Y-m-d'),
                     'type' => $event->getType()?->value ?? 'special',
                     'title' => (string) $event->getTitle(),

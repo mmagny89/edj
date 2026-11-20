@@ -590,7 +590,9 @@ h1 {
     background: var(--blue);
 }
 
-.event-slide--special .event-slide__date {
+.event-slide--special .event-slide__date,
+.event-slide--game_night .event-slide__date,
+.event-slide--game_weekend .event-slide__date {
     background: var(--yellow);
     color: var(--ink);
 }
@@ -2281,4 +2283,16 @@ html[data-motion="reduce"] *::after {
     .membership-choice {
         grid-template-columns: 1fr;
     }
+}
+
+/* Lien « en savoir plus » des cartes du calendrier et des rendez-vous. */
+.event-slide__more,
+.rdv-card__more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 800;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
