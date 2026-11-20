@@ -37,6 +37,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Domaine definitif `enviedejouer89.fr` (sans www) : `REDIRIGER_WWW=1` redirige `www.` vers lui en 301
+  (`compose.www.yml`). `deployer.sh` branche enfin `compose.redirection.yml` (`ANCIEN_DOMAINE`), documente
+  mais jamais ajoute jusque-la.
 - Passage de consommateur a annuel : en choisissant une formule annuelle, l'adherent voit les avantages
   (remises chez les partenaires) et peut accepter l'avantage ludique Philibert, dans un encart « Avantage ludique » a part, comme sur le bulletin.
 - Bulletin et modification de la fiche : l'« Avantage ludique » est masque par defaut et n'apparait que pour

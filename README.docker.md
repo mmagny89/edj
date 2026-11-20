@@ -254,7 +254,7 @@ docker compose -f compose.yml -f compose.prod.yml --env-file .env.prod.local log
 
 ## Ecarts assumes au manifeste
 
-- `compose.redirection.yml` n'est pas au manifeste (section 1) : override **facultatif** que `deployer.sh` n'ajoute que si `ANCIEN_DOMAINE` figure dans les secrets, pour rediriger en 301 un ancien domaine vers le principal le temps d'un changement de domaine.
+- `compose.redirection.yml` n'est pas au manifeste (section 1) : override **facultatif** que `deployer.sh` n'ajoute que si `ANCIEN_DOMAINE` figure dans les secrets, pour rediriger en 301 un ancien domaine vers le principal le temps d'un changement de domaine. De meme `compose.www.yml`, ajoute si `REDIRIGER_WWW=1`, redirige `www.<domaine>` vers le domaine nu.
 
 | Ecart | Pourquoi |
 |---|---|

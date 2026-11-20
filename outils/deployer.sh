@@ -28,7 +28,18 @@ esac
 # de toute facon le chemin absolu (conventions, section ci/deploiement).
 PROJET=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 SECRETS="$PROJET/.env.${ENVIRONNEMENT}.local"
-COMPOSE="docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml --env-file $SECRETS"
+lire_secret() {
+	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
+}
+
+COMPOSE="docker compose -f compose.yml -f compose.${ENVIRONNEMENT}.yml"
+# Redirections facultatives, propres a la production : un ancien domaine vers le
+# principal (ANCIEN_DOMAINE) et www vers le domaine nu (REDIRIGER_WWW=1).
+if [ "$ENVIRONNEMENT" = prod ]; then
+	[ -z "$(lire_secret ANCIEN_DOMAINE)" ] || COMPOSE="$COMPOSE -f compose.redirection.yml"
+	[ "$(lire_secret REDIRIGER_WWW)" != 1 ] || COMPOSE="$COMPOSE -f compose.www.yml"
+fi
+COMPOSE="$COMPOSE --env-file $SECRETS"
 
 cd "$PROJET"
 
@@ -86,10 +97,6 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # En prod, SERVER_NAME est fige a ":80" (Traefik termine le TLS) et le domaine
 # vit dans SERVER_HOST ; en staging, Caddy sert le domaine lui-meme et c'est
 # SERVER_NAME qui le porte. On lit donc l'un puis l'autre.
-lire_secret() {
-	grep -E "^$1=" "$SECRETS" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '"'"'"''
-}
-
 DOMAINE=$(lire_secret SERVER_HOST)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret SERVER_NAME)
 

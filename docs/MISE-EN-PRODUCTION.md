@@ -424,6 +424,10 @@ A faire quand le domaine est achete et que le site a ete valide sous
   www.enviedejouer89.fr.   A   <IP du VPS>   (ou CNAME vers le domaine nu)
   ```
 
+  Le domaine de reference est **`enviedejouer89.fr`, sans www** : `www.` redirige
+  vers lui en 301 (voir E.3). Le DNS de `www` est donc indispensable, sans quoi
+  la redirection ne peut pas obtenir son certificat.
+
 - Verifier : `dig +short enviedejouer89.fr`.
 
 ### E.2 Courrier du domaine (a prevoir tot)
@@ -452,6 +456,7 @@ Dans `/srv/edj-prod/.env.prod.local` :
 ```
 APP_DOMAIN=enviedejouer89.fr
 ANCIEN_DOMAINE=edj.mmagny.fr
+REDIRIGER_WWW=1
 SITE_INDEXABLE=1
 ```
 
@@ -460,6 +465,9 @@ SITE_INDEXABLE=1
   redirige **de façon permanente (301)** `edj.mmagny.fr` vers le nouveau domaine,
   chemin conserve. Les adresses deja partagees continuent de marcher, et les
   moteurs apprennent le deplacement.
+- `REDIRIGER_WWW=1` : `deployer.sh` ajoute `compose.www.yml`, qui redirige
+  **en 301** `www.enviedejouer89.fr` vers `enviedejouer89.fr`, chemin conserve.
+  A n'activer que lorsque le DNS de `www` existe. Pas sous `edj.mmagny.fr`.
 - `SITE_INDEXABLE=1` : ouvre le site aux moteurs de recherche (`robots.txt`
   autorise l'accueil, pages en `index`, plan du site annonce).
 
@@ -475,6 +483,9 @@ pointer encore sur le serveur). Controler :
 
 ```sh
 sh outils/verifier-site.sh enviedejouer89.fr --indexable
+curl -sI https://www.enviedejouer89.fr/adhesion/bulletin | grep -iE '^(HTTP|location)'
+#  HTTP/2 301
+#  location: https://enviedejouer89.fr/adhesion/bulletin
 curl -sI https://edj.mmagny.fr/adhesion/bulletin | grep -iE '^(HTTP|location)'
 #  HTTP/2 301
 #  location: https://enviedejouer89.fr/adhesion/bulletin
@@ -536,4 +547,5 @@ redeployer. Le TTL bas de la veille rend le DNS reversible en quelques minutes.
 | `MEMBERS_WHATSAPP_URL` | non | Lien du groupe WhatsApp, dans le courriel de confirmation |
 | `SITE_INDEXABLE` | non | `0` (defaut) : invisible des moteurs ; `1` : ouvert |
 | `ANCIEN_DOMAINE` | non | Active la redirection 301 de l'ancien domaine |
+| `REDIRIGER_WWW` | non | `1` : redirige `www.<domaine>` vers `<domaine>` en 301 (DNS de `www` requis) |
 | `PROXY_NETWORK` | oui | Nom du reseau Docker de Traefik (`proxy`) |
