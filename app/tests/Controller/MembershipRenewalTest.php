@@ -128,7 +128,7 @@ final class MembershipRenewalTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->filter('nav.membership-choice a[aria-current="page"]'));
         self::assertSelectorTextContains('nav.membership-choice', 'Nouvelle adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler mon adhésion');
+        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler ou modifier mon adhésion');
     }
 
     public function testTheRequestPageIsPublic(): void
@@ -136,7 +136,7 @@ final class MembershipRenewalTest extends WebTestCase
         $this->client->request('GET', '/adhesion/renouvellement');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Renouveler mon adhésion');
+        self::assertSelectorTextContains('h1', 'Renouveler ou modifier mon adhésion');
     }
 
     /**
@@ -257,7 +257,9 @@ final class MembershipRenewalTest extends WebTestCase
         $this->renew($link);
         $this->client->request('GET', $link);
 
-        self::assertSelectorTextContains('h1', "C'est déjà fait");
+        // Adhesion de la saison deja deposee : le lien ouvre sa modification.
+        self::assertResponseRedirects();
+        self::assertStringContainsString('/modifier', (string) $this->client->getResponse()->headers->get('Location'));
         $this->entityManager->clear();
         self::assertCount(2, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
     }

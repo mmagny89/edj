@@ -25,64 +25,45 @@
         </header>
 
         <ul class="info-tiles">
-            <li>
-                <i class="fa-regular fa-clock" aria-hidden="true"></i>
-                <strong>Horaire</strong>
-                <span>{{ event.timeLabel }}</span>
-            </li>
-            <li>
-                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                <strong>Lieu</strong>
-                <span>{{ event.location ?: 'Maison des Associations, Joigny' }}</span>
-            </li>
+            <li><i class="fa-regular fa-clock" aria-hidden="true"></i><span><strong>Horaire</strong> {{ event.timeLabel }}</span></li>
+            <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span><strong>Lieu</strong> {{ event.location ?: 'Maison des Associations, Joigny' }}</span></li>
             <li>
                 <i class="fa-solid fa-store" aria-hidden="true"></i>
-                <strong>LudiPassion</strong>
-                <span>
-                    {% if event.ludipassionPresent is same as(true) %}Sera présent
-                    {% elseif event.ludipassionPresent is same as(false) %}Ne sera pas présent
-                    {% else %}À confirmer{% endif %}
+                <span><strong>LudiPassion</strong>
+                    {% if event.ludipassionPresent is same as(true) %}sera présent
+                    {% elseif event.ludipassionPresent is same as(false) %}ne sera pas présent
+                    {% else %}à confirmer{% endif %}
                 </span>
             </li>
             <li>
                 <i class="fa-solid fa-ticket" aria-hidden="true"></i>
-                <strong>Tombola</strong>
-                <span>{{ event.raffleEnabled ? 'Oui' : 'Pas de tombola' }}</span>
+                <span><strong>Tombola</strong>
+                    {% if event.raffleEnabled %}
+                        {% if event.raffleTicketPriceLabel %}ticket à {{ event.raffleTicketPriceLabel }}{% else %}oui{% endif %}{% if event.raffleTicketCount %}, {{ event.raffleTicketCount }} tickets{% endif %}
+                    {% else %}pas de tombola{% endif %}
+                </span>
             </li>
         </ul>
 
-        {% if event.raffleEnabled %}
+        {% if event.raffleEnabled and event.rafflePrizeList|length %}
             <section class="raffle-panel" aria-labelledby="t-tombola">
-                <h2 id="t-tombola">La tombola</h2>
-                <div class="raffle-panel__stats">
-                    {% if event.raffleTicketPriceLabel %}
-                        <p><strong>{{ event.raffleTicketPriceLabel }}</strong><span>le ticket</span></p>
-                    {% endif %}
-                    {% if event.raffleTicketCount %}
-                        <p><strong>{{ event.raffleTicketCount }}</strong><span>tickets à vendre</span></p>
-                    {% endif %}
-                    <p><strong>{{ event.rafflePrizeList|length }}</strong><span>lot{{ event.rafflePrizeList|length > 1 ? 's' : '' }} à gagner</span></p>
-                </div>
-                <ul class="raffle-panel__prizes" aria-label="Lots à gagner">
+                <h2 id="t-tombola">Lots de la tombola ({{ event.rafflePrizeList|length }})</h2>
+                <ul class="raffle-panel__prizes">
                     {% for prize in event.rafflePrizeList %}<li>{{ prize }}</li>{% endfor %}
                 </ul>
             </section>
         {% endif %}
 
         <aside class="bring-teaser">
-            <div>
-                <h2>Qui apporte quoi ?</h2>
-                <p>
-                    {% if event.contributions|length %}
-                        {{ event.contributions|length }} personne{{ event.contributions|length > 1 ? 's' : '' }} ont déjà dit ce qu'elles apportent. Et vous ?
-                    {% else %}
-                        Jeux, boissons, gâteaux : dites ce que vous apportez pour que tout le monde s'y retrouve.
-                    {% endif %}
-                </p>
-            </div>
-            <a href="{{ path('site_event_contributions', {id: event.id}) }}" class="button button--join">
-                <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Voir la liste
-            </a>
+            <p>
+                <strong>Qui apporte quoi ?</strong>
+                {% if event.contributions|length %}
+                    {{ event.contributions|length }} apport{{ event.contributions|length > 1 ? 's' : '' }} déjà noté{{ event.contributions|length > 1 ? 's' : '' }}.
+                {% else %}
+                    Jeux, boissons, gâteaux : dites ce que vous ramenez.
+                {% endif %}
+            </p>
+            <a href="{{ path('site_event_contributions', {id: event.id}) }}" class="button button--join">Voir la liste</a>
         </aside>
 
         <p class="event-page__more"><a href="{{ path('site_activities') }}#nuits-du-jeu">En savoir plus sur nos rendez-vous</a></p>

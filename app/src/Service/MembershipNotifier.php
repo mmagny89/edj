@@ -150,16 +150,7 @@ final class MembershipNotifier
      */
     public function sendRenewalLink(MembershipApplication $application, string $url): void
     {
-        $this->sendLink($application, $url, 'membership_renewal_link', 'Renouveler votre adhésion à Envie de Jouer', '2 heures');
-    }
-
-    /**
-     * Lien « Modifier mon adhesion » : memes garanties que le lien de
-     * renouvellement, il part a la seule adresse du dernier bulletin.
-     */
-    public function sendEditLink(MembershipApplication $application, string $url): void
-    {
-        $this->sendLink($application, $url, 'membership_edit_link', 'Modifier votre adhésion à Envie de Jouer', '2 heures');
+        $this->sendLink($application, $url, 'membership_renewal_link', 'Renouveler ou modifier votre adhésion à Envie de Jouer', '2 heures');
     }
 
     private function sendLink(MembershipApplication $application, string $url, string $template, string $subject, string $lifetime): void

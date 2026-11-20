@@ -7,11 +7,7 @@
         <span>Je n'ai pas encore de numéro d'adhérent.</span>
     </a>
     <a href="{{ path('membership_renewal_request') }}" class="membership-choice__item" {{ active == 'renewal' ? 'aria-current="page"' }}>
-        <strong>Renouveler mon adhésion</strong>
-        <span>J'ai un numéro d'adhérent (EDJ-0001).</span>
-    </a>
-    <a href="{{ path('membership_edit_request') }}" class="membership-choice__item" {{ active == 'edit' ? 'aria-current="page"' }}>
-        <strong>Modifier mon adhésion</strong>
-        <span>Changement d'adresse ou je souhaite passer en adhésion annuelle.</span>
+        <strong>Renouveler ou modifier mon adhésion</strong>
+        <span>J'ai un numéro d'adhérent (EDJ-0001) : renouvellement, changement d'adresse, passage à l'adhésion annuelle.</span>
     </a>
 </nav>

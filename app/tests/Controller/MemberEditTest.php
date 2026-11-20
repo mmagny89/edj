@@ -75,22 +75,29 @@ final class MemberEditTest extends WebTestCase
         return static::getContainer()->get(MemberAccessLink::class)->sheetUrl($application->getMember());
     }
 
-    public function testTheChoiceOffersThreeWays(): void
+    public function testTheChoiceOffersTwoWays(): void
     {
-        $this->client->request('GET', '/adhesion/modification');
+        $this->client->request('GET', '/adhesion/renouvellement');
 
         self::assertResponseIsSuccessful();
+        self::assertCount(2, $this->client->getCrawler()->filter('nav.membership-choice a'));
         self::assertSelectorTextContains('nav.membership-choice', 'Nouvelle adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler mon adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', 'Modifier mon adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', "Changement d'adresse ou je souhaite passer en adhésion annuelle");
+        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler ou modifier mon adhésion');
+        self::assertSelectorNotExists('a[href="/adhesion/modification"]');
     }
 
-    public function testTheSpaceOffersEditingToEveryone(): void
+    /**
+     * « Ma fiche » ne fait que lire : ni formulaire, ni lien de modification ;
+     * la carte, elle, est proposee.
+     */
+    public function testTheSpaceIsReadOnlyAndShowsTheCard(): void
     {
-        $this->client->request('GET', $this->spaceUrl($this->create(MembershipType::Individual)));
+        $this->client->request('GET', $this->spaceUrl($this->create(MembershipType::Consumer)));
 
-        self::assertSelectorExists('a[href*="/modifier"]');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('form');
+        self::assertSelectorNotExists('a[href*="/modifier"]');
+        self::assertSelectorExists('a[href*="carte.pdf"]');
     }
 
     public function testAnAnnualMemberChangesTheAddressOnly(): void
@@ -171,18 +178,36 @@ final class MemberEditTest extends WebTestCase
         self::assertSelectorExists('[role="alert"]');
     }
 
-    public function testTheEditLinkIsSentToTheBulletinAddress(): void
+    public function testTheRenewalLinkOpensTheEditionWhenTheSeasonIsCovered(): void
     {
         $application = $this->create(MembershipType::Individual);
+        $link = static::getContainer()->get(MemberAccessLink::class)->renewalUrl($application->getMember());
 
-        $crawler = $this->client->request('GET', '/adhesion/modification');
-        $this->client->submit($crawler->selectButton('Recevoir mon lien')->form(['member_access_request[number]' => $application->getMemberNumber()]));
+        $this->client->request('GET', $link);
+        self::assertResponseRedirects();
+        $this->client->followRedirect();
 
-        self::assertResponseRedirects('/adhesion/modification/envoye');
-        $messages = static::getContainer()->get('messenger.transport.async')->getSent();
-        self::assertNotEmpty($messages);
-        $email = end($messages)->getMessage()->getMessage();
-        self::assertMatchesRegularExpression('#/adhesion/espace/EDJ-\d+/modifier\?#', (string) $email->getTextBody());
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Modifier mon adhésion');
+    }
+
+    public function testTheEditionAlsoChangesTheOtherFields(): void
+    {
+        $application = $this->create(MembershipType::Individual);
+        $id = $application->getId();
+
+        $crawler = $this->client->request('GET', $this->editUrl($application));
+        $form = $crawler->selectButton('Enregistrer')->form([
+            'member_edit[firstName]' => 'Camille-Anne',
+            'member_edit[phone]' => '06 12 34 56 78',
+        ]);
+        $form['member_edit[imageRightsRefused]']->tick();
+        $this->client->submit($form);
+
+        $this->entityManager->clear();
+        $saved = $this->entityManager->find(MembershipApplication::class, $id);
+        self::assertSame('Camille-Anne', $saved->getFirstName());
+        self::assertTrue($saved->isImageRightsRefused());
     }
 
     public function testAnUnsignedUrlIsRefused(): void

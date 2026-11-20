@@ -5,6 +5,8 @@ namespace App\Form;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TelType;
@@ -14,8 +16,9 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * « Modifier mon adhesion » : l'adherent corrige ses coordonnees et, s'il est
- * consommateur, passe a une formule annuelle — le tout depuis son espace.
+ * « Modifier mon adhesion » : l'adherent corrige sa fiche (identite,
+ * coordonnees, responsable legal, autorisations) et, s'il est consommateur,
+ * passe a une formule annuelle.
  *
  * Les champs de formule n'existent que pour un consommateur de la saison en
  * cours (option « allow_upgrade »). Les regles de fond de la formule sont
@@ -32,6 +35,32 @@ final class MemberEditType extends AbstractType
     {
         $g = [self::GROUP];
         $builder
+            ->add('lastName', TextType::class, [
+                'label' => 'Nom',
+                'attr' => ['autocomplete' => 'family-name'],
+                'constraints' => [
+                    new Assert\NotBlank(message: 'Le nom est obligatoire.', groups: $g),
+                    new Assert\Length(max: 100, groups: $g),
+                ],
+            ])
+            ->add('firstName', TextType::class, [
+                'label' => 'Prénom',
+                'attr' => ['autocomplete' => 'given-name'],
+                'constraints' => [
+                    new Assert\NotBlank(message: 'Le prénom est obligatoire.', groups: $g),
+                    new Assert\Length(max: 100, groups: $g),
+                ],
+            ])
+            ->add('birthDate', DateType::class, [
+                'label' => 'Date de naissance',
+                'widget' => 'single_text',
+                'input' => 'datetime_immutable',
+                'required' => false,
+                'constraints' => [
+                    new Assert\LessThan('today', message: 'La date de naissance doit être passée.', groups: $g),
+                    new Assert\GreaterThan('-120 years', message: 'Cette date de naissance ne semble pas correcte.', groups: $g),
+                ],
+            ])
             ->add('address', TextType::class, [
                 'label' => 'Adresse',
                 'required' => false,
@@ -71,6 +100,34 @@ final class MemberEditType extends AbstractType
                     new Assert\Email(message: "Cette adresse e-mail n'est pas valide.", groups: $g),
                     new Assert\Length(max: 180, groups: $g),
                 ],
+            ]);
+
+        $builder
+            ->add('guardianLastName', TextType::class, [
+                'label' => 'Nom du responsable légal',
+                'required' => false,
+                'constraints' => [new Assert\Length(max: 100, groups: $g)],
+            ])
+            ->add('guardianFirstName', TextType::class, [
+                'label' => 'Prénom du responsable légal',
+                'required' => false,
+                'constraints' => [new Assert\Length(max: 100, groups: $g)],
+            ])
+            ->add('guardianEmail', EmailType::class, [
+                'label' => 'Adresse e-mail du responsable légal',
+                'required' => false,
+                'constraints' => [
+                    new Assert\Email(message: "Cette adresse e-mail n'est pas valide.", groups: $g),
+                    new Assert\Length(max: 180, groups: $g),
+                ],
+            ])
+            ->add('philibertConsent', CheckboxType::class, [
+                'label' => "J'autorise la communication de mon adresse e-mail à la boutique Philibert dans le cadre de son programme de fidélité.",
+                'required' => false,
+            ])
+            ->add('imageRightsRefused', CheckboxType::class, [
+                'label' => "Je refuse l'utilisation de photos de moi et/ou des membres de ma famille prises lors des activités d'Envie de Jouer.",
+                'required' => false,
             ]);
 
         if ($options['allow_upgrade']) {

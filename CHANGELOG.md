@@ -17,11 +17,12 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute (preparation de la mise en production)
 
-- **Modifier mon adhesion** : troisieme choix du bulletin en ligne, a cote de « Nouvelle adhesion » et
-  « Renouveler mon adhesion » (« Changement d'adresse ou je souhaite passer en adhesion annuelle »). Numero,
-  lien signe envoye a l'adresse du bulletin, puis formulaire des coordonnees ; un adherent consommateur
-  peut y passer a une formule annuelle. Le bureau est prevenu ; apres un passage a l'annuel, l'adhesion
-  reste en attente jusqu'a l'encaissement.
+- **Renouveler ou modifier mon adhesion** : un seul parcours au bulletin en ligne (deux choix : « Nouvelle
+  adhesion » et « Renouveler ou modifier mon adhesion »). Numero, puis lien signe envoye a l'adresse du
+  bulletin : sans adhesion pour la saison, il ouvre le renouvellement ; avec une adhesion en cours, il ouvre sa
+  modification (identite, coordonnees, responsable legal, autorisations) et, pour un consommateur, le passage a
+  une formule annuelle. Le bureau est prevenu ; apres un passage a l'annuel, l'adhesion reste en attente
+  jusqu'a l'encaissement. « Ma fiche d'adherent » reste en lecture seule et donne la carte.
 - **QR code du site** (`/admin/qr-code`) : les deux adresses (avec et sans `www`), en SVG et en PNG, generes
   sur le serveur.
 - **Nuits et week-ends du jeu** : deux types d'evenement, avec deux pages publiques. La fiche
@@ -29,8 +30,8 @@ GitHub, par `.github/workflows/release.yml`.
   ticket, nombre de tickets). La page « Qui apporte quoi » (`/evenements/{id}/apports`) affiche ce que chacun
   apporte sous forme de notes, avec un petit formulaire (prenom et objet, sans compte, avec les protections
   des formulaires publics ; suppression possible depuis l'administration).
-- **Page « Nos rendez-vous »** (`/rendez-vous`) : quatre cartes aerees (mardis, samedis, nuits, week-end du
-  jeu), le detail se deplie. Le calendrier de l'accueil porte un lien « En savoir plus » sur chaque carte.
+- **Page « Nos rendez-vous »** (`/rendez-vous`) : cinq cartes (mardis, samedis, nuits, week-end du jeu, hors de nos
+  murs), toutes les informations visibles. Le calendrier de l'accueil porte un lien « En savoir plus » sur chaque carte.
 - Commande a usage unique `app:events:nuit-fin-3h` (`--dry-run` pour simuler) : ramene la fin des Nuits du Jeu
   de 4h a 3h et range les « Nuit du Jeu » deja saisies dans le nouveau type.
 

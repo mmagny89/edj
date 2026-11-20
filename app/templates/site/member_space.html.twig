@@ -27,7 +27,9 @@
                 <li><strong>Communication de votre e-mail à Philibert :</strong> {{ application.philibertConsent ? 'autorisée' : 'refusée' }}</li>
             </ul>
             <p>
-                Une autre erreur à corriger ? Écrivez-nous à
+                Une erreur, un changement d'adresse ? Utilisez
+                <a href="{{ path('membership_renewal_request') }}">Renouveler ou modifier mon adhésion</a>,
+                ou écrivez-nous à
                 <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
             </p>
         </div>
@@ -51,18 +53,6 @@
                 </p>
             {% endif %}
         </div>
-
-        {% if editUrl %}
-            <div class="legal-block member-panel">
-                <h3>Modifier mon adhésion</h3>
-                <p>
-                    Changement d'adresse{% if canUpgrade %}, ou je souhaite passer en adhésion annuelle{% endif %}.
-                </p>
-                <div class="form-actions">
-                    <a href="{{ editUrl }}" class="button button--join">Modifier mon adhésion</a>
-                </div>
-            </div>
-        {% endif %}
 
         <p class="form-privacy">
             Ce lien expire trente minutes après son envoi. Passé ce délai,

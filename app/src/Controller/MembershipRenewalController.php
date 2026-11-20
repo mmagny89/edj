@@ -19,7 +19,10 @@ use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Renouveler son adhesion depuis le site, avec son numero d'adherent.
+ * Renouveler ou modifier son adhesion depuis le site, avec son numero
+ * d'adherent : une seule porte d'entree. Sans adhesion pour la saison en cours,
+ * le lien ouvre le formulaire de renouvellement ; avec une adhesion en cours, il
+ * ouvre sa modification (voir MemberSpaceController::edit).
  *
  * Le parcours est celui de l'espace adherent : on saisit son numero, un lien
  * signe part a l'adresse du dernier bulletin, et c'est ce lien — pas le numero,
@@ -87,8 +90,11 @@ final class MembershipRenewalController extends AbstractController
         }
 
         $season = MembershipSeasons::of(new \DateTimeImmutable());
+        // Une adhesion existe deja pour la saison : on ne la renouvelle pas, on la
+        // modifie. Meme lien signe, meme echeance : l'adherent n'a rien a
+        // redemander.
         if (null !== $this->applications->findInSeason($member, $season)) {
-            return $this->alreadyRenewed($season);
+            return $this->redirect($this->links->editUrl($member, $this->links->expirationOf($request)));
         }
 
         if (!$this->membershipApplicationLimiter->create($request->getClientIp())->consume()->isAccepted()) {

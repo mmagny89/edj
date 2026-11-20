@@ -3,8 +3,8 @@
 {% form_theme form 'site/form_theme.html.twig' %}
 
 {% block robots %}noindex, nofollow{% endblock %}
-{% block description %}Renouvelez votre adhésion à Envie de Jouer avec votre numéro d'adhérent.{% endblock %}
-{% block title %}Renouveler mon adhésion - Envie de Jouer{% endblock %}
+{% block description %}Renouvelez ou modifiez votre adhésion à Envie de Jouer avec votre numéro d'adhérent.{% endblock %}
+{% block title %}Renouveler ou modifier mon adhésion - Envie de Jouer{% endblock %}
 
 {% block main %}
     <main id="contenu" class="section membership-form-page">
@@ -12,11 +12,13 @@
 
         <div class="section__intro">
             <p class="eyebrow">Adhésion</p>
-            <h1>Renouveler mon adhésion</h1>
+            <h1>Renouveler ou modifier mon adhésion</h1>
             <p>
                 Saisissez votre numéro d'adhérent : nous vous envoyons un lien à l'adresse e-mail
-                de votre dernier bulletin. Ce lien ouvre un formulaire déjà rempli, à relire et à
-                signer. Pas de compte, pas de mot de passe.
+                de votre dernier bulletin. Si votre adhésion de la saison est en cours, il ouvre sa
+                modification (adresse, autres champs de la fiche, passage à l'adhésion annuelle) ;
+                sinon, il ouvre le renouvellement, déjà rempli, à relire et à signer.
+                Pas de compte, pas de mot de passe.
             </p>
         </div>
 
