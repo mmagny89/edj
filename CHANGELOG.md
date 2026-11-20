@@ -10,6 +10,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- **Administration** : la creation d'un compte envoie un courriel d'accueil a la personne (adresse de connexion,
+  mot de passe provisoire, consigne de le changer des la premiere connexion).
 - **Courriels** : un gabarit commun (`emails/base.html.twig`) pour tous les messages du site, aux couleurs de
   l'association, avec son nom et son logo en tete ; compatible Outlook et mobile, logo joint au message.
 - **Referencement** : le plan du site (`sitemap.xml`) liste aussi `/rendez-vous` et les douze prochains

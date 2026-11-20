@@ -1,0 +1,33 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Votre accès à l'administration{% endblock %}
+{% block preheader %}Connectez-vous et choisissez votre mot de passe.{% endblock %}
+
+{% block content %}
+    <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#171922;">Bienvenue dans l'administration</h1>
+    <p style="margin:0 0 12px;">Bonjour,</p>
+    <p style="margin:0 0 12px;">
+        Un compte {{ super_admin ? 'de super-administrateur' : 'de contributeur' }} vient d'être créé pour vous sur le site d'Envie de Jouer.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3ecd8" style="margin:0 0 12px;background-color:#f3ecd8;border-radius:8px;">
+        <tr>
+            <td style="padding:14px 16px;font-size:15px;">
+                Identifiant : <strong>{{ email }}</strong><br>
+                Mot de passe provisoire :
+                <strong style="font-family:'Courier New',Courier,monospace;font-size:17px;letter-spacing:1px;">{{ password }}</strong>
+            </td>
+        </tr>
+    </table>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+        <tr>
+            <td align="center" bgcolor="#255db0" style="background-color:#255db0;border-radius:8px;">
+                <a href="{{ login_url }}" style="display:inline-block;padding:13px 22px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">Me connecter</a>
+            </td>
+        </tr>
+    </table>
+    <p style="margin:0 0 12px;"><strong>Connectez-vous dès maintenant</strong> : le site vous demandera de choisir votre propre mot de passe dès la première connexion.</p>
+    <p style="margin:0;font-size:13px;color:#475569;">
+        Ce mot de passe provisoire ne doit servir qu'une fois : ne le transmettez à personne et supprimez
+        ce message après avoir changé votre mot de passe.
+    </p>
+{% endblock %}

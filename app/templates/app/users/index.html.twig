@@ -20,7 +20,8 @@
                 {{ credentials.created ? 'Compte créé' : 'Mot de passe réinitialisé' }} : à transmettre maintenant
             </h2>
             <p class="mt-1 text-sm text-amber-900">
-                Ce mot de passe provisoire <strong>ne sera plus affiché</strong>. Notez-le ou transmettez-le maintenant ;
+                Ce mot de passe provisoire <strong>ne sera plus affiché</strong>.{% if credentials.created %} Il vient aussi d'être envoyé à cette adresse ;
+                si le courriel n'arrive pas, transmettez-le maintenant.{% else %} Notez-le ou transmettez-le maintenant ;{% endif %}
                 la personne devra le changer dès sa connexion.
             </p>
             <dl class="mt-4 grid gap-2 sm:grid-cols-[8rem_1fr]">

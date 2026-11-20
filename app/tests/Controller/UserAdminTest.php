@@ -6,6 +6,9 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Mailer\Messenger\SendEmailMessage;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
+use Symfony\Component\Mime\Email;
 
 /**
  * Gestion des comptes d'administration. Ecrit en base de test.
@@ -61,6 +64,36 @@ final class UserAdminTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/utilisateurs');
 
         return (string) $crawler->filter(sprintf('form[action$="%s"] input[name="_token"]', $id))->attr('value');
+    }
+
+    public function testCreatingAnAccountEmailsTheTemporaryPassword(): void
+    {
+        $crawler = $this->client->request('GET', '/admin/utilisateurs/nouveau');
+        $form = $crawler->selectButton('Créer le compte')->form();
+        $form['user_creation[email]'] = 'accueil@example.test';
+        $form['user_creation[role]']->select('ROLE_CONTRIBUTOR');
+        $this->client->submit($form);
+
+        // Le client redemarre le noyau entre deux requetes : on lit le transport
+        // en memoire avant de suivre la redirection.
+        /** @var InMemoryTransport $transport */
+        $transport = static::getContainer()->get('messenger.transport.async');
+        $mails = [];
+        foreach ($transport->getSent() as $envelope) {
+            $message = $envelope->getMessage();
+            if ($message instanceof SendEmailMessage && $message->getMessage() instanceof Email) {
+                $mails[] = $message->getMessage();
+            }
+        }
+        $crawler = $this->client->followRedirect();
+        $password = $crawler->filter('[role="alert"] code')->text();
+
+        self::assertCount(1, $mails);
+        self::assertSame('accueil@example.test', $mails[0]->getTo()[0]->getAddress());
+        self::assertStringContainsString($password, (string) $mails[0]->getTextBody());
+        self::assertStringContainsString($password, (string) $mails[0]->getHtmlBody());
+        self::assertStringContainsString('/login', (string) $mails[0]->getTextBody());
+        self::assertStringContainsString('choisir votre propre mot de passe', (string) $mails[0]->getTextBody());
     }
 
     public function testListShowsTheAccounts(): void

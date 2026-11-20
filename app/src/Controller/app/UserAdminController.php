@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\UserCreationType;
 use App\Repository\UserRepository;
 use App\Security\TemporaryPassword;
+use App\Service\AdminWelcomeNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,6 +34,7 @@ final class UserAdminController extends AbstractController
         private readonly UserRepository $users,
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly AdminWelcomeNotifier $welcome,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,
     ) {
@@ -74,6 +76,7 @@ final class UserAdminController extends AbstractController
                 $this->entityManager->flush();
 
                 $this->audit('Compte cree.', $user, ['role' => $role]);
+                $this->welcome->send($user, $password);
                 $request->getSession()->getFlashBag()->add('credentials', ['email' => $email, 'password' => $password, 'created' => true]);
 
                 return $this->redirectToRoute('app_users');
