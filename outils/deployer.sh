@@ -95,9 +95,9 @@ $COMPOSE ps --format '  {{.Name}}  {{.Status}}'
 # derriere le proxy : le controle qui compte se fait depuis l'exterieur.
 #
 # En prod, SERVER_NAME est fige a ":80" (Traefik termine le TLS) et le domaine
-# vit dans SERVER_HOST ; en staging, Caddy sert le domaine lui-meme et c'est
+# vit dans APP_DOMAIN ; en staging, Caddy sert le domaine lui-meme et c'est
 # SERVER_NAME qui le porte. On lit donc l'un puis l'autre.
-DOMAINE=$(lire_secret SERVER_HOST)
+DOMAINE=$(lire_secret APP_DOMAIN)
 [ -n "$DOMAINE" ] || DOMAINE=$(lire_secret SERVER_NAME)
 
 case "$DOMAINE" in
