@@ -6,6 +6,8 @@ twig:
         social_facebook: '%app.social.facebook%'
         social_instagram: '%app.social.instagram%'
         site_indexable: '%app.seo.indexable%'
+        matomo_url: '%app.matomo.url%'
+        matomo_site_id: '%app.matomo.site_id%'
         social_facebook_group: '%app.social.facebook_group%'
 when@dev:
     twig:

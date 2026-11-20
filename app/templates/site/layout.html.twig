@@ -16,6 +16,10 @@
     {# Lu par Turbo pour la feuille de style de sa barre de progression, que la
        politique de contenu n'autorise qu'avec ce nonce. #}
     <meta name="csp-nonce" content="{{ csp_nonce() }}">
+    {% if matomo_url %}
+        {# Mesure d'audience : voir assets/analytics.js. Absente hors production. #}
+        <meta name="matomo" content="{{ matomo_url }}" data-site-id="{{ matomo_site_id }}">
+    {% endif %}
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Envie de Jouer">

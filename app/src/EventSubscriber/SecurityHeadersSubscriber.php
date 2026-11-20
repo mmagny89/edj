@@ -22,6 +22,8 @@ final class SecurityHeadersSubscriber
         private readonly CspNonce $nonce,
         #[Autowire('%kernel.debug%')]
         private readonly bool $debug,
+        #[Autowire('%app.matomo.url%')]
+        private readonly string $matomoUrl = '',
     ) {
     }
 
@@ -65,15 +67,19 @@ final class SecurityHeadersSubscriber
             $headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
 
+        // Matomo : le seul hote tiers admis, et seulement s'il est configure
+        // (script, balise d'image de repli, envoi de la page vue).
+        $matomo = '' !== $this->matomoUrl ? ' '.rtrim($this->matomoUrl, '/') : '';
+
         $headers->set('Content-Security-Policy', implode('; ', [
             "default-src 'self'",
-            "script-src 'self'",
+            "script-src 'self'".$matomo,
             // Turbo cree une feuille de style pour sa barre de progression,
             // avec le nonce lu dans <meta name="csp-nonce">.
             sprintf("style-src 'self' 'nonce-%s'", $this->nonce->value()),
-            "img-src 'self' data:",
+            "img-src 'self' data:".$matomo,
             "font-src 'self'",
-            "connect-src 'self'",
+            "connect-src 'self'".$matomo,
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",

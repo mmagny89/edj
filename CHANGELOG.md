@@ -8,6 +8,12 @@ GitHub, par `.github/workflows/release.yml`.
 
 ## [Non publie]
 
+### Ajoute
+
+- **Mesure d'audience** : Matomo (auto-heberge, `matomo.mmagny.fr`, site 3), en production seulement, sans cookie,
+  avec respect de « Do Not Track » / « Global Privacy Control », URL sans requete (les liens signes ne partent pas),
+  case de refus sur la page « Donnees personnelles ». La politique de contenu n'ouvre que cet hote.
+
 ### Modifie
 
 - **Administration** : la creation d'un compte et la reinitialisation de son mot de passe envoient un courriel avec
