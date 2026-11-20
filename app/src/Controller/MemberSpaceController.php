@@ -104,14 +104,14 @@ final class MemberSpaceController extends AbstractController
     {
         $member = $this->members->findOneByNumber($number);
         if (!$this->links->isValid($request) || !$member instanceof Member) {
-            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_renewal_request'], new Response('', Response::HTTP_FORBIDDEN));
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_change_request'], new Response('', Response::HTTP_FORBIDDEN));
         }
 
         // La fiche de la saison en cours, pas la derniere venue : c'est elle
         // qu'on modifie.
         $application = $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
         if (!$application instanceof MembershipApplication || $application->isAnonymized()) {
-            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_renewal_request'], new Response('', Response::HTTP_NOT_FOUND));
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_change_request'], new Response('', Response::HTTP_NOT_FOUND));
         }
 
         $canUpgrade = $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable()));

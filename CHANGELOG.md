@@ -17,9 +17,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute (preparation de la mise en production)
 
-- **Renouveler ou modifier mon adhesion** : un seul parcours au bulletin en ligne (deux choix : « Nouvelle
-  adhesion » et « Renouveler ou modifier mon adhesion »). Numero, puis lien signe envoye a l'adresse du
-  bulletin : sans adhesion pour la saison, il ouvre le renouvellement ; avec une adhesion en cours, il ouvre sa
+- **Modifier ou renouveler mon adhesion** (`/adhesion/modification`) : un seul parcours au bulletin en ligne (deux choix : « Nouvelle
+  adhesion » et « Modifier ou renouveler mon adhesion »). Numero, puis lien signe envoye a l'adresse du
+  bulletin (le courriel dit s'il s'agit d'un renouvellement ou d'une modification) : sans adhesion pour la saison, il ouvre le renouvellement ; avec une adhesion en cours, il ouvre sa
   modification (identite, coordonnees, responsable legal, autorisations) et, pour un consommateur, le passage a
   une formule annuelle. Le bureau est prevenu ; apres un passage a l'annuel, l'adhesion reste en attente
   jusqu'a l'encaissement. « Ma fiche d'adherent » reste en lecture seule et donne la carte.

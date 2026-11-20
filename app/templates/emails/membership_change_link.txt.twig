@@ -1,0 +1,18 @@
+Bonjour {{ application.firstName }},
+
+Quelqu'un vient de demander {{ renewal ? "le renouvellement" : "la modification" }} de l'adhésion {{ application.memberNumber }}.
+Si c'est bien vous, ouvrez ce lien :
+
+{{ url }}
+
+{% if renewal -%}
+Le formulaire est déjà rempli avec vos informations de l'an dernier : il ne reste qu'à les relire et à signer.
+Le renouvellement ne compte qu'une fois la cotisation réglée à l'association.
+{%- else -%}
+Vous pourrez corriger votre fiche (adresse, coordonnées, autorisations) et, si vous êtes adhérent consommateur, passer à l'adhésion annuelle.
+{%- endif %}
+
+Ce lien n'est valable que {{ lifetime }}. Passé ce délai, redemandez-en un depuis le site.
+Si vous n'avez rien demandé, ignorez ce message : personne n'a eu accès à votre fiche.
+
+Envie de Jouer — Joigny
