@@ -38,7 +38,7 @@ GitHub, par `.github/workflows/release.yml`.
 ### Modifie
 
 - Passage de consommateur a annuel : en choisissant une formule annuelle, l'adherent voit les avantages
-  (remises chez les partenaires) et peut accepter l'avantage ludique Philibert, dans le bloc « Ma formule ».
+  (remises chez les partenaires) et peut accepter l'avantage ludique Philibert, dans un encart « Avantage ludique » a part, comme sur le bulletin.
 - Bulletin et modification de la fiche : l'« Avantage ludique » est masque par defaut et n'apparait que pour
   une formule annuelle (masque pour la formule consommateur).
 - Modification de la fiche : l'enregistrement redirige vers une page de confirmation (le message d'erreur
