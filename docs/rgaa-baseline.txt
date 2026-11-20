@@ -1,0 +1,3 @@
+# Constats RGAA acceptes. Format : empreinte, puis la raison.
+430fa1974c53 Contraste du rythme annuel (blanc sur rouge) : couleur de la charte graphique, non modifiable.
+e992f2ccf372 Contraste du bouton principal (blanc sur rouge) : couleur de la charte graphique, non modifiable.
