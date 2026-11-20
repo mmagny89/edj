@@ -155,6 +155,11 @@ final class MemberEditType extends AbstractType
             'validation_groups' => ['upgrade', self::GROUP],
             'csrf_protection' => true,
             'allow_upgrade' => false,
+            // Un second envoi du meme formulaire (double clic, page rechargee) arrive
+            // apres le passage a l'annuel, quand les champs de formule n'existent
+            // plus : il ne doit pas etre refuse pour « champs supplementaires » alors
+            // que le premier a reussi. Les champs en trop sont ignores.
+            'allow_extra_fields' => true,
         ]);
         $resolver->setAllowedTypes('allow_upgrade', 'bool');
     }

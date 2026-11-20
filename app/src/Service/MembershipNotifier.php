@@ -75,7 +75,7 @@ final class MembershipNotifier
             ->to($this->contactEmail)
             ->subject(sprintf(
                 '%s : %s %s',
-                $upgraded ? "Passage a l'adhesion annuelle" : "Modification d'adhesion",
+                $upgraded ? "Passage à l'adhésion annuelle" : "Modification d'adhésion",
                 (string) $application->getFirstName(),
                 (string) $application->getLastName(),
             ))

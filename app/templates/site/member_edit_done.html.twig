@@ -9,11 +9,11 @@
             <p class="eyebrow">Adhésion</p>
             <h1>C'est enregistré</h1>
             <p>
-                Merci {{ application.firstName }}, vos modifications sont prises en compte.
+                Merci {{ firstName }}, vos modifications sont prises en compte.
                 {% if upgraded %}
-                    Vous êtes passé à la formule <strong>{{ application.membershipType.label|lower }}</strong>.
-                    {% if application.amountDue %}
-                        Il reste {{ application.amountDueLabel }} à régler à l'association, lors d'une de nos
+                    Vous êtes passé à la formule <strong>{{ formula }}</strong>.
+                    {% if due %}
+                        Il reste {{ dueLabel }} à régler à l'association, lors d'une de nos
                         soirées ; votre carte d'adhérent sera disponible dès que la cotisation sera encaissée.
                     {% else %}
                         Il n'y a rien à régler.

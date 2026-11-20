@@ -109,6 +109,8 @@ final class MemberEditTest extends WebTestCase
         self::assertSelectorNotExists('input[name="member_edit[membershipType]"]');
         $form = $crawler->selectButton('Enregistrer')->form(['member_edit[city]' => 'Auxerre', 'member_edit[postalCode]' => '89000']);
         $this->client->submit($form);
+        self::assertResponseRedirects('/adhesion/modification/termine');
+        $this->client->followRedirect();
 
         self::assertSelectorTextContains('h1', "C'est enregistré");
         $this->entityManager->clear();
@@ -137,18 +139,50 @@ final class MemberEditTest extends WebTestCase
         $form = $crawler->selectButton('Enregistrer')->form();
         $form['member_edit[membershipType]']->select('individuelle');
         $this->client->submit($form);
+        self::assertResponseRedirects('/adhesion/modification/termine');
+        // Les courriels se lisent avant la redirection : le noyau redemarre ensuite.
+        $sent = array_filter(array_map(
+            static fn ($envelope) => $envelope->getMessage()->getMessage(),
+            static::getContainer()->get('messenger.transport.async')->getSent(),
+        ), static fn ($message) => $message instanceof Email);
+        $this->client->followRedirect();
 
         self::assertSelectorTextContains('h1', "C'est enregistré");
         $this->entityManager->clear();
         $saved = $this->entityManager->find(MembershipApplication::class, $id);
         self::assertSame(MembershipType::Individual, $saved->getMembershipType());
         self::assertSame(MembershipStatus::Pending, $saved->getStatus());
-
-        $sent = array_filter(array_map(
-            static fn ($envelope) => $envelope->getMessage()->getMessage(),
-            static::getContainer()->get('messenger.transport.async')->getSent(),
-        ), static fn ($message) => $message instanceof Email);
         self::assertNotEmpty($sent);
+        $board = end($sent);
+        self::assertSame("Passage à l'adhésion annuelle : Camille Durand", $board->getSubject());
+        self::assertStringContainsString('Cotisation à encaisser', (string) $board->getHtmlBody());
+        self::assertStringContainsString('Fiche actuelle', (string) $board->getHtmlBody());
+    }
+
+    /**
+     * Double envoi : le second arrive apres le passage a l'annuel, avec les
+     * champs de formule du premier affichage. Il ne doit pas afficher d'erreur.
+     */
+    public function testASecondSubmitAfterTheUpgradeShowsNoError(): void
+    {
+        $application = $this->create(MembershipType::Consumer);
+
+        $crawler = $this->client->request('GET', $this->editUrl($application));
+        $form = $crawler->selectButton('Enregistrer')->form();
+        $form['member_edit[membershipType]']->select('individuelle');
+        $values = $form->getPhpValues();
+
+        $this->client->submit($form);
+        self::assertResponseRedirects('/adhesion/modification/termine');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('h1', "C'est enregistré");
+
+        $this->client->request('POST', $this->editUrl($application), $values);
+        self::assertResponseRedirects('/adhesion/modification/termine');
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('[role="alert"]');
+        self::assertSelectorTextContains('h1', "C'est enregistré");
     }
 
     public function testAConsumerWhoKeepsTheFormulaStaysValidated(): void
