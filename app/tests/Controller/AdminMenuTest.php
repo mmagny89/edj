@@ -24,7 +24,7 @@ final class AdminMenuTest extends WebTestCase
 
         self::assertSame(['Adhérents', 'Séances et caisse'], $crawler->filter('nav[aria-label="Administration"] p[id^="menu-groupe-"]')->each(fn ($n) => trim($n->text())));
         self::assertSame(
-            ['Tableau de bord', 'Adhésions', 'Émargement', 'Courriels', 'Évènements', 'Pointage', 'Comptabilité'],
+            ['Tableau de bord', 'Adhésions', 'Émargement', 'Courriels', 'QR code du site', 'Évènements', 'Pointage', 'Comptabilité'],
             $this->labels($crawler),
         );
     }
