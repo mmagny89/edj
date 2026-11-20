@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{% block title %}Envie de Jouer{% endblock %}</title>
+    {# Outlook (moteur Word) : sans ceci il impose des polices et des tailles d'image. #}
+    <!--[if mso]>
+    <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+    <style>table, td, p, a, span {font-family:Arial, Helvetica, sans-serif !important;}</style>
+    <![endif]-->
+    <style>
+        body { margin:0; padding:0; width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+        table, td { mso-table-lspace:0; mso-table-rspace:0; }
+        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
+        a { color:#255db0; }
+        @media only screen and (max-width:620px) {
+            .edj-pad { padding-left:18px !important; padding-right:18px !important; }
+            .edj-outer { padding:12px 6px !important; }
+        }
+    </style>
+</head>
+{# Gabarit commun a tous les courriels du site : aux couleurs de l'association
+   (fond bleu clair, bandeau jaune, filet et texte encre, liens bleus), nom et logo
+   en tete. Tout est en ligne et en tableaux : les clients de messagerie ignorent
+   les feuilles de style et les mises en page modernes, Outlook compris. Le logo
+   voyage dans le message (cid:logo, joint par MailLogoListener) : beaucoup de
+   clients bloquent les images distantes, jamais celles qui sont jointes.
+
+   Blocs : title (titre de la page et du message), preheader (resume cache),
+   content (corps), footer (mention de bas de page, facultative). #}
+<body style="margin:0;padding:0;background-color:#a8b7df;font-family:Arial,Helvetica,sans-serif;color:#171922;line-height:1.55;">
+{% set preheader %}{% block preheader %}{% endblock %}{% endset %}
+{% if preheader|trim %}
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#a8b7df;opacity:0;">{{ preheader|trim }}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+{% endif %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#a8b7df" style="background-color:#a8b7df;">
+    <tr>
+        <td align="center" class="edj-outer" style="padding:24px 12px;">
+            <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fffaf0" style="max-width:600px;width:100%;background-color:#fffaf0;border:2px solid #171922;border-radius:14px;">
+                <tr>
+                    <td class="edj-pad" bgcolor="#e9c33a" style="padding:18px 28px;background-color:#e9c33a;border-bottom:2px solid #171922;border-radius:12px 12px 0 0;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="padding-right:14px;vertical-align:middle;">
+                                    <img src="cid:logo" alt="Envie de Jouer" width="56" height="56" style="display:block;width:56px;height:56px;border-radius:12px;border:2px solid #171922;">
+                                </td>
+                                <td style="vertical-align:middle;">
+                                    <span style="display:block;font-size:22px;font-weight:bold;color:#171922;line-height:1.2;">Envie de Jouer</span>
+                                    <span style="display:block;font-size:13px;color:#171922;line-height:1.4;">Association de jeux de société · Joigny</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="edj-pad" style="padding:28px;font-size:16px;color:#171922;line-height:1.55;">
+                        {% block content %}{% endblock %}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="edj-pad" bgcolor="#f3ecd8" style="padding:16px 28px 22px;font-size:12px;line-height:1.5;color:#475569;background-color:#f3ecd8;border-top:2px solid #171922;border-radius:0 0 12px 12px;">
+                        {% block footer %}{% endblock %}
+                        Envie de Jouer — Joigny
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]></td></tr></table><![endif]-->
+        </td>
+    </tr>
+</table>
+</body>
+</html>

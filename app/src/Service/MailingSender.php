@@ -39,8 +39,6 @@ final class MailingSender
         private readonly string $mailerFrom,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
-        #[Autowire('%kernel.project_dir%/public/icons/icon-192.png')]
-        private readonly string $logoPath,
     ) {
     }
 
@@ -133,10 +131,8 @@ final class MailingSender
             ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
             ->subject($subject)
             ->text($this->twig->render('emails/mailing.txt.twig', $context))
-            // Le logo voyage dans le message (cid:logo) : beaucoup de clients bloquent
-            // les images distantes, jamais celles qui sont jointes.
-            ->embedFromPath($this->logoPath, 'logo', 'image/png');
-        $email->html($this->twig->render('emails/mailing.html.twig', $context + ['logo_cid' => 'logo']));
+            // Le logo (cid:logo) est joint par MailLogoListener, comme pour tout courriel.
+            ->html($this->twig->render('emails/mailing.html.twig', $context));
 
         if (null !== $unsubscribeUrl) {
             $headers = $email->getHeaders();
