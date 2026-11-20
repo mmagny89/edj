@@ -24,12 +24,13 @@ GitHub, par `.github/workflows/release.yml`.
   reste en attente jusqu'a l'encaissement.
 - **QR code du site** (`/admin/qr-code`) : les deux adresses (avec et sans `www`), en SVG et en PNG, generes
   sur le serveur.
-- **Nuits et week-ends du jeu** : deux types d'evenement, avec une page publique (`/evenements/{id}`) qui dit
-  si LudiPassion sera present, s'il y a une tombola (lots, prix du ticket, nombre de tickets) et ou chacun
-  indique ce qu'il apporte (prenom et objet, sans compte, avec les protections des formulaires publics ;
-  suppression possible depuis l'administration).
-- **Page « Nos rendez-vous »** (`/rendez-vous`) : le detail des mardis, des samedis, des nuits et du
-  week-end du jeu, avec un lien « En savoir plus » sur l'accueil et dans le calendrier.
+- **Nuits et week-ends du jeu** : deux types d'evenement, avec deux pages publiques. La fiche
+  (`/evenements/{id}`) donne l'horaire, le lieu, la presence de LudiPassion et la tombola (lots, prix du
+  ticket, nombre de tickets). La page « Qui apporte quoi » (`/evenements/{id}/apports`) affiche ce que chacun
+  apporte sous forme de notes, avec un petit formulaire (prenom et objet, sans compte, avec les protections
+  des formulaires publics ; suppression possible depuis l'administration).
+- **Page « Nos rendez-vous »** (`/rendez-vous`) : quatre cartes aerees (mardis, samedis, nuits, week-end du
+  jeu), le detail se deplie. Le calendrier de l'accueil porte un bouton « En savoir plus » sur chaque carte.
 - Commande a usage unique `app:events:nuit-fin-3h` (`--dry-run` pour simuler) : ramene la fin des Nuits du Jeu
   de 4h a 3h et range les « Nuit du Jeu » deja saisies dans le nouveau type.
 

@@ -1,0 +1,65 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block title %}Qui apporte quoi - {{ event.title }} - Envie de Jouer{% endblock %}
+{% block description %}Ce que chacun apporte pour {{ event.title }} : jeux, boissons, gâteaux.{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section event-page">
+        <a href="{{ path('site_event', {id: event.id}) }}" class="event-page__back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{ event.title }}
+        </a>
+
+        <div class="section__intro">
+            <p class="eyebrow">{{ event.startsAt|format_date(pattern: 'EEEE d MMMM', locale: 'fr') }}</p>
+            <h1>Qui apporte quoi ?</h1>
+            <p>Pour éviter dix gâteaux au chocolat et zéro boisson : dites ce que vous ramenez.</p>
+        </div>
+
+        <div class="bring-layout">
+            <section aria-labelledby="t-liste">
+                <h2 id="t-liste">Déjà prévu <span class="bring-count">{{ event.contributions|length }}</span></h2>
+                {% for message in app.flashes('success') %}
+                    <p class="member-status member-status--valide" role="status">{{ message }}</p>
+                {% endfor %}
+                {% if event.contributions|length %}
+                    <ul class="note-grid">
+                        {% for contribution in event.contributions %}
+                            <li class="note">
+                                <span class="note__item">{{ contribution.item }}</span>
+                                <span class="note__who">{{ contribution.name }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="note-empty">Rien pour l'instant : lancez la liste !</p>
+                {% endif %}
+            </section>
+
+            <section class="bring-form" aria-labelledby="t-ajout">
+                <h2 id="t-ajout">Je ramène…</h2>
+                {% if not over %}
+                    {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+                        {{ form_errors(form) }}
+                        {{ form_row(form.name) }}
+                        {{ form_row(form.item) }}
+                        {{ form_row(form.website) }}
+                        <div class="form-actions">
+                            <button type="submit" class="button button--primary">
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter
+                            </button>
+                        </div>
+                        <p class="form-privacy">
+                            Votre prénom et ce que vous apportez s'affichent publiquement ; ils sont supprimés
+                            avec l'évènement. Pas de nom de famille, s'il vous plaît.
+                            <a href="{{ path('site_privacy') }}">Données personnelles</a>.
+                        </p>
+                    {{ form_end(form) }}
+                {% else %}
+                    <p class="form-note">Cet évènement est passé : la liste n'accepte plus de nouveaux apports.</p>
+                {% endif %}
+            </section>
+        </div>
+    </main>
+{% endblock %}

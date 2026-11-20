@@ -1,64 +1,79 @@
 {% extends 'site/layout.html.twig' %}
 
 {% block title %}Nos rendez-vous - Envie de Jouer{% endblock %}
-{% block description %}Soirées du mardi, après-midi du 1er samedi, Nuits du Jeu et week-end du Jeu : le déroulé de chaque rendez-vous d'Envie de Jouer à Joigny.{% endblock %}
+{% block description %}Soirées du mardi, après-midi du 1er samedi, Nuits du Jeu et week-end du Jeu : les rendez-vous d'Envie de Jouer à Joigny.{% endblock %}
 
 {% block main %}
     <main id="contenu" class="section">
-        <div class="section__intro">
+        <div class="section__intro activity-banner">
             <p class="eyebrow">Rendez-vous</p>
-            <h1>Nos rendez-vous en détail</h1>
+            <h1>Quand venir jouer ?</h1>
             <p>
-                Tous ont lieu à la Maison des Associations de Joigny et reposent sur le même principe :
-                chacun apporte des jeux de sa collection, on les met en commun, on joue ensemble.
-            </p>
-            <p>
-                Adhésion à 10 € par an, ou formule consommateur : gratuite à l'année, 1 € par événement.
-                <a href="{{ path('membership_form') }}">Remplir le bulletin en ligne</a>.
+                À la Maison des Associations de Joigny, chacun apporte des jeux, on les met en commun et on joue ensemble.
             </p>
         </div>
 
-        <section id="mardis" class="rdv-card rdv-card--weekly" aria-labelledby="t-mardis">
-            <p class="rdv-card__rhythm"><i class="fa-solid fa-repeat" aria-hidden="true"></i> Chaque semaine</p>
-            <h2 id="t-mardis">Les soirées du mardi</h2>
-            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 18h30 – minuit</p>
-            <p>Tables ouvertes : on joue aux jeux que les membres ont apportés, on explique les règles, on essaie des nouveautés.</p>
-            <p>Venez seul ou à plusieurs : des joueurs vous expliquent les règles et vous trouvent une table.</p>
-        </section>
+        <div class="activity-grid">
+            <article id="mardis" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-dice"></i></span>
+                <h2>Les soirées du mardi</h2>
+                <ul class="activity-card__meta">
+                    <li>Chaque semaine</li>
+                    <li>18h30 – minuit</li>
+                </ul>
+                <p>Tables ouvertes, jeux apportés par les membres, règles expliquées.</p>
+                <details>
+                    <summary>En savoir plus</summary>
+                    <p>Venez seul ou à plusieurs : des joueurs vous expliquent les règles, vous trouvent une table et vous font essayer des nouveautés.</p>
+                </details>
+            </article>
 
-        <section id="samedis" class="rdv-card rdv-card--monthly" aria-labelledby="t-samedis">
-            <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Chaque mois</p>
-            <h2 id="t-samedis">Les après-midi du 1<sup>er</sup> samedi</h2>
-            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> 14h – 18h</p>
-            <p>Une après-midi pour jouer sans se presser, entre amis ou en famille.</p>
-        </section>
+            <article id="samedis" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-calendar-day"></i></span>
+                <h2>Les après-midi du 1<sup>er</sup> samedi</h2>
+                <ul class="activity-card__meta">
+                    <li>Chaque mois</li>
+                    <li>14h – 18h</li>
+                </ul>
+                <p>Jouer sans se presser, entre amis ou en famille.</p>
+                <details>
+                    <summary>En savoir plus</summary>
+                    <p>Un rythme plus calme que le mardi soir, qui convient bien aux parties en famille et aux plus jeunes.</p>
+                </details>
+            </article>
 
-        <section id="nuits-du-jeu" class="rdv-card rdv-card--yearly" aria-labelledby="t-nuits">
-            <p class="rdv-card__rhythm"><i class="fa-solid fa-moon" aria-hidden="true"></i> Quatre fois par an</p>
-            <h2 id="t-nuits">Les Nuits du Jeu</h2>
-            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> De 15h à 3h du matin</p>
-            <p>Douze heures de jeu d'affilée, pour les longues parties et les grosses tables. L'une des quatre nuits fête l'anniversaire de l'association.</p>
+            <article id="nuits-du-jeu" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-moon"></i></span>
+                <h2>Les Nuits du Jeu</h2>
+                <ul class="activity-card__meta">
+                    <li>4 fois par an</li>
+                    <li>15h – 3h du matin</li>
+                </ul>
+                <p>Douze heures de jeu d'affilée, pour les longues parties et les grosses tables.</p>
+                <details>
+                    <summary>En savoir plus</summary>
+                    <p>L'une des quatre nuits fête l'anniversaire de l'association. Chaque nuit a sa fiche dans le calendrier : LudiPassion, tombola, et la liste de ce que chacun apporte.</p>
+                </details>
+                <a href="{{ path('site_index') }}#calendrier" class="button button--quiet activity-card__action">Voir les prochaines dates</a>
+            </article>
+
+            <article id="week-end-du-jeu" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-calendar-week"></i></span>
+                <h2>Le week-end du Jeu</h2>
+                <ul class="activity-card__meta">
+                    <li>Une fois par an</li>
+                    <li>Deux jours</li>
+                </ul>
+                <p>La Fête des Jeux : la nuit du samedi, puis on remet ça le dimanche.</p>
+            </article>
+        </div>
+
+        <div class="join-banner activity-banner">
             <p>
-                Chaque nuit a sa page, dans le calendrier : on y voit si LudiPassion sera présent, s'il y a
-                une tombola (lots, prix du ticket), et on peut dire ce qu'on apporte, jeux, boissons ou gâteaux.
+                Adhésion à 10 € par an, ou formule consommateur : gratuite à l'année, 1 € par événement.
+                Nous sortons aussi de nos murs : festival Le Sens du Jeu à Sens, fête des associations de Joigny.
             </p>
-        </section>
-
-        <section id="week-end-du-jeu" class="rdv-card rdv-card--yearly" aria-labelledby="t-we">
-            <p class="rdv-card__rhythm"><i class="fa-solid fa-calendar-week" aria-hidden="true"></i> Une fois par an</p>
-            <h2 id="t-we">Le week-end du Jeu</h2>
-            <p class="rdv-card__when"><i class="fa-regular fa-clock" aria-hidden="true"></i> Deux jours</p>
-            <p>Deux jours de jeu pour la Fête des Jeux : la nuit du samedi, puis on remet ça le dimanche.</p>
-        </section>
-
-        <section id="hors-les-murs" class="rdv-card rdv-card--outside" aria-labelledby="t-hors">
-            <p class="rdv-card__rhythm"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Hors de nos murs</p>
-            <h2 id="t-hors">Festival et fête des associations</h2>
-            <p>Le festival Le Sens du Jeu, à Sens, et la fête des associations, à Joigny, pour retrouver d'autres joueurs et rencontrer ceux qui ne nous connaissent pas encore.</p>
-        </section>
-
-        <div class="form-actions">
-            <a href="{{ path('site_index') }}#calendrier" class="button button--primary">Voir le calendrier</a>
+            <a href="{{ path('membership_form') }}" class="button button--join">Adhérer en ligne</a>
         </div>
     </main>
 {% endblock %}

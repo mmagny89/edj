@@ -25,18 +25,28 @@ final class ActivityController extends AbstractController
         return $this->render('site/activities.html.twig');
     }
 
-    #[Route('/evenements/{id}', name: 'site_event', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function event(
+    /**
+     * Fiche d'une nuit ou d'un week-end du jeu : quand, ou, LudiPassion, tombola.
+     */
+    #[Route('/evenements/{id}', name: 'site_event', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function event(Event $event): Response
+    {
+        $this->assertHasOwnPage($event);
+
+        return $this->render('site/event.html.twig', ['event' => $event]);
+    }
+
+    /**
+     * « Qui apporte quoi » : la liste et le petit formulaire pour s'y ajouter.
+     */
+    #[Route('/evenements/{id}/apports', name: 'site_event_contributions', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function contributions(
         Request $request,
         Event $event,
         EntityManagerInterface $entityManager,
         RateLimiterFactoryInterface $eventContributionLimiter,
     ): Response {
-        // Seules les nuits et les week-ends du jeu ont leur page : un mardi ou
-        // une manifestation n'a ni tombola ni liste d'apports.
-        if (!$event->getType()?->hasOwnPage()) {
-            throw $this->createNotFoundException();
-        }
+        $this->assertHasOwnPage($event);
 
         $over = $event->lastDay() < new \DateTimeImmutable('today');
         $contribution = new EventContribution($event);
@@ -58,14 +68,25 @@ final class ActivityController extends AbstractController
                 // Redirection : un rafraichissement ne doit pas redeposer l'apport.
                 $this->addFlash('success', 'Merci, c\'est noté !');
 
-                return $this->redirectToRoute('site_event', ['id' => $event->getId()]);
+                return $this->redirectToRoute('site_event_contributions', ['id' => $event->getId()]);
             }
         }
 
-        return $this->render('site/event.html.twig', [
+        return $this->render('site/event_contributions.html.twig', [
             'event' => $event,
             'form' => $form,
             'over' => $over,
         ]);
+    }
+
+    /**
+     * Seules les nuits et les week-ends du jeu ont leurs pages : un mardi ou
+     * une manifestation n'a ni tombola ni liste d'apports.
+     */
+    private function assertHasOwnPage(Event $event): void
+    {
+        if (!$event->getType()?->hasOwnPage()) {
+            throw $this->createNotFoundException();
+        }
     }
 }
