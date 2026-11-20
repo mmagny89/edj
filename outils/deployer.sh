@@ -75,8 +75,13 @@ journal "Version deployee : $(git rev-parse --short HEAD) — $(git log -1 --pre
 # FrankenPHP/PHP telecharge des semaines plus tot, et un correctif PHP publie
 # entre-temps n'arrivait jamais en production — sans que ni le code ni le .env
 # ne changent, donc sans rien a voir dans le diff (CERTFR-2026-ALE-014).
+# Construction puis demarrage en deux temps : `up --pull always` tente aussi de
+# telecharger `edj-php:prod` pour le service worker, qui partage l'image de php
+# sans la construire, et echoue (« pull access denied ») puisque cette image
+# n'existe que sur ce serveur. `build --pull` ne rafraichit que les images de base.
 journal "Construction et demarrage"
-$COMPOSE up -d --build --pull always --wait
+$COMPOSE build --pull
+$COMPOSE up -d --wait
 
 # RUN_MIGRATIONS=0 en production (section env/schema) : la mise a jour de schema est une
 # etape explicite, jamais le demarrage du conteneur.
