@@ -50,7 +50,17 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   le premier et survit aux readhesions. Le rapprochement passe par
   `MemberDirectory`, le rang par la sequence PostgreSQL `member_number_seq`
   (exclue de Doctrine par `schema_filter` dans `doctrine.yaml`).
-- L'espace adherent (`/adhesion/ma-fiche`) n'a ni compte ni mot de passe : un
+- Un seul parcours « Modifier ou renouveler » (`/adhesion/modification`) : `findInSeason` decide. Adhesion de la
+  saison : `member_edit` (modification de la fiche, passage consommateur -> annuel par `recordFormulaChange`,
+  `clearGuardianUnlessMinor()`) ; sinon renouvellement. L'enregistrement **redirige** vers une page de
+  confirmation (Turbo n'affiche pas un 200 a un POST), et les boutons d'envoi portent `data-turbo-submits-with`.
+- Pointage : rattache a un evenement du calendrier (`EventAttendance::$event`), jamais a une date libre.
+- Courriels aux adherents : le corps est du HTML nettoye par `MailingTemplate::normalize`
+  (symfony/html-sanitizer) avant tout affichage, stockage ou envoi ; un texte sans balise reste accepte.
+  Gabarit `emails/mailing.html.twig` (logo joint en `cid:logo`) : le style est en ligne et en tableaux.
+- Production : `deployer.sh` ajoute `compose.redirection.yml` (si `ANCIEN_DOMAINE`) et `compose.www.yml`
+  (si `REDIRIGER_WWW=1`, `www.` vers le domaine nu en 301). Domaine definitif : `enviedejouer89.fr`, sans `www`.
+- L'espace adherent (`/adhesion/ma-fiche`) est en lecture seule et n'a ni compte ni mot de passe : un
   lien signe par `UriSigner`, expirant en trente minutes, part a l'adresse du
   bulletin. Toute reponse a une demande est identique, numero connu ou non.
 - La carte d'adherent est un PDF produit par Dompdf, qui exige `ext-gd` dans

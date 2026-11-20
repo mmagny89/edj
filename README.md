@@ -13,7 +13,8 @@
 
 Application web de l'association **Envie de Jouer** (Joigny) : le site public,
 l'adhesion en ligne et l'administration de l'association. En production sur
-https://edj.mmagny.fr.
+https://edj.mmagny.fr, en attendant le domaine definitif **enviedejouer89.fr** (sans
+`www` : `www.` redirige vers lui en 301, voir `docs/MISE-EN-PRODUCTION.md`, phase E).
 
 > Les badges sont des images chargees par la page GitHub : aucune ressource
 > externe n'entre dans l'application, qui n'appelle ni CDN ni service tiers.
@@ -23,11 +24,20 @@ https://edj.mmagny.fr.
 **Site public**
 
 - Calendrier des soirees du mardi, des apres-midi du 1er samedi et des
-  manifestations.
+  manifestations, et page « Nos rendez-vous » qui presente chaque type de seance.
+- Fiche des Nuits du jeu et week-ends jeu : horaires, LudiPassion, tombola
+  (lots, prix du ticket) et page publique « qui apporte quoi », ou chacun
+  ajoute ce qu'il emmene.
 - Adhesion en ligne (individuelle, famille, consommateur), avec accuse de
-  reception par courriel.
+  reception par courriel. L'encart « Responsable legal » n'apparait que pour un
+  mineur (calcule sur la date de naissance) et l'« Avantage ludique » que pour
+  une formule annuelle.
+- « Modifier ou renouveler mon adhesion » (`/adhesion/modification`) : un seul
+  parcours. Avec une adhesion de la saison en cours, le lien signe ouvre la
+  modification de la fiche (adresse, coordonnees…, et passage de consommateur a
+  annuel) ; sinon, il ouvre le renouvellement. Le courriel s'adapte.
 - Espace adherent sans compte ni mot de passe : un lien signe, valable trente
-  minutes, ouvre la fiche, la carte d'adherent en PDF et le renouvellement.
+  minutes, ouvre la fiche en lecture seule et la carte d'adherent en PDF.
 - Installable comme une application sur l'ecran d'accueil, sans cache hors
   ligne : le site reste toujours a jour.
 - Reglages d'accessibilite (contraste, taille du texte, liens soulignes, sans
@@ -40,10 +50,11 @@ periode d'inactivite)
 | Section | Role |
 |---|---|
 | Tableau de bord | Chiffres et graphiques d'une saison : adherents, renouvellements, age, territoire, reglements |
-| Evenements | Calendrier de l'accueil ; generation d'une saison entiere (jours feries ecartes) |
+| Evenements | Calendrier de l'accueil ; generation d'une saison entiere (jours feries ecartes) ; pour une Nuit du jeu : LudiPassion, tombola, liste de ce que chacun apporte |
 | Adhesions | Validation et encaissement, fiche papier, correction, renouvellement, passage a l'annuel, anonymisation, export CSV |
-| Courriels | Message aux adherents d'une saison, avec variables, apercu, essai, lien de desinscription et historique |
-| Pointage | Presence et euro de chaque consommateur a une seance |
+| Courriels | Message aux adherents d'une saison, redige dans un editeur simple (gras, italique, souligne, lien, centrage, liste), avec variables, apercu, essai, lien de desinscription et historique ; habille aux couleurs et au logo de l'association |
+| Pointage | Presence et euro de chaque consommateur, pour un evenement du calendrier (aujourd'hui ou passe) |
+| QR code du site | QR code (SVG et PNG) de l'adresse du site, avec ou sans `www` |
 | Comptabilite | Journal de caisse d'une saison, reste a encaisser, export CSV |
 | Emargement | Feuille d'emargement PDF pour une assemblee generale |
 | Saisons, Import, Administrateurs | Reserves aux super-administrateurs : tampons des cartes, import d'un fichier Excel d'adherents, comptes (roles, blocage, mot de passe provisoire) |
@@ -135,6 +146,15 @@ docker compose exec php php bin/console make:migration
 docker compose exec php php bin/console doctrine:migrations:migrate
 docker compose logs -f php
 docker compose down
+```
+
+Commandes applicatives :
+
+```bash
+# 20 adherents fictifs (adresses @example.test) pour essayer les parcours ; --purge les retire
+docker compose exec php php bin/console app:memberships:demo [--purge]
+# Fait finir les Nuits du jeu a 3h au lieu de 4h (one-shot) ; --dry-run pour voir sans ecrire
+docker compose exec php php bin/console app:events:nuit-fin-3h [--dry-run]
 ```
 
 ## Tests et controles
