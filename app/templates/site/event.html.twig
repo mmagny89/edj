@@ -1,97 +1,90 @@
 {% extends 'site/layout.html.twig' %}
 
-{% form_theme form 'site/form_theme.html.twig' %}
-
 {% block title %}{{ event.title }} - Envie de Jouer{% endblock %}
-{% block description %}{{ event.title }} à {{ event.location ?: 'Joigny' }} : horaires, tombola, LudiPassion, et ce que chacun apporte.{% endblock %}
+{% block description %}{{ event.title }} à {{ event.location ?: 'Joigny' }} : horaires, tombola, LudiPassion.{% endblock %}
 
 {% block main %}
-    <main id="contenu" class="section membership-form-page">
-        <div class="section__intro">
-            <p class="eyebrow">{{ event.type.label }}</p>
-            <h1>{{ event.title }}</h1>
-            <p>
-                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-                {% if event.endsAt %}
-                    Du {{ event.startsAt|format_date('full', locale: 'fr') }} au {{ event.endsAt|format_date('full', locale: 'fr') }}
-                {% else %}
-                    {{ event.startsAt|format_date('full', locale: 'fr') }}
-                {% endif %}
-                · {{ event.timeLabel }}
-                {% if event.location %}<br><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ event.location }}{% endif %}
-            </p>
-            {% if event.description %}<p>{{ event.description }}</p>{% endif %}
-            <p><a href="{{ path('site_activities') }}#nuits-du-jeu">En savoir plus sur les rendez-vous</a></p>
-        </div>
+    <main id="contenu" class="section event-page">
+        <a href="{{ path('site_index') }}#calendrier" class="event-page__back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au calendrier
+        </a>
 
-        <div class="legal-block member-panel">
-            <h3>Sur place</h3>
-            <ul>
-                <li>
-                    <strong>LudiPassion :</strong>
-                    {% if event.ludipassionPresent is same as(true) %}
-                        sera présent.
-                    {% elseif event.ludipassionPresent is same as(false) %}
-                        ne sera pas présent.
-                    {% else %}
-                        pas encore confirmé.
+        <header class="event-hero">
+            <div class="event-hero__date">
+                <time datetime="{{ event.startsAt|date('Y-m-d') }}">
+                    <span>{{ event.startsAt|date('j') }}</span>
+                    <small>{{ event.startsAt|format_date(pattern: 'MMM', locale: 'fr') }}</small>
+                </time>
+                {% if event.endsAt %}<p>au {{ event.endsAt|format_date(pattern: 'd MMMM', locale: 'fr') }}</p>{% endif %}
+            </div>
+            <div>
+                <p class="eyebrow">{{ event.type.label }}</p>
+                <h1>{{ event.title }}</h1>
+                {% if event.description %}<p class="event-hero__lead">{{ event.description }}</p>{% endif %}
+            </div>
+        </header>
+
+        <ul class="info-tiles">
+            <li>
+                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <strong>Horaire</strong>
+                <span>{{ event.timeLabel }}</span>
+            </li>
+            <li>
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                <strong>Lieu</strong>
+                <span>{{ event.location ?: 'Maison des Associations, Joigny' }}</span>
+            </li>
+            <li>
+                <i class="fa-solid fa-store" aria-hidden="true"></i>
+                <strong>LudiPassion</strong>
+                <span>
+                    {% if event.ludipassionPresent is same as(true) %}Sera présent
+                    {% elseif event.ludipassionPresent is same as(false) %}Ne sera pas présent
+                    {% else %}À confirmer{% endif %}
+                </span>
+            </li>
+            <li>
+                <i class="fa-solid fa-ticket" aria-hidden="true"></i>
+                <strong>Tombola</strong>
+                <span>{{ event.raffleEnabled ? 'Oui' : 'Pas de tombola' }}</span>
+            </li>
+        </ul>
+
+        {% if event.raffleEnabled %}
+            <section class="raffle-panel" aria-labelledby="t-tombola">
+                <h2 id="t-tombola">La tombola</h2>
+                <div class="raffle-panel__stats">
+                    {% if event.raffleTicketPriceLabel %}
+                        <p><strong>{{ event.raffleTicketPriceLabel }}</strong><span>le ticket</span></p>
                     {% endif %}
-                </li>
-                <li>
-                    <strong>Tombola :</strong>
-                    {% if event.raffleEnabled %}
-                        oui{% if event.raffleTicketPriceLabel %}, ticket à {{ event.raffleTicketPriceLabel }}{% endif %}{% if event.raffleTicketCount %}, {{ event.raffleTicketCount }} tickets en tout{% endif %}.
-                    {% else %}
-                        pas de tombola.
+                    {% if event.raffleTicketCount %}
+                        <p><strong>{{ event.raffleTicketCount }}</strong><span>tickets à vendre</span></p>
                     {% endif %}
-                </li>
-            </ul>
-            {% if event.raffleEnabled and event.rafflePrizeList|length %}
-                <h4>Lots à gagner</h4>
-                <ul>
+                    <p><strong>{{ event.rafflePrizeList|length }}</strong><span>lot{{ event.rafflePrizeList|length > 1 ? 's' : '' }} à gagner</span></p>
+                </div>
+                <ul class="raffle-panel__prizes" aria-label="Lots à gagner">
                     {% for prize in event.rafflePrizeList %}<li>{{ prize }}</li>{% endfor %}
                 </ul>
-            {% endif %}
-        </div>
-
-        <div class="legal-block member-panel">
-            <h3>Qui apporte quoi ?</h3>
-            {% for message in app.flashes('success') %}
-                <p class="member-status member-status--valide" role="status">{{ message }}</p>
-            {% endfor %}
-            {% if event.contributions|length %}
-                <ul>
-                    {% for contribution in event.contributions %}
-                        <li><strong>{{ contribution.name }}</strong> : {{ contribution.item }}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>Personne ne s'est encore inscrit : lancez-vous !</p>
-            {% endif %}
-        </div>
-
-        {% if not over %}
-            <h2>Je ramène quelque chose</h2>
-            {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
-                {{ form_errors(form) }}
-                {{ form_row(form.name) }}
-                {{ form_row(form.item) }}
-                {{ form_row(form.website) }}
-                <div class="form-actions">
-                    <button type="submit" class="button button--primary">
-                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                        Ajouter à la liste
-                    </button>
-                    <a href="{{ path('site_index') }}#calendrier" class="button button--quiet">Retour au calendrier</a>
-                </div>
-                <p class="form-privacy">
-                    Votre prénom et ce que vous apportez s'affichent publiquement sur cette page ; ils sont
-                    supprimés avec l'évènement. N'indiquez pas votre nom de famille.
-                    <a href="{{ path('site_privacy') }}">Données personnelles</a>.
-                </p>
-            {{ form_end(form) }}
-        {% else %}
-            <p class="form-note">Cet évènement est passé : la liste n'accepte plus de nouveaux apports.</p>
+            </section>
         {% endif %}
+
+        <aside class="bring-teaser">
+            <div>
+                <h2>Qui apporte quoi ?</h2>
+                <p>
+                    {% if event.contributions|length %}
+                        {{ event.contributions|length }} personne{{ event.contributions|length > 1 ? 's' : '' }} ont déjà dit ce qu'elles apportent. Et vous ?
+                    {% else %}
+                        Jeux, boissons, gâteaux : dites ce que vous apportez pour que tout le monde s'y retrouve.
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{{ path('site_event_contributions', {id: event.id}) }}" class="button button--join">
+                <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Voir la liste
+            </a>
+        </aside>
+
+        <p class="event-page__more"><a href="{{ path('site_activities') }}#nuits-du-jeu">En savoir plus sur nos rendez-vous</a></p>
     </main>
 {% endblock %}

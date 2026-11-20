@@ -48,35 +48,38 @@ final class EventPageTest extends WebTestCase
         $this->client->request('GET', '/evenements/'.$event->getId());
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('main', 'sera présent');
-        self::assertSelectorTextContains('main', 'ticket à 1,5 €');
-        self::assertSelectorTextContains('main', '200 tickets');
-        self::assertSelectorTextContains('main', "Un bon d'achat");
+        self::assertSelectorTextContains('.info-tiles', 'Sera présent');
+        self::assertSelectorTextContains('.raffle-panel', '1,5 €');
+        self::assertSelectorTextContains('.raffle-panel', '200');
+        self::assertSelectorTextContains('.raffle-panel', "Un bon d'achat");
+        self::assertSelectorExists('a[href$="/apports"]');
+        self::assertSelectorNotExists('form');
     }
 
     public function testAVisitorCanAddWhatTheyBring(): void
     {
         $event = $this->night();
+        $url = '/evenements/'.$event->getId().'/apports';
 
-        $crawler = $this->client->request('GET', '/evenements/'.$event->getId());
-        $form = $crawler->selectButton('Ajouter à la liste')->form([
+        $crawler = $this->client->request('GET', $url);
+        $form = $crawler->selectButton('Ajouter')->form([
             'event_contribution[name]' => 'Léa',
             'event_contribution[item]' => 'Un gâteau',
         ]);
         $this->client->submit($form);
 
-        self::assertResponseRedirects('/evenements/'.$event->getId());
+        self::assertResponseRedirects($url);
         $this->client->followRedirect();
-        self::assertSelectorTextContains('main', 'Léa');
-        self::assertSelectorTextContains('main', 'Un gâteau');
+        self::assertSelectorTextContains('.note-grid', 'Léa');
+        self::assertSelectorTextContains('.note-grid', 'Un gâteau');
     }
 
     public function testTheHoneypotRefusesARobot(): void
     {
         $event = $this->night();
 
-        $crawler = $this->client->request('GET', '/evenements/'.$event->getId());
-        $form = $crawler->selectButton('Ajouter à la liste')->form([
+        $crawler = $this->client->request('GET', '/evenements/'.$event->getId().'/apports');
+        $form = $crawler->selectButton('Ajouter')->form([
             'event_contribution[name]' => 'Bot',
             'event_contribution[item]' => 'Spam',
             'event_contribution[website]' => 'http://spam.example',
@@ -92,7 +95,9 @@ final class EventPageTest extends WebTestCase
         $event = $this->night(EventType::Special);
 
         $this->client->request('GET', '/evenements/'.$event->getId());
+        self::assertResponseStatusCodeSame(404);
 
+        $this->client->request('GET', '/evenements/'.$event->getId().'/apports');
         self::assertResponseStatusCodeSame(404);
     }
 
@@ -100,7 +105,7 @@ final class EventPageTest extends WebTestCase
     {
         $event = $this->night(EventType::GameNight, '-3 days');
 
-        $this->client->request('GET', '/evenements/'.$event->getId());
+        $this->client->request('GET', '/evenements/'.$event->getId().'/apports');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('form');
@@ -124,5 +129,6 @@ final class EventPageTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#mardis');
         self::assertSelectorExists('#nuits-du-jeu');
+        self::assertSelectorExists('#week-end-du-jeu');
     }
 }
