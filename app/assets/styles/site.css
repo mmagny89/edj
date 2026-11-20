@@ -2296,14 +2296,16 @@ html[data-motion="reduce"] *::after {
     text-underline-offset: 3px;
 }
 
-/* Bouton « En savoir plus » des cartes du calendrier : un vrai bouton du site,
-   plus compact que ceux des formulaires. */
+/* « En savoir plus » des cartes du calendrier : un simple lien souligne. */
 .event-slide__more {
     justify-self: start;
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
-    margin-top: 8px;
-    padding: 8px 14px;
-    box-shadow: 3px 3px 0 var(--ink);
+    font-weight: 800;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 /* ---------------------------------------------------------------------------

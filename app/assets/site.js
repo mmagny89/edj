@@ -145,7 +145,7 @@ const renderCarousel = (events, filter, today) => {
         <div class="event-slide__title">${escapeHtml(event.title)}</div>
         <strong>${escapeHtml(formatDate(event.date))} · ${escapeHtml(event.time)}</strong>
         ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ''}
-        ${event.url ? `<a class="button button--quiet event-slide__more" href="${escapeHtml(event.url)}">En savoir plus</a>` : ''}
+        ${event.url ? `<a class="event-slide__more" href="${escapeHtml(event.url)}">En savoir plus</a>` : ''}
         ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(event.location)}</small>` : ''}
       </div>
     </article>
