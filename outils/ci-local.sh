@@ -11,7 +11,7 @@
 # quand son outil est absent — comme dans le workflow généré. Une porte qui ne tourne pas ici
 # n'est jamais comptée comme réussie.
 #
-# Rien n'est écrit dans la base de développement : la base `app_ci` est créée puis supprimée.
+# Rien n'est écrit dans la base de développement : la base jetable `<base>_ci` est créée puis supprimée.
 # Les portes du front (npm) se rejouent à part : `docker compose --profile frontend exec node …`.
 set -uo pipefail
 
@@ -23,11 +23,15 @@ workflow=.github/workflows/qualite.yml
 php() { docker compose exec -T php "$@"; }
 
 url_dev=$(php sh -c 'printf %s "$DATABASE_URL"') || { echo "ci-local : conteneur php injoignable (stack démarré ?)." >&2; exit 1; }
-case "$url_dev" in
-	*/app\?*) ;;
-	*) echo "ci-local : DATABASE_URL inattendue (base « app » attendue, convention du stack)." >&2; exit 1 ;;
+# Nom de la base de dev, lu dans l'URL (« app » par convention du stack, mais un projet peut
+# avoir la sienne : « edj »). La base jetable est « <nom>_ci ».
+base_dev=$(printf '%s' "$url_dev" | sed -nE 's#^[a-z+]+://[^/]+/([A-Za-z0-9_]+)(\?.*)?$#\1#p')
+case "$base_dev" in
+	'') echo "ci-local : DATABASE_URL inattendue (nom de base introuvable)." >&2; exit 1 ;;
+	*_ci) echo "ci-local : la base de dev se termine par _ci ($base_dev) : refus, elle serait supprimée." >&2; exit 1 ;;
 esac
-url_ci=${url_dev/\/app\?/\/app_ci?}
+base_ci=${base_dev}_ci
+url_ci=${url_dev/\/$base_dev\?/\/$base_ci\?}
 chemin_conteneur=$(php sh -c 'printf %s "$PATH"')
 
 # Variables du bloc `env:` de niveau 0 du workflow. PHP_VERSION ne concerne que le runner ;
@@ -81,7 +85,7 @@ porte "Base de test créée et migrée" '[ -f bin/console ] && [ -d migrations ]
 porte "Tests PHP (PHPUnit)" '[ -x vendor/bin/phpunit ]' ci vendor/bin/phpunit
 
 # Nettoyage : la base jetable ne doit pas survivre à l'essai.
-docker compose exec -T database sh -c 'psql -U "$POSTGRES_USER" -d postgres -qc "DROP DATABASE IF EXISTS app_ci WITH (FORCE)"' > /dev/null 2>&1
+docker compose exec -T database sh -c 'psql -U "$POSTGRES_USER" -d postgres -qc "DROP DATABASE IF EXISTS \"'"$base_ci"'\" WITH (FORCE)"' > /dev/null 2>&1
 
 if [ "$echecs" -gt 0 ]; then
 	echo "── $echecs porte(s) en échec."
