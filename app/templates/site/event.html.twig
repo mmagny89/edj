@@ -49,7 +49,7 @@
             <a href="{{ path('site_event_ics', {id: event.id}) }}" class="button button--join" download>
                 <i class="fa-regular fa-calendar-plus" aria-hidden="true"></i> Ajouter à mon agenda
             </a>
-            <a href="{{ googleCalendarUrl }}" target="_blank" rel="noopener">Google Agenda<span class="sr-only"> (nouvel onglet)</span></a>
+            <a href="{{ googleCalendarUrl }}" class="calendar-link" target="_blank" rel="noopener"><i class="fa-brands fa-google" aria-hidden="true"></i> Google Agenda<span class="sr-only"> (nouvel onglet)</span></a>
         </p>
 
         {% if event.raffleEnabled and event.rafflePrizeList|length %}

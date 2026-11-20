@@ -2715,11 +2715,28 @@ html[data-motion="reduce"] *::after {
     margin: 0;
 }
 
-.event-page__calendar a:not(.button) {
+/* Lien secondaire : une pastille a contour fin, sans ombre, pour ne pas
+   concurrencer le bouton principal. */
+.calendar-link {
     display: inline-flex;
     align-items: center;
+    gap: 8px;
     min-height: 44px;
-    font-weight: 800;
+    padding: 8px 16px;
+    border: 2px solid rgba(23, 25, 34, 0.35);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color 160ms ease, background 160ms ease;
+}
+
+.calendar-link:hover,
+.calendar-link:focus-visible {
+    border-color: var(--ink);
+    background: white;
 }
 
 /* Bouton « ajouter a mon agenda » a droite de la date, sur le fond de couleur. */
