@@ -67,7 +67,9 @@
 
             <fieldset>
                 <legend>Autorisations</legend>
-                <div data-membership-type-target="philibert">{{ form_row(form.philibertConsent) }}</div>
+                {% if not canUpgrade %}
+                    <div data-membership-type-target="philibert">{{ form_row(form.philibertConsent) }}</div>
+                {% endif %}
                 {{ form_row(form.imageRightsRefused) }}
             </fieldset>
 
@@ -81,6 +83,15 @@
                     {{ form_row(form.membershipType) }}
                     <div class="family-panel" data-membership-type-target="family">
                         {{ form_row(form.principalMemberName) }}
+                    </div>
+                    {# Propose des le choix d'une formule annuelle ; masque pour le consommateur. #}
+                    <div data-membership-type-target="philibert">
+                        <p class="form-note">
+                            <strong>Avantages de l'adhésion annuelle</strong> : 5 % de remise à La Crique au Jeu
+                            (Sens) et 10 % chez Carte sur Table (Auxerre) sur présentation de la carte, et l'avantage
+                            ludique Philibert ci-dessous.
+                        </p>
+                        {{ form_row(form.philibertConsent) }}
                     </div>
                     <p class="form-note">
                         La cotisation annuelle se règle à l'association, lors d'une de nos soirées. Tant qu'elle
