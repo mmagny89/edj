@@ -140,11 +140,12 @@ const renderCarousel = (events, filter, today) => {
           <span>${event.date.getDate()}</span>
           <small>${new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(event.date)}</small>
         </time>
+        ${event.ics ? `<a class="event-slide__calendar" href="${escapeHtml(event.ics)}" download aria-label="Ajouter à mon agenda : ${escapeHtml(event.title)}" title="Ajouter à mon agenda"><i class="fa-regular fa-calendar-plus" aria-hidden="true"></i></a>` : ''}
       </div>
       <div class="event-slide__content">
         <p><i class="fa-solid ${eventTypeIcons[event.type]}" aria-hidden="true"></i> ${escapeHtml(eventTypeLabels[event.type])}</p>
         <div class="event-slide__title">${escapeHtml(event.title)}</div>
-        <strong>${escapeHtml(formatDate(event.date))} · ${escapeHtml(event.time)}</strong>
+        <strong>${escapeHtml(formatDate(event.date, { year: 'numeric' }))} · ${escapeHtml(event.time)}</strong>
         ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ''}
         ${event.url ? `<a class="event-slide__more" href="${escapeHtml(event.url)}">En savoir plus</a>` : ''}
         ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(event.location)}</small>` : ''}
