@@ -286,7 +286,7 @@ h1 {
 }
 
 .button--primary {
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
 }
 
@@ -548,7 +548,7 @@ h1 {
 
 .carousel-controls button:hover,
 .carousel-controls button:focus-visible {
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
     outline: none;
 }
@@ -582,7 +582,7 @@ h1 {
 
 .event-slide__date {
     padding: 16px;
-    background: var(--red-aa);
+    background: var(--red);
     color: white;
 }
 
@@ -1281,7 +1281,7 @@ html[data-contrast="high"] .site-footer__credit {
 }
 
 .rdv-card--yearly .rdv-card__rhythm {
-    background: var(--red-aa);
+    background: var(--red);
     color: white !important;
 }
 
