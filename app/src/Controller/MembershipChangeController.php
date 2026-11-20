@@ -112,6 +112,7 @@ final class MembershipChangeController extends AbstractController
                 return $this->alreadyRenewed($season);
             }
 
+            $application->clearGuardianUnlessMinor();
             $this->entityManager->persist($application);
             $this->entityManager->flush();
 

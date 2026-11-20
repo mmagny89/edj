@@ -1,6 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 
-// Bulletin d'adhesion : deux groupes de champs ne sont obligatoires que dans
+// Bulletin d'adhesion et modification de la fiche : deux groupes de champs ne sont obligatoires que dans
 // certains cas, que l'on rend visibles au fur et a mesure.
 //
 //  - « membre de votre famille qui a deja adhere » : pour la formule famille ;
@@ -25,10 +25,13 @@ export default class extends Controller {
   refresh() {
     const selected = this.element.querySelector('input[name$="[membershipType]"]:checked');
     const isFamily = selected?.value === 'famille';
-    const familyInput = this.familyTarget.querySelector('input');
 
-    this.familyTarget.hidden = !isFamily;
-    this.setRequired(familyInput, isFamily);
+    // Le formulaire de modification n'a pas toujours de champ « famille » : un
+    // adherent annuel ne change pas de formule.
+    if (this.hasFamilyTarget) {
+      this.familyTarget.hidden = !isFamily;
+      this.setRequired(this.familyTarget.querySelector('input'), isFamily);
+    }
 
     this.refreshPhilibert(selected?.value === 'consommateur');
 
@@ -36,7 +39,9 @@ export default class extends Controller {
     // « hidden » sur un fieldset retire aussi ses champs de la navigation au
     // clavier et des lecteurs d'ecran : un adulte ne passe pas par trois champs
     // qui ne le concernent pas.
-    this.guardianTarget.hidden = !isMinor;
+    if (this.hasGuardianTarget) {
+      this.guardianTarget.hidden = !isMinor;
+    }
     ['guardianLastName', 'guardianFirstName', 'guardianEmail'].forEach((field) => {
       this.setRequired(this.element.querySelector(`input[name$="[${field}]"]`), isMinor);
     });

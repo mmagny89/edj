@@ -42,6 +42,7 @@ final class MembershipController extends AbstractController
             // Le numero d'adherent est attribue avant l'enregistrement : le
             // courriel d'accuse de reception le porte, et c'est lui qui ouvre
             // ensuite l'acces a la fiche et a la carte.
+            $application->clearGuardianUnlessMinor();
             $this->members->attach($application);
             $this->entityManager->persist($application);
             $this->entityManager->flush();

@@ -19,7 +19,7 @@
         </div>
 
         <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
-        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate'}}) }}
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh input->membership-type#refresh'}}) }}
             {% if not form.vars.valid %}
                 <p class="form-alert" role="alert">
                     <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
@@ -51,10 +51,12 @@
                 </p>
             </fieldset>
 
-            <fieldset>
+            {# Visible sans JavaScript ; avec, il n'apparait que pour un adherent de
+               moins de 18 ans, calcule a la volee sur la date de naissance. #}
+            <fieldset data-membership-type-target="guardian">
                 <legend>Responsable légal</legend>
                 <p class="form-note">
-                    <strong>Obligatoire si l'adhérent a moins de 18 ans.</strong> À laisser vide pour un adulte.
+                    <strong>Obligatoire : l'adhérent a moins de 18 ans.</strong> C'est le responsable légal qui signe.
                 </p>
                 <div class="form-grid">
                     {{ form_row(form.guardianLastName) }}
@@ -66,6 +68,9 @@
             <fieldset>
                 <legend>Autorisations</legend>
                 {{ form_row(form.philibertConsent) }}
+                <p class="form-note" data-membership-type-target="philibertNote" role="status" hidden>
+                    Cet avantage est réservé aux adhérents à l'année : la formule consommateur n'y donne pas droit.
+                </p>
                 {{ form_row(form.imageRightsRefused) }}
             </fieldset>
 
@@ -77,7 +82,9 @@
                         venir toute la saison sans rien payer de plus, ou gardez la formule actuelle.
                     </p>
                     {{ form_row(form.membershipType) }}
-                    {{ form_row(form.principalMemberName) }}
+                    <div class="family-panel" data-membership-type-target="family">
+                        {{ form_row(form.principalMemberName) }}
+                    </div>
                     <p class="form-note">
                         La cotisation annuelle se règle à l'association, lors d'une de nos soirées. Tant qu'elle
                         n'est pas encaissée, l'adhésion reste « en attente » et la carte n'est pas délivrée.

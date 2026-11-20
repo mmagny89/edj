@@ -120,6 +120,7 @@ final class MemberSpaceController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $application->clearGuardianUnlessMinor();
             $upgraded = $canUpgrade && null !== $from && $from !== $application->getMembershipType();
 
             if ($upgraded) {
