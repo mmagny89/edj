@@ -30,7 +30,7 @@ GitHub, par `.github/workflows/release.yml`.
   apporte sous forme de notes, avec un petit formulaire (prenom et objet, sans compte, avec les protections
   des formulaires publics ; suppression possible depuis l'administration).
 - **Page « Nos rendez-vous »** (`/rendez-vous`) : quatre cartes aerees (mardis, samedis, nuits, week-end du
-  jeu), le detail se deplie. Le calendrier de l'accueil porte un bouton « En savoir plus » sur chaque carte.
+  jeu), le detail se deplie. Le calendrier de l'accueil porte un lien « En savoir plus » sur chaque carte.
 - Commande a usage unique `app:events:nuit-fin-3h` (`--dry-run` pour simuler) : ramene la fin des Nuits du Jeu
   de 4h a 3h et range les « Nuit du Jeu » deja saisies dans le nouveau type.
 
