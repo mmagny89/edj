@@ -16,6 +16,11 @@ parameters:
     # domaine provisoire ou en recette, 1 le jour de la mise en ligne definitive.
     app.seo.indexable: '%env(bool:SITE_INDEXABLE)%'
 
+    # Mesure d'audience Matomo, hebergee par l'association (matomo.mmagny.fr). Vide
+    # hors production : ni script, ni ouverture de la politique de contenu.
+    app.matomo.url: ''
+    app.matomo.site_id: ''
+
     # Groupe Facebook des adherents : sa page est publique, l'acces y est
     # soumis a l'approbation d'un administrateur du groupe. Le parametre de suivi
     # « ?ref=share » du lien partage est retire.
@@ -70,3 +75,8 @@ services:
     App\:
         resource: '../src/*'
         exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
+
+when@prod:
+    parameters:
+        app.matomo.url: 'https://matomo.mmagny.fr/'
+        app.matomo.site_id: '3'

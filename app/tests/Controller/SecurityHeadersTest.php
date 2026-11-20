@@ -72,4 +72,21 @@ final class SecurityHeadersTest extends WebTestCase
 
         self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
     }
+
+    public function testMatomoHostIsOnlyAllowedWhenConfigured(): void
+    {
+        $subscriber = new \App\EventSubscriber\SecurityHeadersSubscriber(new \App\Security\CspNonce(), false, 'https://matomo.example.org/');
+        $request = \Symfony\Component\HttpFoundation\Request::create('https://edj.test/');
+        $response = new \Symfony\Component\HttpFoundation\Response();
+        $subscriber->onResponse(new \Symfony\Component\HttpKernel\Event\ResponseEvent(
+            self::bootKernel(),
+            $request,
+            \Symfony\Component\HttpKernel\HttpKernelInterface::MAIN_REQUEST,
+            $response,
+        ));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringContainsString("script-src 'self' https://matomo.example.org;", $csp);
+        self::assertStringContainsString("connect-src 'self' https://matomo.example.org;", $csp);
+    }
 }
