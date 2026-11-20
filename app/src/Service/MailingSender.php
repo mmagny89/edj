@@ -39,6 +39,8 @@ final class MailingSender
         private readonly string $mailerFrom,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,
+        #[Autowire('%kernel.project_dir%/public/icons/icon-192.png')]
+        private readonly string $logoPath,
     ) {
     }
 
@@ -75,7 +77,7 @@ final class MailingSender
 
         $campaign = new MailCampaign(
             $draft->subject,
-            $draft->body,
+            MailingTemplate::normalize($draft->body),
             $season,
             $draft->includeAnnual,
             $draft->includeConsumers,
@@ -116,10 +118,10 @@ final class MailingSender
     private function build(MailingDraft $draft, array $values, string $to, string $number, ?string $unsubscribeUrl): Email
     {
         $subject = trim((string) preg_replace('/\s+/', ' ', MailingTemplate::render($draft->subject, $values)));
-        $body = MailingTemplate::render($draft->body, $values);
+        $bodyHtml = MailingTemplate::renderHtml(MailingTemplate::normalize($draft->body), $values);
         $context = [
-            'body_text' => $body,
-            'body_html' => MailingTemplate::toHtml($body),
+            'body_text' => MailingTemplate::toText($bodyHtml),
+            'body_html' => $bodyHtml,
             'number' => $number,
             // Pas de lien pour un essai : il n'existe aucun adherent a desinscrire.
             'unsubscribe_url' => $unsubscribeUrl,
@@ -131,7 +133,10 @@ final class MailingSender
             ->replyTo(new Address($this->contactEmail, 'Envie de Jouer'))
             ->subject($subject)
             ->text($this->twig->render('emails/mailing.txt.twig', $context))
-            ->html($this->twig->render('emails/mailing.html.twig', $context));
+            // Le logo voyage dans le message (cid:logo) : beaucoup de clients bloquent
+            // les images distantes, jamais celles qui sont jointes.
+            ->embedFromPath($this->logoPath, 'logo', 'image/png');
+        $email->html($this->twig->render('emails/mailing.html.twig', $context + ['logo_cid' => 'logo']));
 
         if (null !== $unsubscribeUrl) {
             $headers = $email->getHeaders();

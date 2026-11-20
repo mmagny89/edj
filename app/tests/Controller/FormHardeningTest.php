@@ -146,7 +146,7 @@ final class FormHardeningTest extends WebTestCase
 
     public function testTheAccessRequestFormAlsoCarriesTheGuard(): void
     {
-        foreach (['/adhesion/ma-fiche', '/adhesion/renouvellement'] as $path) {
+        foreach (['/adhesion/ma-fiche', '/adhesion/modification'] as $path) {
             $crawler = $this->client->request('GET', $path);
 
             self::assertCount(1, $crawler->filter('input[type="hidden"][name$="[guard]"]'), $path);

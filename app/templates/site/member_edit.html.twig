@@ -1,0 +1,115 @@
+{% extends 'site/layout.html.twig' %}
+
+{% form_theme form 'site/form_theme.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Modifier mon adhésion - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>Modifier mon adhésion</h1>
+            <p>
+                {{ application.firstName }}, votre adhésion de la saison est en cours
+                (numéro <strong class="member-number">{{ application.memberNumber }}</strong>). Corrigez
+                ce qui a changé dans votre fiche{% if canUpgrade %}, ou passez à une adhésion annuelle{% endif %} :
+                votre signature est déjà enregistrée.
+            </p>
+        </div>
+
+        <p class="form-required-note"><span aria-hidden="true">*</span> Champ obligatoire</p>
+        {{ form_start(form, {'attr': {'class': 'membership-form', 'novalidate': 'novalidate', 'data-controller': 'membership-type', 'data-action': 'change->membership-type#refresh input->membership-type#refresh'}}) }}
+            {% if not form.vars.valid %}
+                <p class="form-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    Le changement n'a pas pu être enregistré : quelques champs demandent votre attention.
+                </p>
+                {{ form_errors(form) }}
+            {% endif %}
+
+            <fieldset>
+                <legend>Identité</legend>
+                <div class="form-grid">
+                    {{ form_row(form.lastName) }}
+                    {{ form_row(form.firstName) }}
+                    {{ form_row(form.birthDate) }}
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Coordonnées</legend>
+                <div class="form-grid">
+                    <div class="form-grid__wide">{{ form_row(form.address) }}</div>
+                    {{ form_row(form.postalCode) }}
+                    {{ form_row(form.city) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.email) }}
+                </div>
+                <p class="form-note">
+                    Si vous changez d'adresse e-mail, les prochains liens seront envoyés à la nouvelle.
+                </p>
+            </fieldset>
+
+            {# Visible sans JavaScript ; avec, il n'apparait que pour un adherent de
+               moins de 18 ans, calcule a la volee sur la date de naissance. #}
+            <fieldset data-membership-type-target="guardian">
+                <legend>Responsable légal</legend>
+                <p class="form-note">
+                    <strong>Obligatoire : l'adhérent a moins de 18 ans.</strong> C'est le responsable légal qui signe.
+                </p>
+                <div class="form-grid">
+                    {{ form_row(form.guardianLastName) }}
+                    {{ form_row(form.guardianFirstName) }}
+                    <div class="form-grid__wide">{{ form_row(form.guardianEmail) }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Autorisations</legend>
+                {% if not canUpgrade %}
+                    <div data-membership-type-target="philibert">{{ form_row(form.philibertConsent) }}</div>
+                {% endif %}
+                {{ form_row(form.imageRightsRefused) }}
+            </fieldset>
+
+            {% if canUpgrade %}
+                <fieldset>
+                    <legend>Ma formule</legend>
+                    <p class="form-note">
+                        Vous êtes adhérent consommateur : 1 € par événement. Choisissez une formule annuelle pour
+                        venir toute la saison sans rien payer de plus, ou gardez la formule actuelle.
+                    </p>
+                    {{ form_row(form.membershipType) }}
+                    <div class="family-panel" data-membership-type-target="family">
+                        {{ form_row(form.principalMemberName) }}
+                    </div>
+                    <p class="form-note">
+                        La cotisation annuelle se règle à l'association, lors d'une de nos soirées. Tant qu'elle
+                        n'est pas encaissée, l'adhésion reste « en attente » et la carte n'est pas délivrée.
+                    </p>
+                </fieldset>
+
+                {# Encart a part, comme sur le bulletin : propose des le choix d'une
+                   formule annuelle, masque pour le consommateur. #}
+                <fieldset data-membership-type-target="philibert">
+                    <legend>Avantage ludique</legend>
+                    {{ form_row(form.philibertConsent) }}
+                    <p class="form-note">
+                        Autres avantages inclus dans l'adhésion : 5 % de remise à La Crique au Jeu (Sens)
+                        sur présentation de la carte d'adhérent, 10 % de réduction chez Carte sur Table
+                        (Auxerre), carte à demander auprès du Conseil d'Administration.
+                    </p>
+                </fieldset>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="button button--primary" data-turbo-submits-with="Enregistrement…">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                    Enregistrer
+                </button>
+                <a href="{{ path('site_index') }}" class="button button--quiet">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+    </main>
+{% endblock %}

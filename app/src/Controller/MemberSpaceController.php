@@ -3,6 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Member;
+use App\Enum\MembershipType;
+use App\Form\MemberEditType;
+use App\Service\MembershipSeasons;
+use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\MembershipApplication;
 use App\Form\MemberAccessRequestType;
 use App\Repository\MemberRepository;
@@ -35,6 +39,7 @@ final class MemberSpaceController extends AbstractController
         private readonly MemberAccessLink $links,
         private readonly MembershipNotifier $notifier,
         private readonly RateLimiterFactoryInterface $memberAccessRequestLimiter,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -79,6 +84,88 @@ final class MemberSpaceController extends AbstractController
                 ? $this->links->cardUrl($application->getMember(), $this->links->expirationOf($request))
                 : null,
         ]);
+    }
+
+    #[Route('/adhesion/modification/termine', name: 'member_edit_done', methods: ['GET'])]
+    public function editDone(Request $request): Response
+    {
+        $summary = $request->getSession()->getFlashBag()->get('member_edit_done')[0] ?? null;
+
+        // Page rechargee ou ouverte a la main : plus de recapitulatif, on repart
+        // de la demande de lien.
+        if (null === $summary) {
+            return $this->redirectToRoute('membership_change_request');
+        }
+
+        return $this->render('site/member_edit_done.html.twig', $summary);
+    }
+
+    /**
+     * Modifier sa fiche (coordonnees, responsable legal, autorisations) et, pour
+     * un consommateur de la saison en cours, passer a une formule annuelle sans
+     * attendre la saison suivante.
+     *
+     * On n'y arrive que par le lien du parcours « Renouveler ou modifier » : la
+     * page de renouvellement y redirige quand l'adhesion de la saison existe.
+     * L'espace « Ma fiche », lui, reste en lecture seule.
+     *
+     * Comme pour le bureau, une adhesion validee redevient « en attente » des
+     * qu'une cotisation est a payer : la carte n'est plus delivree tant
+     * qu'elle n'est pas encaissee.
+     */
+    #[Route('/adhesion/espace/{number}/modifier', name: 'member_edit', methods: ['GET', 'POST'], requirements: ['number' => Member::PREFIX.'\\d+'])]
+    public function edit(Request $request, string $number): Response
+    {
+        $member = $this->members->findOneByNumber($number);
+        if (!$this->links->isValid($request) || !$member instanceof Member) {
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_change_request'], new Response('', Response::HTTP_FORBIDDEN));
+        }
+
+        // La fiche de la saison en cours, pas la derniere venue : c'est elle
+        // qu'on modifie.
+        $application = $this->applications->findInSeason($member, MembershipSeasons::of(new \DateTimeImmutable()));
+        if (!$application instanceof MembershipApplication || $application->isAnonymized()) {
+            return $this->render('site/member_link_expired.html.twig', ['retry' => 'membership_change_request'], new Response('', Response::HTTP_NOT_FOUND));
+        }
+
+        $canUpgrade = $application->canBecomeAnnual(MembershipSeasons::of(new \DateTimeImmutable()));
+        $from = $application->getMembershipType();
+        $form = $this->createForm(MemberEditType::class, $application, ['allow_upgrade' => $canUpgrade]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $application->clearGuardianUnlessMinor();
+            $upgraded = $canUpgrade && null !== $from && $from !== $application->getMembershipType();
+
+            if ($upgraded) {
+                if (MembershipType::Family !== $application->getMembershipType()) {
+                    $application->setPrincipalMemberName(null);
+                }
+
+                $application->recordFormulaChange($from, null);
+                if (($application->amountDue() ?? 0) > 0 && $application->isValidated()) {
+                    $application->reopen(null);
+                }
+            }
+            $this->entityManager->flush();
+
+            $this->notifier->notifyChange($application, $upgraded);
+
+            // Redirection apres enregistrement : Turbo n'affiche pas une reponse 200
+            // a un POST (il attend une redirection), et un rafraichissement ne doit
+            // pas renvoyer le formulaire. Le recapitulatif voyage en flash.
+            $request->getSession()->getFlashBag()->set('member_edit_done', [[
+                'firstName' => $application->getFirstName(),
+                'upgraded' => $upgraded,
+                'formula' => mb_strtolower($application->getMembershipType()?->label() ?? ''),
+                'due' => ($application->amountDue() ?? 0) > 0,
+                'dueLabel' => $application->amountDueLabel(),
+            ]]);
+
+            return $this->redirectToRoute('member_edit_done');
+        }
+
+        return $this->render('site/member_edit.html.twig', ['form' => $form, 'application' => $application, 'canUpgrade' => $canUpgrade]);
     }
 
     /**

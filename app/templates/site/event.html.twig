@@ -1,0 +1,71 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}{{ event.title }} - Envie de Jouer{% endblock %}
+{% block description %}{{ event.title }} à {{ event.location ?: 'Joigny' }} : horaires, tombola, LudiPassion.{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section event-page">
+        <a href="{{ path('site_index') }}#calendrier" class="event-page__back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au calendrier
+        </a>
+
+        <header class="event-hero">
+            <div class="event-hero__date">
+                <time datetime="{{ event.startsAt|date('Y-m-d') }}">
+                    <span>{{ event.startsAt|date('j') }}</span>
+                    <small>{{ event.startsAt|format_date(pattern: 'MMM', locale: 'fr') }}</small>
+                </time>
+                {% if event.endsAt %}<p>au {{ event.endsAt|format_date(pattern: 'd MMMM', locale: 'fr') }}</p>{% endif %}
+            </div>
+            <div>
+                <p class="eyebrow">{{ event.type.label }}</p>
+                <h1>{{ event.title }}</h1>
+                {% if event.description %}<p class="event-hero__lead">{{ event.description }}</p>{% endif %}
+            </div>
+        </header>
+
+        <ul class="info-tiles">
+            <li><i class="fa-regular fa-clock" aria-hidden="true"></i><span><strong>Horaire</strong> {{ event.timeLabel }}</span></li>
+            <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span><strong>Lieu</strong> {{ event.location ?: 'Maison des Associations, Joigny' }}</span></li>
+            <li>
+                <i class="fa-solid fa-store" aria-hidden="true"></i>
+                <span><strong>LudiPassion</strong>
+                    {% if event.ludipassionPresent is same as(true) %}sera présent
+                    {% elseif event.ludipassionPresent is same as(false) %}ne sera pas présent
+                    {% else %}à confirmer{% endif %}
+                </span>
+            </li>
+            <li>
+                <i class="fa-solid fa-ticket" aria-hidden="true"></i>
+                <span><strong>Tombola</strong>
+                    {% if event.raffleEnabled %}
+                        {% if event.raffleTicketPriceLabel %}ticket à {{ event.raffleTicketPriceLabel }}{% else %}oui{% endif %}{% if event.raffleTicketCount %}, {{ event.raffleTicketCount }} tickets{% endif %}
+                    {% else %}pas de tombola{% endif %}
+                </span>
+            </li>
+        </ul>
+
+        {% if event.raffleEnabled and event.rafflePrizeList|length %}
+            <section class="raffle-panel" aria-labelledby="t-tombola">
+                <h2 id="t-tombola">Lots de la tombola ({{ event.rafflePrizeList|length }})</h2>
+                <ul class="raffle-panel__prizes">
+                    {% for prize in event.rafflePrizeList %}<li>{{ prize }}</li>{% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+
+        <aside class="bring-teaser">
+            <p>
+                <strong>Qui apporte quoi ?</strong>
+                {% if event.contributions|length %}
+                    {{ event.contributions|length }} apport{{ event.contributions|length > 1 ? 's' : '' }} déjà noté{{ event.contributions|length > 1 ? 's' : '' }}.
+                {% else %}
+                    Jeux, boissons, gâteaux : dites ce que vous ramenez.
+                {% endif %}
+            </p>
+            <a href="{{ path('site_event_contributions', {id: event.id}) }}" class="button button--join">Voir la liste</a>
+        </aside>
+
+        <p class="event-page__more"><a href="{{ path('site_activities') }}#nuits-du-jeu">En savoir plus sur nos rendez-vous</a></p>
+    </main>
+{% endblock %}

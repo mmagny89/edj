@@ -784,6 +784,22 @@ class MembershipApplication
         return $this->guardianLastName;
     }
 
+    /**
+     * Le responsable legal n'existe que pour un mineur : les champs, masques a
+     * l'ecran pour un adulte, restent pourtant envoyes avec le formulaire. On les
+     * vide ici pour ne pas conserver le nom et l'adresse d'un tiers sans objet.
+     */
+    public function clearGuardianUnlessMinor(): static
+    {
+        if (null !== $this->birthDate && !$this->isMinor()) {
+            $this->guardianLastName = null;
+            $this->guardianFirstName = null;
+            $this->guardianEmail = null;
+        }
+
+        return $this;
+    }
+
     public function setGuardianLastName(?string $guardianLastName): static
     {
         $this->guardianLastName = $guardianLastName;

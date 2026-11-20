@@ -93,14 +93,9 @@
                 </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset data-membership-type-target="philibert">
                 <legend>Avantage ludique</legend>
                 {{ form_row(form.philibertConsent) }}
-                {# Visible seulement quand la formule consommateur est choisie
-                   (voir membership-type_controller.js). #}
-                <p class="form-note" data-membership-type-target="philibertNote" role="status" hidden>
-                    Cet avantage est réservé aux adhérents à l'année : la formule consommateur n'y donne pas droit.
-                </p>
                 <p class="form-note">
                     Autres avantages inclus dans l'adhésion : 5 % de remise à La Crique au Jeu (Sens)
                     sur présentation de la carte d'adhérent, 10 % de réduction chez Carte sur Table
@@ -137,7 +132,7 @@
             {{ form_row(form.website) }}
 
             <div class="form-actions">
-                <button type="submit" class="button button--primary">
+                <button type="submit" class="button button--primary" data-turbo-submits-with="Envoi…">
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                     Envoyer mon bulletin
                 </button>

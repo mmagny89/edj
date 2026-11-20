@@ -3,6 +3,8 @@
 namespace App\Service;
 
 use App\Entity\MembershipApplication;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
 /**
  * Le texte d'un message et ses variables.
@@ -113,5 +115,109 @@ final class MailingTemplate
         }
 
         return implode("\n", $paragraphs);
+    }
+
+    /**
+     * Le corps d'un message, en HTML sur : celui de l'editeur est nettoye, un texte
+     * simple (sans balise) est converti comme avant. Tout passe par ici avant d'etre
+     * affiche, stocke ou envoye — on ne fait jamais confiance au champ.
+     */
+    public static function normalize(string $body): string
+    {
+        $body = str_replace("\r\n", "\n", $body);
+        if (!preg_match('~</?[a-z][^>]*>~i', $body)) {
+            return self::toHtml($body);
+        }
+
+        return self::inlineStyles(self::sanitizer()->sanitize($body));
+    }
+
+    /**
+     * Les variables remplacees dans du HTML : les valeurs y sont echappees, un
+     * nom saisi par un adherent ne peut pas y glisser de balise.
+     *
+     * @param array<string, string> $values
+     */
+    public static function renderHtml(string $html, array $values): string
+    {
+        $escaped = array_map(static fn (string $v): string => htmlspecialchars($v, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'), $values);
+
+        return self::render($html, $escaped);
+    }
+
+    /**
+     * Le texte brut d'un HTML nettoye : la version « texte » du courriel, et ce
+     * qui sert a verifier qu'un message n'est pas vide.
+     */
+    public static function toText(string $html): string
+    {
+        $text = (string) preg_replace_callback(
+            '~<a\b[^>]*href="([^"]*)"[^>]*>(.*?)</a>~is',
+            static function (array $m): string {
+                $label = trim(strip_tags($m[2]));
+                $url = html_entity_decode($m[1], \ENT_QUOTES, 'UTF-8');
+
+                return '' === $label || $label === $url ? $url : $label.' ('.$url.')';
+            },
+            $html,
+        );
+        $text = (string) preg_replace(['~<br\s*/?>~i', '~<li\b[^>]*>~i', '~</(p|div|h2|ul|ol)>~i'], ["\n", "\n- ", "\n\n"], $text);
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES, 'UTF-8');
+
+        return trim((string) preg_replace("~\n{3,}~", "\n\n", str_replace("\xC2\xA0", ' ', $text)));
+    }
+
+    private static function sanitizer(): HtmlSanitizer
+    {
+        $config = (new HtmlSanitizerConfig())
+            ->allowElement('p', ['style'])
+            ->allowElement('div', ['style'])
+            ->allowElement('h2', ['style'])
+            ->allowElement('br')
+            ->allowElement('strong')
+            ->allowElement('b')
+            ->allowElement('em')
+            ->allowElement('i')
+            ->allowElement('u')
+            ->allowElement('ul')
+            ->allowElement('ol')
+            ->allowElement('li')
+            ->allowElement('a', ['href'])
+            ->allowLinkSchemes(['http', 'https', 'mailto'])
+            ->allowRelativeLinks(false)
+            ->forceAttribute('a', 'rel', 'noopener noreferrer');
+
+        return new HtmlSanitizer($config);
+    }
+
+    /**
+     * Les clients de messagerie ignorent les feuilles de style : l'espacement et
+     * l'alignement s'ecrivent en ligne. Du style saisi, seul l'alignement du texte
+     * survit.
+     */
+    private static function inlineStyles(string $html): string
+    {
+        $base = [
+            'p' => 'margin:0 0 14px;',
+            'div' => 'margin:0 0 14px;',
+            'h2' => 'margin:20px 0 10px;font-size:18px;color:#171922;',
+            'ul' => 'margin:0 0 14px;padding-left:22px;',
+            'ol' => 'margin:0 0 14px;padding-left:22px;',
+            'li' => 'margin:0 0 4px;',
+        ];
+
+        // Liens aux couleurs de l'association, soulignes pour ne pas dependre de la couleur seule.
+        $html = (string) preg_replace('~<a (?=href=)~i', '<a style="color:#255db0;text-decoration:underline;" ', $html);
+
+        return (string) preg_replace_callback(
+            '~<(p|div|h2|ul|ol|li)\b([^>]*)>~i',
+            static function (array $m) use ($base): string {
+                $tag = strtolower($m[1]);
+                $align = preg_match('~text-align:\s*(left|center|right|justify)~i', $m[2], $a) ? 'text-align:'.strtolower($a[1]).';' : '';
+
+                return '<'.$tag.' style="'.$align.$base[$tag].'">';
+            },
+            $html,
+        );
     }
 }

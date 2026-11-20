@@ -64,6 +64,34 @@ final class MembershipNotifier
     }
 
     /**
+     * Previent le bureau qu'un adherent a modifie son adhesion depuis le site :
+     * nouvelles coordonnees et, le cas echeant, passage a une formule annuelle
+     * (une cotisation est alors a encaisser).
+     */
+    public function notifyChange(MembershipApplication $application, bool $upgraded): void
+    {
+        $email = (new Email())
+            ->from(new Address($this->mailerFrom, 'Site Envie de Jouer'))
+            ->to($this->contactEmail)
+            ->subject(sprintf(
+                '%s : %s %s',
+                $upgraded ? "Passage à l'adhésion annuelle" : "Modification d'adhésion",
+                (string) $application->getFirstName(),
+                (string) $application->getLastName(),
+            ))
+            ->html($this->twig->render('emails/membership_change.html.twig', [
+                'application' => $application,
+                'upgraded' => $upgraded,
+            ]));
+
+        if ($application->getEmail()) {
+            $email->replyTo(new Address((string) $application->getEmail()));
+        }
+
+        $this->send($email);
+    }
+
+    /**
      * Accuse de reception envoye a l'adherent — et au responsable legal pour un
      * mineur : c'est lui qui a engage l'enfant, il doit en avoir trace.
      *
@@ -117,15 +145,24 @@ final class MembershipNotifier
     }
 
     /**
-     * Lien de renouvellement : memes garanties que le lien d'acces — il part a
-     * la seule adresse du dernier bulletin, et signe le numero qu'il ouvre.
+     * Lien « modifier ou renouveler » : memes garanties que le lien d'acces — il
+     * part a la seule adresse du dernier bulletin, et signe le numero qu'il
+     * ouvre. Le courriel dit ce que le lien ouvre : le renouvellement quand la
+     * saison n'est pas couverte, la modification de la fiche sinon.
      */
-    public function sendRenewalLink(MembershipApplication $application, string $url): void
+    public function sendChangeLink(MembershipApplication $application, string $url, bool $renewal): void
     {
-        $this->sendLink($application, $url, 'membership_renewal_link', 'Renouveler votre adhésion à Envie de Jouer', '2 heures');
+        $this->sendLink(
+            $application,
+            $url,
+            'membership_change_link',
+            $renewal ? 'Renouveler votre adhésion à Envie de Jouer' : 'Modifier votre adhésion à Envie de Jouer',
+            '2 heures',
+            ['renewal' => $renewal],
+        );
     }
 
-    private function sendLink(MembershipApplication $application, string $url, string $template, string $subject, string $lifetime): void
+    private function sendLink(MembershipApplication $application, string $url, string $template, string $subject, string $lifetime, array $extra = []): void
     {
         // Plafond propre a ce courriel, par destinataire. Celui des
         // confirmations d'adhesion ne convenait pas : trois par jour, c'est
@@ -145,7 +182,7 @@ final class MembershipNotifier
             'application' => $application,
             'url' => $url,
             'lifetime' => $lifetime,
-        ];
+        ] + $extra;
 
         $email = (new Email())
             ->from(new Address($this->mailerFrom, 'Envie de Jouer'))

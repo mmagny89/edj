@@ -9,10 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Le passage d'un consommateur un jour donne, et le reglement qui va avec.
  *
- * Un pointage se rattache a une date, pas a un evenement : on pointe pour la
- * seance du jour, ou pour une seance passee dont on saisit la date. Un evenement
- * du calendrier tombant ce jour-la, s'il existe, ne fournit que le libelle.
- * Une personne n'a qu'un pointage par jour.
+ * Un pointage se rattache a un evenement du calendrier, aujourd'hui ou passe, et
+ * porte la date du jour pointe (copiee : elle date la recette et survit a la
+ * purge de l'evenement). Une personne n'a qu'un pointage par jour.
  *
  * La formule consommateur est gratuite a l'annee et se paie 1 € par
  * evenement : c'est ici que cet euro est enregistre, et c'est la seule trace

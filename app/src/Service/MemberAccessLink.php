@@ -51,9 +51,18 @@ final class MemberAccessLink
         return $this->sign('member_card', $member, $expiresAt);
     }
 
-    public function renewalUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
+    public function changeUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
     {
-        return $this->sign('membership_renewal', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
+        return $this->sign('membership_change', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
+    }
+
+    /**
+     * Lien du formulaire « Modifier mon adhesion » : il ouvre des champs a
+     * relire, comme le renouvellement, d'ou la meme duree.
+     */
+    public function editUrl(Member $member, ?\DateTimeImmutable $expiresAt = null): string
+    {
+        return $this->sign('member_edit', $member, $expiresAt ?? new \DateTimeImmutable(self::RENEWAL_LIFETIME));
     }
 
     public function isValid(Request $request): bool

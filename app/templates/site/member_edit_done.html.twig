@@ -1,0 +1,28 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block robots %}noindex, nofollow{% endblock %}
+{% block title %}Adhésion modifiée - Envie de Jouer{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section membership-form-page">
+        <div class="section__intro">
+            <p class="eyebrow">Adhésion</p>
+            <h1>C'est enregistré</h1>
+            <p>
+                Merci {{ firstName }}, vos modifications sont prises en compte.
+                {% if upgraded %}
+                    Vous êtes passé à la formule <strong>{{ formula }}</strong>.
+                    {% if due %}
+                        Il reste {{ dueLabel }} à régler à l'association, lors d'une de nos
+                        soirées ; votre carte d'adhérent sera disponible dès que la cotisation sera encaissée.
+                    {% else %}
+                        Il n'y a rien à régler.
+                    {% endif %}
+                {% endif %}
+            </p>
+        </div>
+        <div class="form-actions">
+            <a href="{{ path('site_index') }}" class="button button--primary">Retour à l'accueil</a>
+        </div>
+    </main>
+{% endblock %}

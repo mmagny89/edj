@@ -27,9 +27,10 @@
                 <li><strong>Communication de votre e-mail à Philibert :</strong> {{ application.philibertConsent ? 'autorisée' : 'refusée' }}</li>
             </ul>
             <p>
-                Une erreur, un changement d'adresse ? Écrivez-nous à
-                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a> :
-                cette page se consulte, elle ne se modifie pas.
+                Une erreur, un changement d'adresse ? Utilisez
+                <a href="{{ path('membership_change_request') }}">Modifier ou renouveler mon adhésion</a>,
+                ou écrivez-nous à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
             </p>
         </div>
 

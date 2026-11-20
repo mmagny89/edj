@@ -1,0 +1,76 @@
+{% extends 'site/layout.html.twig' %}
+
+{% block title %}Nos rendez-vous - Envie de Jouer{% endblock %}
+{% block description %}Soirées du mardi, après-midi du 1er samedi, Nuits du Jeu et week-end du Jeu : les rendez-vous d'Envie de Jouer à Joigny.{% endblock %}
+
+{% block main %}
+    <main id="contenu" class="section event-page">
+        <div class="section__intro intro-panel">
+            <p class="eyebrow">Rendez-vous</p>
+            <h1>Quand venir jouer ?</h1>
+            <p>
+                À la Maison des Associations de Joigny, chacun apporte des jeux, on les met en commun et on joue ensemble.
+            </p>
+        </div>
+
+        <div class="activity-grid">
+            <article id="mardis" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-dice"></i></span>
+                <h2>Les soirées du mardi</h2>
+                <ul class="activity-card__meta">
+                    <li>Chaque semaine</li>
+                    <li>18h30 – minuit</li>
+                </ul>
+                <p>Tables ouvertes, jeux apportés par les membres, règles expliquées.</p>
+                <p>Venez seul ou à plusieurs : des joueurs vous expliquent les règles, vous trouvent une table et vous font essayer des nouveautés.</p>
+            </article>
+
+            <article id="samedis" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-calendar-day"></i></span>
+                <h2>Les après-midi du 1<sup>er</sup> samedi</h2>
+                <ul class="activity-card__meta">
+                    <li>Chaque mois</li>
+                    <li>14h – 18h</li>
+                </ul>
+                <p>Jouer sans se presser, entre amis ou en famille.</p>
+                <p>Un rythme plus calme que le mardi soir, qui convient bien aux parties en famille et aux plus jeunes.</p>
+            </article>
+
+            <article id="nuits-du-jeu" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-moon"></i></span>
+                <h2>Les Nuits du Jeu</h2>
+                <ul class="activity-card__meta">
+                    <li>4 fois par an</li>
+                    <li>15h – 3h du matin</li>
+                </ul>
+                <p>Douze heures de jeu d'affilée, pour les longues parties et les grosses tables.</p>
+                <p>L'une des quatre nuits fête l'anniversaire de l'association. Chaque nuit a sa fiche dans le calendrier : LudiPassion, tombola, et la liste de ce que chacun apporte.</p>
+            </article>
+
+            <article id="week-end-du-jeu" class="activity-card">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-calendar-week"></i></span>
+                <h2>Le week-end du Jeu</h2>
+                <ul class="activity-card__meta">
+                    <li>Une fois par an</li>
+                    <li>Deux jours</li>
+                </ul>
+                <p>La Fête des Jeux : la nuit du samedi, puis on remet ça le dimanche.</p>
+            </article>
+
+            <article id="hors-les-murs" class="activity-card activity-card--wide">
+                <span class="activity-card__icon" aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span>
+                <h2>Hors de nos murs</h2>
+                <ul class="activity-card__meta">
+                    <li>À Sens</li>
+                    <li>À Joigny</li>
+                </ul>
+                <p>Le festival Le Sens du Jeu, à Sens, pour retrouver d'autres joueurs aux côtés de Sens Ludique, et la fête des associations de Joigny, pour rencontrer celles et ceux qui ne nous connaissent pas encore.</p>
+            </article>
+        </div>
+
+        <div class="join-banner activity-banner">
+            <p>Tous nos rendez-vous sont ouverts par l'adhésion : 10 € par an, ou gratuite à l'année avec 1 € par événement.</p>
+            <a href="{{ path('membership_form') }}" class="button button--join">Adhérer en ligne</a>
+        </div>
+    </main>
+{% endblock %}

@@ -1,12 +1,13 @@
 import { Controller } from '@hotwired/stimulus';
 
-// Bulletin d'adhesion : deux groupes de champs ne sont obligatoires que dans
+// Bulletin d'adhesion et modification de la fiche : deux groupes de champs ne sont obligatoires que dans
 // certains cas, que l'on rend visibles au fur et a mesure.
 //
 //  - « membre de votre famille qui a deja adhere » : pour la formule famille ;
 //  - responsable legal (nom, prenom, e-mail) : pour un adherent de moins de 18 ans ;
-//  - communication a Philibert : pas pour la formule consommateur, qui n'ouvre
-//    pas droit a l'avantage — la case est decochee et desactivee, avec la raison.
+//  - avantage ludique (communication a Philibert) : masque par defaut, il n'apparait
+//    que pour une formule annuelle ; la formule consommateur n'y donne pas droit,
+//    la case est alors decochee et desactivee.
 //
 // Le champ passe en `required`, son etiquette recoit la classe `required` (qui
 // affiche l'asterisque, comme les autres champs obligatoires) et la zone
@@ -16,7 +17,7 @@ import { Controller } from '@hotwired/stimulus';
 // de moins de 18 ans est donnee. Sans JavaScript, tout reste affiche et le
 // serveur applique les memes regles.
 export default class extends Controller {
-  static targets = ['family', 'guardian', 'philibertNote'];
+  static targets = ['family', 'guardian', 'philibert'];
 
   connect() {
     this.refresh();
@@ -25,18 +26,26 @@ export default class extends Controller {
   refresh() {
     const selected = this.element.querySelector('input[name$="[membershipType]"]:checked');
     const isFamily = selected?.value === 'famille';
-    const familyInput = this.familyTarget.querySelector('input');
 
-    this.familyTarget.hidden = !isFamily;
-    this.setRequired(familyInput, isFamily);
+    // Le formulaire de modification n'a pas toujours de champ « famille » : un
+    // adherent annuel ne change pas de formule.
+    if (this.hasFamilyTarget) {
+      this.familyTarget.hidden = !isFamily;
+      this.setRequired(this.familyTarget.querySelector('input'), isFamily);
+    }
 
-    this.refreshPhilibert(selected?.value === 'consommateur');
+    // Sans choix de formule sur la page (adherent annuel qui modifie sa fiche),
+    // l'avantage reste affiche.
+    const hasChoice = this.element.querySelector('input[name$="[membershipType]"]') !== null;
+    this.refreshPhilibert(hasChoice && (!selected || selected.value === 'consommateur'));
 
     const isMinor = this.isMinor();
     // « hidden » sur un fieldset retire aussi ses champs de la navigation au
     // clavier et des lecteurs d'ecran : un adulte ne passe pas par trois champs
     // qui ne le concernent pas.
-    this.guardianTarget.hidden = !isMinor;
+    if (this.hasGuardianTarget) {
+      this.guardianTarget.hidden = !isMinor;
+    }
     ['guardianLastName', 'guardianFirstName', 'guardianEmail'].forEach((field) => {
       this.setRequired(this.element.querySelector(`input[name$="[${field}]"]`), isMinor);
     });
@@ -55,8 +64,8 @@ export default class extends Controller {
       checkbox.checked = false;
     }
     checkbox.disabled = isConsumer;
-    this.philibertNoteTargets.forEach((note) => {
-      note.hidden = !isConsumer;
+    this.philibertTargets.forEach((zone) => {
+      zone.hidden = isConsumer;
     });
   }
 

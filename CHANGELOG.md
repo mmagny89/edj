@@ -8,6 +8,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ## [Non publie]
 
+## [1.5.0] - 2026-11-20
+
 ### Securite
 
 - **PHP 8.5.12** (correctifs de CVE-2026-109618 et CVE-2026-109619, execution de code a distance), en
@@ -15,7 +17,51 @@ GitHub, par `.github/workflows/release.yml`.
   correctif PHP publie entre deux deploiements n'arrivait jamais en production. Un controle hebdomadaire
   (`.github/workflows/php-correctif.yml`) signale un PHP en retard sur le dernier correctif de sa branche.
 
+### Ajoute (preparation de la mise en production)
+
+- Courriels aux adherents : editeur de texte enrichi tres simple (gras, italique, souligne, lien, centrage, liste,
+  titre). Le HTML est nettoye cote serveur (symfony/html-sanitizer : balises, liens et styles autorises
+  seulement), la version texte du courriel est generee, et le message est habille aux couleurs de
+  l'association avec son logo joint au courriel.
+- **Modifier ou renouveler mon adhesion** (`/adhesion/modification`) : un seul parcours au bulletin en ligne (deux choix : « Nouvelle
+  adhesion » et « Modifier ou renouveler mon adhesion »). Numero, puis lien signe envoye a l'adresse du
+  bulletin (le courriel dit s'il s'agit d'un renouvellement ou d'une modification) : sans adhesion pour la saison, il ouvre le renouvellement ; avec une adhesion en cours, il ouvre sa
+  modification (identite, coordonnees, responsable legal, autorisations) et, pour un consommateur, le passage a
+  une formule annuelle. Le bureau est prevenu ; apres un passage a l'annuel, l'adhesion reste en attente
+  jusqu'a l'encaissement. « Ma fiche d'adherent » reste en lecture seule et donne la carte.
+- **QR code du site** (`/admin/qr-code`) : les deux adresses (avec et sans `www`), en SVG et en PNG, generes
+  sur le serveur.
+- **Nuits et week-ends du jeu** : deux types d'evenement, avec deux pages publiques. La fiche
+  (`/evenements/{id}`) donne l'horaire, le lieu, la presence de LudiPassion et la tombola (lots, prix du
+  ticket, nombre de tickets). La page « Qui apporte quoi » (`/evenements/{id}/apports`) affiche ce que chacun
+  apporte sous forme de notes, avec un petit formulaire (prenom et objet, sans compte, avec les protections
+  des formulaires publics ; suppression possible depuis l'administration).
+- **Page « Nos rendez-vous »** (`/rendez-vous`) : cinq cartes (mardis, samedis, nuits, week-end du jeu, hors de nos
+  murs), toutes les informations visibles. Le calendrier de l'accueil porte un lien « En savoir plus » sur chaque carte.
+- Commande a usage unique `app:events:nuit-fin-3h` (`--dry-run` pour simuler) : ramene la fin des Nuits du Jeu
+  de 4h a 3h et range les « Nuit du Jeu » deja saisies dans le nouveau type.
+
 ### Modifie
+
+- Pointage des consommateurs : on ne pointe que pour un evenement du calendrier (aujourd'hui ou passe),
+  choisi dans une liste ; un jour sans evenement ne se pointe plus, et le pointage est toujours rattache
+  a son evenement.
+- Domaine definitif `enviedejouer89.fr` (sans www) : `REDIRIGER_WWW=1` redirige `www.` vers lui en 301
+  (`compose.www.yml`). `deployer.sh` branche enfin `compose.redirection.yml` (`ANCIEN_DOMAINE`), documente
+  mais jamais ajoute jusque-la.
+- Passage de consommateur a annuel : en choisissant une formule annuelle, l'adherent voit les avantages
+  (remises chez les partenaires) et peut accepter l'avantage ludique Philibert, dans un encart « Avantage ludique » a part, comme sur le bulletin.
+- Bulletin et modification de la fiche : l'« Avantage ludique » est masque par defaut et n'apparait que pour
+  une formule annuelle (masque pour la formule consommateur).
+- Modification de la fiche : l'enregistrement redirige vers une page de confirmation (le message d'erreur
+  apparu au passage a l'annuel venait d'un double envoi), et les boutons d'envoi se desactivent pendant
+  l'envoi. Le courriel « Passage a l'adhesion annuelle » est mis en forme comme les autres.
+- Bulletin d'adhesion et modification de la fiche : l'encart « Responsable legal » n'apparait que si l'adherent
+  est mineur, calcule a la volee sur la date de naissance ; pour un adulte, le serveur n'enregistre aucun
+  responsable legal.
+- Partenaires de l'accueil : chaque carte est un bouton anime (ombre qui s'enfonce au survol, au focus
+  clavier et au clic).
+- Les Nuits du Jeu durent de 15h a 3h du matin (douze heures).
 
 - Tableau de bord : le bloc « Adherents a l'annee » donne le total de la saison choisie, consommateurs compris, avec « dont N adherents consommateurs » ; l'ecart avec la saison precedente se calcule sur le meme total.
 - Sur grand ecran, la banniere d'accueil et le bandeau de navigation occupent ensemble la hauteur
@@ -600,6 +646,8 @@ depot public.
 - Metriques Caddy sur une ecoute interne `:2020`, pour une supervision d'hote.
 - Attrapeur de courriels Mailpit en developpement.
 
-[Non publie]: https://github.com/mmagny89/edj/compare/v1.1.0...HEAD
+[Non publie]: https://github.com/mmagny89/edj/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/mmagny89/edj/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/mmagny89/edj/compare/v1.3.0...v1.4.0
 [1.1.0]: https://github.com/mmagny89/edj/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mmagny89/edj/releases/tag/v1.0.0

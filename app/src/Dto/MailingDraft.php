@@ -27,7 +27,6 @@ final class MailingDraft
     #[Assert\Length(max: 150, maxMessage: "L'objet ne peut pas dépasser {{ limit }} caractères.")]
     public string $subject = '';
 
-    #[Assert\NotBlank(message: 'Le message est vide.')]
     #[Assert\Length(max: 20000, maxMessage: 'Le message ne peut pas dépasser {{ limit }} caractères.')]
     public string $body = '';
 
@@ -47,7 +46,12 @@ final class MailingDraft
             $context->buildViolation("L'objet tient sur une seule ligne.")->atPath('subject')->addViolation();
         }
 
-        foreach (['subject' => $this->subject, 'body' => $this->body] as $field => $text) {
+        $bodyText = MailingTemplate::toText(MailingTemplate::normalize($this->body));
+        if ('' === $bodyText) {
+            $context->buildViolation('Le message est vide.')->atPath('body')->addViolation();
+        }
+
+        foreach (['subject' => $this->subject, 'body' => $bodyText] as $field => $text) {
             $unknown = MailingTemplate::unknownVariables($text);
             if ([] !== $unknown) {
                 $context->buildViolation('Variable inconnue : {{ names }}. Variables possibles : {{ known }}.')

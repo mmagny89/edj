@@ -5,8 +5,12 @@ namespace App\Form;
 use App\Entity\Event;
 use App\Enum\EventType as EventTypeEnum;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -72,6 +76,34 @@ final class EventFormType extends AbstractType
                 'required' => false,
                 'attr' => ['rows' => 3],
                 'help' => "Une phrase, affichée sous la date dans le calendrier. Laissée vide, la description habituelle du type choisi est reprise.",
+            ])
+            ->add('ludipassionPresent', ChoiceType::class, [
+                'label' => 'LudiPassion sera-t-il présent ?',
+                'required' => false,
+                'placeholder' => 'Pas encore précisé',
+                'choices' => ['Oui' => true, 'Non' => false],
+                'help' => 'Affiché sur la page de la nuit ou du week-end du jeu. Laissez « Pas encore précisé » tant que ce n\'est pas confirmé.',
+            ])
+            ->add('raffleEnabled', CheckboxType::class, [
+                'label' => 'Il y aura une tombola',
+                'required' => false,
+            ])
+            ->add('raffleTicketPriceCents', MoneyType::class, [
+                'label' => 'Prix du ticket',
+                'required' => false,
+                'currency' => 'EUR',
+                'divisor' => 100,
+            ])
+            ->add('raffleTicketCount', IntegerType::class, [
+                'label' => 'Nombre total de tickets à vendre',
+                'required' => false,
+                'attr' => ['min' => 1],
+            ])
+            ->add('rafflePrizes', TextareaType::class, [
+                'label' => 'Lots de la tombola',
+                'required' => false,
+                'attr' => ['rows' => 5],
+                'help' => 'Un lot par ligne.',
             ])
             // PRE_SUBMIT et non POST_SUBMIT : les valeurs par defaut doivent
             // etre en place avant la validation, sinon un titre laisse vide

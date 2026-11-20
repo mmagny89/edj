@@ -82,12 +82,12 @@ final class MembershipRenewalTest extends WebTestCase
 
     private function link(MembershipApplication $application): string
     {
-        return static::getContainer()->get(MemberAccessLink::class)->renewalUrl($application->getMember());
+        return static::getContainer()->get(MemberAccessLink::class)->changeUrl($application->getMember());
     }
 
     private function askForLink(string $number): void
     {
-        $crawler = $this->client->request('GET', '/adhesion/renouvellement');
+        $crawler = $this->client->request('GET', '/adhesion/modification');
         $this->client->submit($crawler->selectButton('Recevoir mon lien')->form([
             'member_access_request[number]' => $number,
         ]));
@@ -128,15 +128,15 @@ final class MembershipRenewalTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->filter('nav.membership-choice a[aria-current="page"]'));
         self::assertSelectorTextContains('nav.membership-choice', 'Nouvelle adhésion');
-        self::assertSelectorTextContains('nav.membership-choice', 'Renouveler mon adhésion');
+        self::assertSelectorTextContains('nav.membership-choice', 'Modifier ou renouveler mon adhésion');
     }
 
     public function testTheRequestPageIsPublic(): void
     {
-        $this->client->request('GET', '/adhesion/renouvellement');
+        $this->client->request('GET', '/adhesion/modification');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Renouveler mon adhésion');
+        self::assertSelectorTextContains('h1', 'Modifier mon adhésion');
     }
 
     /**
@@ -154,7 +154,7 @@ final class MembershipRenewalTest extends WebTestCase
         $this->askForLink((string) $application->getMemberNumber());
         $known = (string) $this->client->getResponse()->getContent();
 
-        self::assertResponseRedirects('/adhesion/renouvellement/envoye');
+        self::assertResponseRedirects('/adhesion/modification/envoye');
         self::assertSame($unknown, $known);
         self::assertCount(1, $this->emails());
     }
@@ -167,14 +167,14 @@ final class MembershipRenewalTest extends WebTestCase
 
         $email = $this->emails()[0];
         self::assertSame([$application->getEmail()], array_map(static fn ($a) => $a->getAddress(), $email->getTo()));
-        self::assertMatchesRegularExpression('#/adhesion/renouvellement/EDJ-\d+\?\S*_hash=#', (string) $email->getTextBody());
+        self::assertMatchesRegularExpression('#/adhesion/modification/EDJ-\d+\?\S*_hash=#', (string) $email->getTextBody());
     }
 
     public function testAnUnsignedUrlIsRefused(): void
     {
         $application = $this->previous();
 
-        $this->client->request('GET', '/adhesion/renouvellement/'.$application->getMemberNumber());
+        $this->client->request('GET', '/adhesion/modification/'.$application->getMemberNumber());
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -194,7 +194,7 @@ final class MembershipRenewalTest extends WebTestCase
     {
         $application = $this->previous();
         $expired = static::getContainer()->get(MemberAccessLink::class)
-            ->renewalUrl($application->getMember(), new \DateTimeImmutable('-1 minute'));
+            ->changeUrl($application->getMember(), new \DateTimeImmutable('-1 minute'));
 
         $this->client->request('GET', $expired);
 
@@ -257,7 +257,9 @@ final class MembershipRenewalTest extends WebTestCase
         $this->renew($link);
         $this->client->request('GET', $link);
 
-        self::assertSelectorTextContains('h1', "C'est déjà fait");
+        // Adhesion de la saison deja deposee : le lien ouvre sa modification.
+        self::assertResponseRedirects();
+        self::assertStringContainsString('/modifier', (string) $this->client->getResponse()->headers->get('Location'));
         $this->entityManager->clear();
         self::assertCount(2, $this->entityManager->getRepository(MembershipApplication::class)->findAll());
     }
@@ -269,5 +271,28 @@ final class MembershipRenewalTest extends WebTestCase
         $this->client->request('GET', $this->link($application));
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testTheEmailTalksAboutRenewalWhenTheSeasonIsNotCovered(): void
+    {
+        $application = $this->previous();
+
+        $this->askForLink((string) $application->getMemberNumber());
+
+        $email = end($this->emails());
+        self::assertStringContainsString('Renouveler', (string) $email->getSubject());
+        self::assertStringContainsString('renouvellement', (string) $email->getTextBody());
+    }
+
+    public function testTheEmailTalksAboutModificationWhenTheSeasonIsCovered(): void
+    {
+        $application = $this->previous('now');
+
+        $this->askForLink((string) $application->getMemberNumber());
+
+        $email = end($this->emails());
+        self::assertStringContainsString('Modifier', (string) $email->getSubject());
+        self::assertStringContainsString('modification', (string) $email->getTextBody());
+        self::assertStringNotContainsString('renouvellement', (string) $email->getTextBody());
     }
 }

@@ -17,6 +17,8 @@ enum EventType: string
     case Weekly = 'weekly';
     case Monthly = 'monthly';
     case Special = 'special';
+    case GameNight = 'game_night';
+    case GameWeekend = 'game_weekend';
 
     public function label(): string
     {
@@ -24,7 +26,19 @@ enum EventType: string
             self::Weekly => 'Mardi soir',
             self::Monthly => '1er samedi',
             self::Special => 'Manifestation',
+            self::GameNight => 'Nuit du jeu',
+            self::GameWeekend => 'Week-end du jeu',
         };
+    }
+
+    /**
+     * Vrai pour les rendez-vous qui ont leur page : on y voit qui apporte quoi,
+     * et la tombola. Les mardis et les samedis, eux, se presentent sur la page
+     * « Nos rendez-vous ».
+     */
+    public function hasOwnPage(): bool
+    {
+        return self::GameNight === $this || self::GameWeekend === $this;
     }
 
     /**
@@ -38,7 +52,7 @@ enum EventType: string
         return match ($this) {
             self::Weekly => 'Soirée jeux du mardi',
             self::Monthly => 'Après-midi ludique',
-            self::Special => null,
+            self::Special, self::GameNight, self::GameWeekend => null,
         };
     }
 
@@ -51,7 +65,8 @@ enum EventType: string
         return match ($this) {
             self::Weekly => '18h30 - 00h',
             self::Monthly => '14h - 18h',
-            self::Special => null,
+            self::GameNight => '15h - 3h',
+            self::Special, self::GameWeekend => null,
         };
     }
 
@@ -68,7 +83,7 @@ enum EventType: string
         return match ($this) {
             self::Weekly => 'Une soirée de jeux : tables ouvertes, jeux apportés par les membres et explications.',
             self::Monthly => 'Une après-midi de jeux, avec les jeux apportés par les membres.',
-            self::Special => null,
+            self::Special, self::GameNight, self::GameWeekend => null,
         };
     }
 
@@ -77,7 +92,9 @@ enum EventType: string
         return match ($this) {
             self::Weekly => 'Soirée du mardi (exception ou date ajoutée)',
             self::Monthly => 'Après-midi du 1er samedi (exception ou date ajoutée)',
-            self::Special => 'Manifestation — nuit du jeu, festival, week-end…',
+            self::Special => 'Manifestation — festival, sortie, autre…',
+            self::GameNight => 'Nuit du jeu',
+            self::GameWeekend => 'Week-end du jeu',
         };
     }
 }

@@ -42,12 +42,16 @@ const eventTypeLabels = {
   weekly: 'Mardi soir',
   monthly: '1er samedi',
   special: 'Manifestation',
+  game_night: 'Nuit du jeu',
+  game_weekend: 'Week-end du jeu',
 };
 
 const eventTypeIcons = {
   weekly: 'fa-dice',
   monthly: 'fa-calendar-day',
   special: 'fa-star',
+  game_night: 'fa-moon',
+  game_weekend: 'fa-calendar-week',
 };
 
 // Les titres, descriptions et lieux viennent du back-office : ils s'inserent
@@ -97,9 +101,13 @@ const buildSeasonEvents = () => {
 // saisi dans le back-office, ce qui y figure est ce qu'on veut montrer. Le
 // carrousel defile horizontalement et les filtres permettent de se
 // restreindre a un type de rendez-vous.
+// Les nuits et week-ends du jeu sont des manifestations : le filtre les garde.
+const specialTypes = ['game_night', 'game_weekend'];
+
 const getUpcomingEvents = (events, filter, today) => events
   .filter((event) => event.date >= today)
-  .filter((event) => filter === 'all' || event.type === filter);
+  .filter((event) => filter === 'all' || event.type === filter
+    || (filter === 'special' && specialTypes.includes(event.type)));
 
 const renderCarousel = (events, filter, today) => {
   const eventTrack = document.querySelector('[data-event-track]');
@@ -137,6 +145,7 @@ const renderCarousel = (events, filter, today) => {
         <div class="event-slide__title">${escapeHtml(event.title)}</div>
         <strong>${escapeHtml(formatDate(event.date))} · ${escapeHtml(event.time)}</strong>
         ${event.description ? `<small>${escapeHtml(event.description)}</small>` : ''}
+        ${event.url ? `<a class="event-slide__more" href="${escapeHtml(event.url)}">En savoir plus</a>` : ''}
         ${event.location ? `<small class="event-slide__place"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(event.location)}</small>` : ''}
       </div>
     </article>
