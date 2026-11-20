@@ -64,20 +64,25 @@ final class MembershipNotifier
     }
 
     /**
-     * Previent le bureau qu'un adherent consommateur est passe a une formule
-     * annuelle depuis le site : il y a une cotisation a encaisser.
+     * Previent le bureau qu'un adherent a modifie son adhesion depuis le site :
+     * nouvelles coordonnees et, le cas echeant, passage a une formule annuelle
+     * (une cotisation est alors a encaisser).
      */
-    public function notifyUpgrade(MembershipApplication $application): void
+    public function notifyChange(MembershipApplication $application, bool $upgraded): void
     {
         $email = (new Email())
             ->from(new Address($this->mailerFrom, 'Site Envie de Jouer'))
             ->to($this->contactEmail)
             ->subject(sprintf(
-                'Passage a l\'adhesion annuelle : %s %s',
+                '%s : %s %s',
+                $upgraded ? "Passage a l'adhesion annuelle" : "Modification d'adhesion",
                 (string) $application->getFirstName(),
                 (string) $application->getLastName(),
             ))
-            ->html($this->twig->render('emails/membership_upgrade.html.twig', ['application' => $application]));
+            ->html($this->twig->render('emails/membership_change.html.twig', [
+                'application' => $application,
+                'upgraded' => $upgraded,
+            ]));
 
         if ($application->getEmail()) {
             $email->replyTo(new Address((string) $application->getEmail()));
@@ -146,6 +151,15 @@ final class MembershipNotifier
     public function sendRenewalLink(MembershipApplication $application, string $url): void
     {
         $this->sendLink($application, $url, 'membership_renewal_link', 'Renouveler votre adhésion à Envie de Jouer', '2 heures');
+    }
+
+    /**
+     * Lien « Modifier mon adhesion » : memes garanties que le lien de
+     * renouvellement, il part a la seule adresse du dernier bulletin.
+     */
+    public function sendEditLink(MembershipApplication $application, string $url): void
+    {
+        $this->sendLink($application, $url, 'membership_edit_link', 'Modifier votre adhésion à Envie de Jouer', '2 heures');
     }
 
     private function sendLink(MembershipApplication $application, string $url, string $template, string $subject, string $lifetime): void

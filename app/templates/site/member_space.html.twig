@@ -27,9 +27,8 @@
                 <li><strong>Communication de votre e-mail à Philibert :</strong> {{ application.philibertConsent ? 'autorisée' : 'refusée' }}</li>
             </ul>
             <p>
-                Une erreur, un changement d'adresse ? Écrivez-nous à
-                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a> :
-                cette page se consulte, elle ne se modifie pas.
+                Une autre erreur à corriger ? Écrivez-nous à
+                <a href="mailto:enviedejouer89300@gmail.com">enviedejouer89300@gmail.com</a>.
             </p>
         </div>
 
@@ -53,16 +52,14 @@
             {% endif %}
         </div>
 
-        {% if upgradeUrl %}
+        {% if editUrl %}
             <div class="legal-block member-panel">
-                <h3>Passer à l'adhésion annuelle</h3>
+                <h3>Modifier mon adhésion</h3>
                 <p>
-                    Vous êtes adhérent consommateur : 1 € par événement. Pour venir toute la saison
-                    {{ season }} sans rien payer de plus, passez à une formule annuelle, sans ressaisir
-                    vos informations.
+                    Changement d'adresse{% if canUpgrade %}, ou je souhaite passer en adhésion annuelle{% endif %}.
                 </p>
                 <div class="form-actions">
-                    <a href="{{ upgradeUrl }}" class="button button--join">Passer à l'adhésion annuelle</a>
+                    <a href="{{ editUrl }}" class="button button--join">Modifier mon adhésion</a>
                 </div>
             </div>
         {% endif %}

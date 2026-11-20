@@ -10,4 +10,8 @@
         <strong>Renouveler mon adhésion</strong>
         <span>J'ai un numéro d'adhérent (EDJ-0001).</span>
     </a>
+    <a href="{{ path('membership_edit_request') }}" class="membership-choice__item" {{ active == 'edit' ? 'aria-current="page"' }}>
+        <strong>Modifier mon adhésion</strong>
+        <span>Changement d'adresse ou je souhaite passer en adhésion annuelle.</span>
+    </a>
 </nav>

@@ -1,0 +1,19 @@
+<h1>{{ upgraded ? "Passage à l'adhésion annuelle" : "Modification d'adhésion" }}</h1>
+<p>
+    <strong>{{ application.firstName }} {{ application.lastName }}</strong>
+    ({{ application.memberNumber }}) a modifié son adhésion depuis le site.
+</p>
+<ul>
+    {% if application.address %}<li><strong>Adresse :</strong> {{ application.address }}</li>{% endif %}
+    <li><strong>Code postal et ville :</strong> {{ application.postalCode }} {{ application.city }}</li>
+    {% if application.phone %}<li><strong>Téléphone :</strong> {{ application.phone }}</li>{% endif %}
+    <li><strong>E-mail :</strong> {{ application.email ?: '—' }}</li>
+    <li><strong>Formule :</strong> {{ application.membershipType.label }}</li>
+    {% if application.principalMemberName %}<li><strong>Adhérent principal :</strong> {{ application.principalMemberName }}</li>{% endif %}
+</ul>
+{% if upgraded %}
+    <p>
+        Cotisation à encaisser : <strong>{{ application.amountDueLabel }}</strong>.
+        L'adhésion est repassée « en attente » tant qu'elle n'est pas encaissée.
+    </p>
+{% endif %}
