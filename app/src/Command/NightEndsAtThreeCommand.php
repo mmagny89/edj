@@ -52,8 +52,9 @@ final class NightEndsAtThreeCommand extends Command
         $changed = 0;
         foreach ($nights as $night) {
             $before = (string) $night->getTimeLabel();
-            // (?<!\d) : « 14h » ne doit pas devenir « 13h ».
-            $after = preg_replace('/(?<!\d)4h(00)?(?!\d)/u', '3h$1', $before);
+            // (?<!\d) : « 14h » ne doit pas devenir « 13h ». « 04h » est accepte et
+            // garde son zero : « 03h ».
+            $after = preg_replace('/(?<!\d)(0?)4h(00)?(?!\d)/u', '${1}3h${2}', $before);
 
             // Une « Nuit du Jeu » saisie avant l'existence du type passe au type
             // Nuit du jeu : c'est lui qui lui donne sa page publique.
