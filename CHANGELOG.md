@@ -37,6 +37,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- Modification de la fiche : l'enregistrement redirige vers une page de confirmation (le message d'erreur
+  apparu au passage a l'annuel venait d'un double envoi), et les boutons d'envoi se desactivent pendant
+  l'envoi. Le courriel « Passage a l'adhesion annuelle » est mis en forme comme les autres.
 - Bulletin d'adhesion et modification de la fiche : l'encart « Responsable legal » n'apparait que si l'adherent
   est mineur, calcule a la volee sur la date de naissance ; pour un adulte, le serveur n'enregistre aucun
   responsable legal.
