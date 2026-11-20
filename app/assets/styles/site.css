@@ -2715,7 +2715,7 @@ html[data-motion="reduce"] *::after {
     margin: 0;
 }
 
-/* Lien secondaire : une pastille a contour fin, sans ombre, pour ne pas
+/* Lien secondaire : une pastille blanche a contour fin, sans ombre, pour ne pas
    concurrencer le bouton principal. */
 .calendar-link {
     display: inline-flex;
@@ -2725,7 +2725,7 @@ html[data-motion="reduce"] *::after {
     padding: 8px 16px;
     border: 2px solid rgba(23, 25, 34, 0.35);
     border-radius: 999px;
-    background: transparent;
+    background: white;
     color: var(--ink);
     font-size: 0.95rem;
     font-weight: 700;
@@ -2736,7 +2736,7 @@ html[data-motion="reduce"] *::after {
 .calendar-link:hover,
 .calendar-link:focus-visible {
     border-color: var(--ink);
-    background: white;
+    background: var(--cream);
 }
 
 /* Bouton « ajouter a mon agenda » a droite de la date, sur le fond de couleur. */
