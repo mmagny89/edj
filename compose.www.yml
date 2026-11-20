@@ -1,0 +1,23 @@
+# Redirection permanente de www.<domaine> vers <domaine> (sans www).
+#
+# Facultatif : outils/deployer.sh n'ajoute ce fichier que si REDIRIGER_WWW=1 dans
+# le fichier de secrets. Le domaine de reference est celui sans www
+# (enviedejouer89.fr) : une seule adresse par page, donc un seul contenu pour les
+# moteurs de recherche, et un seul certificat par adresse en service.
+#
+# Traefik obtient un certificat pour www.<domaine> : son DNS doit donc exister
+# (enregistrement A ou CNAME vers le serveur) avant d'activer la redirection,
+# sans quoi Let's Encrypt echoue et reessaie. Ne pas l'activer sous un domaine
+# provisoire qui n'a pas de www (edj.mmagny.fr).
+services:
+  php:
+    labels:
+      traefik.http.routers.edj-prod-www.rule: Host(`www.${APP_DOMAIN:?APP_DOMAIN est requis pour la redirection www — fournir via --env-file .env.prod.local}`)
+      traefik.http.routers.edj-prod-www.entrypoints: websecure
+      traefik.http.routers.edj-prod-www.tls.certresolver: letsencrypt
+      traefik.http.routers.edj-prod-www.service: edj-prod
+      traefik.http.routers.edj-prod-www.middlewares: edj-prod-www-vers-nu
+      # « $$ » : Compose y lit un « $ » litteral. Chemin et requete conserves.
+      traefik.http.middlewares.edj-prod-www-vers-nu.redirectregex.regex: ^https://[^/]+/(.*)
+      traefik.http.middlewares.edj-prod-www-vers-nu.redirectregex.replacement: https://${APP_DOMAIN:?APP_DOMAIN est requis}/$${1}
+      traefik.http.middlewares.edj-prod-www-vers-nu.redirectregex.permanent: "true"
