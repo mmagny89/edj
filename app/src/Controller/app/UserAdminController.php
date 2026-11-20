@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 /**
  * Comptes d'administration : creer, bloquer, changer de role, reinitialiser un
@@ -30,11 +31,15 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_SUPER_ADMIN')]
 final class UserAdminController extends AbstractController
 {
+    /** Validite du lien d'accueil : deux jours, la personne ne lit pas son courrier dans la demi-heure. */
+    private const WELCOME_LINK_LIFETIME = 172800;
+
     public function __construct(
         private readonly UserRepository $users,
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly AdminWelcomeNotifier $welcome,
+        private readonly ResetPasswordHelperInterface $resetPasswordHelper,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,
     ) {
@@ -43,13 +48,8 @@ final class UserAdminController extends AbstractController
     #[Route('', name: 'app_users', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        // Le mot de passe provisoire se lit une fois : le message est un flash,
-        // consomme par cet affichage, et n'est jamais relu ailleurs.
-        $credentials = $request->getSession()->getFlashBag()->get('credentials');
-
         return $this->render('app/users/index.html.twig', [
             'users' => $this->users->findAllOrdered(),
-            'credentials' => $credentials[0] ?? null,
             'currentIdentifier' => $this->getUser()?->getUserIdentifier(),
         ]);
     }
@@ -67,17 +67,19 @@ final class UserAdminController extends AbstractController
                 $form->get('email')->addError(new \Symfony\Component\Form\FormError('Un compte existe déjà avec cette adresse.'));
             } else {
                 $role = (string) $form->get('role')->getData();
-                $password = TemporaryPassword::generate();
 
+                // Aucun mot de passe n'est communique : le compte porte un mot de
+                // passe aleatoire que personne ne connait, et la personne choisit
+                // le sien par le lien du courriel.
                 $user = (new User())->setEmail($email)->setRoles([$role]);
-                $user->setPassword($this->passwordHasher->hashPassword($user, $password));
-                $user->setMustChangePassword(true);
+                $user->setPassword($this->passwordHasher->hashPassword($user, TemporaryPassword::generate()));
                 $this->entityManager->persist($user);
                 $this->entityManager->flush();
 
                 $this->audit('Compte cree.', $user, ['role' => $role]);
-                $this->welcome->send($user, $password);
-                $request->getSession()->getFlashBag()->add('credentials', ['email' => $email, 'password' => $password, 'created' => true]);
+                $token = $this->resetPasswordHelper->generateResetToken($user, self::WELCOME_LINK_LIFETIME);
+                $this->welcome->send($user, $token);
+                $this->addFlash('success', sprintf('Compte créé. Un courriel part à %s avec un lien pour choisir son mot de passe (valable 48 heures).', $email));
 
                 return $this->redirectToRoute('app_users');
             }
@@ -150,13 +152,43 @@ final class UserAdminController extends AbstractController
             return $refusal;
         }
 
-        $password = TemporaryPassword::generate();
-        $user->setPassword($this->passwordHasher->hashPassword($user, $password));
-        $user->setMustChangePassword(true);
+        // L'ancien mot de passe est coupe tout de suite (compte perdu ou compromis) ;
+        // la personne en choisit un nouveau par le lien du courriel.
+        $user->setPassword($this->passwordHasher->hashPassword($user, TemporaryPassword::generate()));
+        $user->setMustChangePassword(false);
         $this->entityManager->flush();
 
         $this->audit('Mot de passe reinitialise.', $user);
-        $request->getSession()->getFlashBag()->add('credentials', ['email' => $user->getEmail(), 'password' => $password, 'created' => false]);
+        $token = $this->resetPasswordHelper->generateResetToken($user, self::WELCOME_LINK_LIFETIME);
+        $this->welcome->send($user, $token, created: false);
+        $this->addFlash('success', sprintf('Mot de passe réinitialisé. Un courriel part à %s avec un lien pour en choisir un nouveau (valable 48 heures).', $user->getEmail()));
+
+        return $this->redirectToRoute('app_users');
+    }
+
+    /**
+     * Supprime un compte contributeur. Un super-administrateur ne se supprime
+     * pas : il faut d'abord le rendre contributeur, geste qui coupe sa session
+     * et que le dernier super-administrateur actif ne peut pas subir.
+     */
+    #[Route('/{id}/supprimer', name: 'app_user_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function delete(Request $request, User $user): Response
+    {
+        if ($user->isSuperAdmin()) {
+            $this->addFlash('error', 'Un super-administrateur ne peut pas être supprimé : rendez-le d\'abord contributeur.');
+
+            return $this->redirectToRoute('app_users');
+        }
+
+        if ($refusal = $this->refuse($request, 'user_delete_'.$user->getId(), $user)) {
+            return $refusal;
+        }
+
+        $email = (string) $user->getEmail();
+        $this->audit('Compte supprime.', $user);
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
+        $this->addFlash('success', sprintf('Le compte %s est supprimé.', $email));
 
         return $this->redirectToRoute('app_users');
     }

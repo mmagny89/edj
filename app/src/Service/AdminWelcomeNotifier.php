@@ -10,16 +10,17 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 use Twig\Environment;
 
 /**
- * Le courriel d'accueil d'un compte d'administration : adresse de connexion,
- * mot de passe provisoire et consigne de le changer des la premiere connexion.
+ * Le courriel d'accueil d'un compte d'administration (ou de sa reinitialisation
+ * par un super-administrateur) : un lien pour choisir son mot de passe. Aucun mot de passe ne voyage jamais par courriel.
  *
- * Le mot de passe provisoire n'est pas durable : le compte est cree avec
- * « doit changer son mot de passe », et la premiere connexion l'impose. Un
- * echec d'envoi ne fait pas echouer la creation — le mot de passe reste
- * affiche a l'ecran de l'administrateur qui l'a creee — mais il est journalise.
+ * Le lien est celui de la reinitialisation (meme page, meme usage unique), avec
+ * une validite plus longue : la personne ne lit pas forcement son courrier dans
+ * la demi-heure. Un echec d'envoi ne fait pas echouer la creation, mais il est
+ * journalise.
  */
 final class AdminWelcomeNotifier
 {
@@ -33,19 +34,20 @@ final class AdminWelcomeNotifier
     ) {
     }
 
-    public function send(User $user, string $temporaryPassword): void
+    public function send(User $user, ResetPasswordToken $token, bool $created = true): void
     {
         $context = [
             'email' => (string) $user->getEmail(),
-            'password' => $temporaryPassword,
-            'login_url' => $this->urls->generate('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            'url' => $this->urls->generate('app_reset_password', ['token' => $token->getToken()], UrlGeneratorInterface::ABSOLUTE_URL),
+            'hours' => max(1, (int) round(($token->getExpiresAt()->getTimestamp() - time()) / 3600)),
+            'created' => $created,
             'super_admin' => \in_array(User::ROLE_SUPER_ADMIN, $user->getRoles(), true),
         ];
 
         $email = (new Email())
             ->from(new Address($this->mailerFrom, 'Envie de Jouer'))
             ->to(new Address((string) $user->getEmail()))
-            ->subject('Votre accès à l\'administration d\'Envie de Jouer')
+            ->subject($created ? 'Votre accès à l\'administration d\'Envie de Jouer' : 'Choisir un nouveau mot de passe d\'administration')
             ->text($this->twig->render('emails/admin_welcome.txt.twig', $context))
             ->html($this->twig->render('emails/admin_welcome.html.twig', $context));
 

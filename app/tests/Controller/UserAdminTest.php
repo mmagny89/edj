@@ -66,11 +66,11 @@ final class UserAdminTest extends WebTestCase
         return (string) $crawler->filter(sprintf('form[action$="%s"] input[name="_token"]', $id))->attr('value');
     }
 
-    public function testCreatingAnAccountEmailsTheTemporaryPassword(): void
+    public function testCreatingAnAccountEmailsAPasswordLinkAndNoPassword(): void
     {
         $crawler = $this->client->request('GET', '/admin/utilisateurs/nouveau');
         $form = $crawler->selectButton('Créer le compte')->form();
-        $form['user_creation[email]'] = 'accueil@example.test';
+        $form['user_creation[email]'] = 'Nouveau@Example.test';
         $form['user_creation[role]']->select('ROLE_CONTRIBUTOR');
         $this->client->submit($form);
 
@@ -85,15 +85,20 @@ final class UserAdminTest extends WebTestCase
                 $mails[] = $message->getMessage();
             }
         }
-        $crawler = $this->client->followRedirect();
-        $password = $crawler->filter('[role="alert"] code')->text();
+
+        self::assertResponseRedirects('/admin/utilisateurs');
+        $this->client->followRedirect();
+        self::assertSelectorNotExists('[role="alert"] code', 'Aucun mot de passe n\'est affiché.');
+        self::assertSelectorTextContains('[role="status"], .flash-success, main', 'nouveau@example.test');
+
+        $stored = $this->entityManager->getRepository(User::class)->findOneBy(['email' => 'nouveau@example.test']);
+        self::assertNotNull($stored, 'L\'adresse est normalisée en minuscules.');
 
         self::assertCount(1, $mails);
-        self::assertSame('accueil@example.test', $mails[0]->getTo()[0]->getAddress());
-        self::assertStringContainsString($password, (string) $mails[0]->getTextBody());
-        self::assertStringContainsString($password, (string) $mails[0]->getHtmlBody());
-        self::assertStringContainsString('/login', (string) $mails[0]->getTextBody());
-        self::assertStringContainsString('choisir votre propre mot de passe', (string) $mails[0]->getTextBody());
+        self::assertSame('nouveau@example.test', $mails[0]->getTo()[0]->getAddress());
+        self::assertMatchesRegularExpression('#/mot-de-passe-oublie/reinitialiser/[A-Za-z0-9]+#', (string) $mails[0]->getTextBody());
+        self::assertMatchesRegularExpression('#/mot-de-passe-oublie/reinitialiser/[A-Za-z0-9]+#', (string) $mails[0]->getHtmlBody());
+        self::assertStringNotContainsStringIgnoringCase('mot de passe provisoire', (string) $mails[0]->getTextBody());
     }
 
     public function testListShowsTheAccounts(): void
@@ -104,30 +109,6 @@ final class UserAdminTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('tbody', 'a@example.test');
-    }
-
-    public function testCreatingAnAccountShowsTheTemporaryPasswordOnlyOnce(): void
-    {
-        $crawler = $this->client->request('GET', '/admin/utilisateurs/nouveau');
-        $form = $crawler->selectButton('Créer le compte')->form();
-        $form['user_creation[email]'] = 'Nouveau@Example.test';
-        $form['user_creation[role]']->select('ROLE_CONTRIBUTOR');
-        $this->client->submit($form);
-
-        self::assertResponseRedirects('/admin/utilisateurs');
-        $crawler = $this->client->followRedirect();
-        self::assertSelectorExists('[role="alert"] code', 'Le mot de passe provisoire est affiché.');
-        $password = $crawler->filter('[role="alert"] code')->text();
-        self::assertMatchesRegularExpression('/^[A-Za-z2-9]{4}(-[A-Za-z2-9]{4}){3}$/', $password);
-
-        $stored = $this->entityManager->getRepository(User::class)->findOneBy(['email' => 'nouveau@example.test']);
-        self::assertNotNull($stored, 'L\'adresse est normalisée en minuscules.');
-        self::assertTrue($stored->mustChangePassword());
-        self::assertNotSame($password, $stored->getPassword(), 'Seul un condensé est conservé.');
-        self::assertStringNotContainsString($password, (string) $stored->getPassword());
-
-        $crawler = $this->client->request('GET', '/admin/utilisateurs');
-        self::assertSelectorNotExists('[role="alert"] code', 'Le mot de passe ne se relit pas.');
     }
 
     public function testCreatingAnExistingAddressIsRefused(): void
@@ -207,19 +188,49 @@ final class UserAdminTest extends WebTestCase
         self::assertSame([User::ROLE_CONTRIBUTOR, 'ROLE_USER'], array_values($this->reload($user)->getRoles()));
     }
 
-    public function testResettingThePasswordGeneratesANewTemporaryOne(): void
+    public function testResettingThePasswordEmailsALinkAndCutsTheOldPassword(): void
     {
         $user = $this->create('a@example.test');
         $id = $user->getId();
+        $before = $user->getPassword();
 
         $this->client->request('POST', sprintf('/admin/utilisateurs/%d/mot-de-passe', $id), ['_token' => $this->token("/$id/mot-de-passe")]);
+        /** @var InMemoryTransport $transport */
+        $transport = static::getContainer()->get('messenger.transport.async');
+        $mails = [];
+        foreach ($transport->getSent() as $envelope) {
+            $message = $envelope->getMessage();
+            if ($message instanceof SendEmailMessage && $message->getMessage() instanceof Email) {
+                $mails[] = $message->getMessage();
+            }
+        }
         self::assertResponseRedirects('/admin/utilisateurs');
-        $crawler = $this->client->followRedirect();
+        $this->client->followRedirect();
 
-        $reloaded = $this->reload($user);
-        self::assertTrue($reloaded->mustChangePassword());
-        self::assertNotSame('x', $reloaded->getPassword());
-        self::assertSelectorExists('[role="alert"] code');
+        self::assertNotSame($before, $this->reload($user)->getPassword(), 'L\'ancien mot de passe est coupé.');
+        self::assertSelectorNotExists('[role="alert"] code');
+        self::assertCount(1, $mails);
+        self::assertSame('a@example.test', $mails[0]->getTo()[0]->getAddress());
+        self::assertMatchesRegularExpression('#/mot-de-passe-oublie/reinitialiser/[A-Za-z0-9]+#', (string) $mails[0]->getTextBody());
+    }
+
+    public function testDeletingAContributorButNeverASuperAdmin(): void
+    {
+        $contributor = $this->create('contrib@example.test');
+        $admin = $this->create('autre-admin@example.test', User::ROLE_SUPER_ADMIN);
+        $cid = $contributor->getId();
+        $aid = $admin->getId();
+
+        // Pas de bouton pour un super-administrateur : la requete forgee est refusee, jeton ou non.
+        $this->client->request('POST', sprintf('/admin/utilisateurs/%d/supprimer', $aid), ['_token' => 'x']);
+        self::assertResponseRedirects('/admin/utilisateurs');
+        $this->entityManager->clear();
+        self::assertNotNull($this->entityManager->find(User::class, $aid), 'Un super-administrateur ne se supprime pas.');
+
+        $this->client->request('POST', sprintf('/admin/utilisateurs/%d/supprimer', $cid), ['_token' => $this->token("/$cid/supprimer")]);
+        self::assertResponseRedirects('/admin/utilisateurs');
+        $this->entityManager->clear();
+        self::assertNull($this->entityManager->find(User::class, $cid));
     }
 
     public function testAContributorCannotReachTheAdministratorPages(): void
