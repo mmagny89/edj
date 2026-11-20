@@ -10,6 +10,11 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute
 
+- **Ajout a l'agenda** : chaque evenement du calendrier et sa fiche proposent « Ajouter a mon agenda »
+  (fichier `.ics`, lu par Apple, Outlook et Google) ; la fiche offre aussi un lien Google Agenda. L'heure est lue
+  dans l'horaire (« 18h30 - 00h ») ; sans heure reconnue, ou sur plusieurs jours, l'evenement est ajoute toute la
+  journee. Dans le calendrier, le bouton est une icone a droite de la date ; l annee figure dans le detail. Les mardis et 1ers samedis calcules n ont pas encore ce bouton.
+
 - **Mesure d'audience** : Matomo (auto-heberge, `matomo.mmagny.fr`, site 3), en production seulement, sans cookie,
   avec respect de « Do Not Track » / « Global Privacy Control », URL sans requete (les liens signes ne partent pas),
   case de refus sur la page « Donnees personnelles ». La politique de contenu n'ouvre que cet hote.

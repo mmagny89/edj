@@ -132,7 +132,7 @@ final class SiteController extends AbstractController
      *
      * @param list<Event> $events
      *
-     * @return list<array{url: string, date: string, type: string, title: string, time: string, description: string, location: string}>
+     * @return list<array{url: string, ics: string, date: string, type: string, title: string, time: string, description: string, location: string}>
      */
     private function serializeEvents(array $events): array
     {
@@ -149,6 +149,7 @@ final class SiteController extends AbstractController
             while ($day <= $last) {
                 $serialized[] = [
                     'url' => $this->eventUrl($event),
+                    'ics' => $this->generateUrl('site_event_ics', ['id' => $event->getId()]),
                     'date' => $day->format('Y-m-d'),
                     'type' => $event->getType()?->value ?? 'special',
                     'title' => (string) $event->getTitle(),

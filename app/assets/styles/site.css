@@ -581,6 +581,10 @@ h1 {
 }
 
 .event-slide__date {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 16px;
     background: var(--red);
     color: white;
@@ -2700,4 +2704,41 @@ html[data-motion="reduce"] *::after {
     .activity-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Ajout a l'agenda sur la fiche d'un evenement : bouton + lien Google. */
+.event-page__calendar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+    margin: 0;
+}
+
+.event-page__calendar a:not(.button) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 800;
+}
+
+/* Bouton « ajouter a mon agenda » a droite de la date, sur le fond de couleur. */
+.event-slide__calendar {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: white;
+    color: var(--ink);
+    font-size: 1.15rem;
+    box-shadow: 2px 2px 0 rgba(23, 25, 34, 0.35);
+}
+
+.event-slide__calendar:hover,
+.event-slide__calendar:focus-visible {
+    background: var(--cream);
 }

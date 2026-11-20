@@ -56,6 +56,27 @@ final class EventPageTest extends WebTestCase
         self::assertSelectorNotExists('form');
     }
 
+    public function testTheCalendarFileIsServedForAnyEvent(): void
+    {
+        $event = $this->night(EventType::Special);
+
+        $this->client->request('GET', '/evenements/'.$event->getId().'/agenda.ics');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringStartsWith('text/calendar', (string) $this->client->getResponse()->headers->get('Content-Type'));
+        self::assertStringContainsString('BEGIN:VEVENT', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testThePageOffersToAddTheEventToACalendar(): void
+    {
+        $event = $this->night();
+
+        $this->client->request('GET', '/evenements/'.$event->getId());
+
+        self::assertSelectorExists('a[href$="/agenda.ics"]');
+        self::assertSelectorExists('a[href^="https://calendar.google.com/calendar/render"]');
+    }
+
     public function testAVisitorCanAddWhatTheyBring(): void
     {
         $event = $this->night();

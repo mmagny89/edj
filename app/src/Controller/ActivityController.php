@@ -5,12 +5,15 @@ namespace App\Controller;
 use App\Entity\Event;
 use App\Entity\EventContribution;
 use App\Form\EventContributionType;
+use App\Service\EventCalendarExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Pages publiques qui presentent les rendez-vous : la page « en savoir plus »
@@ -29,11 +32,41 @@ final class ActivityController extends AbstractController
      * Fiche d'une nuit ou d'un week-end du jeu : quand, ou, LudiPassion, tombola.
      */
     #[Route('/evenements/{id}', name: 'site_event', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function event(Event $event): Response
+    public function event(Event $event, EventCalendarExporter $exporter): Response
     {
         $this->assertHasOwnPage($event);
 
-        return $this->render('site/event.html.twig', ['event' => $event]);
+        return $this->render('site/event.html.twig', [
+            'event' => $event,
+            'googleCalendarUrl' => $exporter->googleUrl($event, $this->absoluteEventUrl($event)),
+        ]);
+    }
+
+    /**
+     * Fichier iCalendar d'un evenement saisi au back-office, quel que soit son
+     * type : le visiteur l'ouvre dans son agenda (Apple, Outlook, Google).
+     */
+    #[Route('/evenements/{id}/agenda.ics', name: 'site_event_ics', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function ics(Event $event, EventCalendarExporter $exporter): Response
+    {
+        $response = new Response($exporter->toIcs($event, $this->absoluteEventUrl($event)));
+        $response->headers->set('Content-Type', 'text/calendar; charset=utf-8');
+        $response->headers->set(
+            'Content-Disposition',
+            HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, 'evenement-'.$event->getId().'.ics'),
+        );
+
+        return $response;
+    }
+
+    private function absoluteEventUrl(Event $event): string
+    {
+        $type = $event->getType();
+
+        return match (true) {
+            $type?->hasOwnPage() ?? false => $this->generateUrl('site_event', ['id' => $event->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
+            default => $this->generateUrl('site_index', [], UrlGeneratorInterface::ABSOLUTE_URL).'#calendrier',
+        };
     }
 
     /**
