@@ -33,7 +33,7 @@ final class ChangePasswordType extends AbstractType
                 'invalid_message' => 'Les deux saisies du nouveau mot de passe diffèrent.',
                 'first_options' => [
                     'label' => 'Nouveau mot de passe',
-                    'help' => '12 caractères au minimum. Une phrase de plusieurs mots vaut mieux qu\'un mot compliqué.',
+                    'help' => '8 caractères au minimum. Une phrase de plusieurs mots est facile à retenir.',
                     'attr' => ['autocomplete' => 'new-password'],
                 ],
                 'second_options' => [
@@ -42,8 +42,7 @@ final class ChangePasswordType extends AbstractType
                 ],
                 'constraints' => [
                     new Assert\NotBlank(message: 'Choisissez un nouveau mot de passe.'),
-                    new Assert\Length(min: 12, minMessage: 'Le mot de passe doit faire au moins {{ limit }} caractères.', max: 4096),
-                    new Assert\PasswordStrength(minScore: Assert\PasswordStrength::STRENGTH_MEDIUM, message: 'Ce mot de passe est trop facile à deviner.'),
+                    new Assert\Length(min: 8, minMessage: 'Le mot de passe doit faire au moins {{ limit }} caractères.', max: 4096),
                 ],
             ]);
     }
