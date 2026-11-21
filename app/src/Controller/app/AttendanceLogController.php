@@ -23,10 +23,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 /**
  * Le pointage d'une seance du calendrier : qui est venu, et qui a paye son euro.
  *
- * On ne pointe que pour un evenement du calendrier, aujourd'hui ou deja passe : la
- * page propose les seances recentes et s'ouvre sur celle du jour. Un jour sans
- * evenement ne se pointe pas. La saison se deduit de la date, et on ne pointe pas
- * dans l'avenir.
+ * On pointe un evenement du calendrier ou une date libre, aujourd'hui ou deja
+ * passee : la page propose les seances recentes et s'ouvre sur le jour meme. Un
+ * jour sans evenement se pointe sous le libelle « Séance ». La saison se deduit
+ * de la date, et on ne pointe pas dans l'avenir.
  *
  * Pense pour etre tenu a l'entree, souvent sur un telephone, pendant que les
  * gens arrivent : un bouton par personne. Chaque geste est un POST qui revient
@@ -62,26 +62,14 @@ final class AttendanceLogController extends AbstractController
                 $this->addFlash('error', 'Cette date n\'est pas valide.');
             } elseif ($day > $today) {
                 $this->addFlash('error', 'On ne pointe pas dans l\'avenir.');
-            } elseif (!isset($sessions[$day->format('Y-m-d')])) {
-                $this->addFlash('error', 'Aucun événement ce jour-là : on ne pointe que pour un événement du calendrier.');
             }
         }
 
-        // Seance demandee si elle existe, sinon celle du jour, sinon la plus recente.
-        $key = null !== $day ? $day->format('Y-m-d') : '';
-        if (!isset($sessions[$key])) {
-            $key = isset($sessions[$today->format('Y-m-d')]) ? $today->format('Y-m-d') : (array_key_first($sessions) ?? '');
-        }
+        // Date demandee si elle est valide (evenement ou date libre), sinon le
+        // jour meme.
+        $day = null !== $day && $day <= $today ? $day : $today;
+        $key = $day->format('Y-m-d');
 
-        if ('' === $key) {
-            return $this->render('app/attendance_log/index.html.twig', [
-                'day' => null,
-                'sessions' => [],
-                'season' => MembershipSeasons::of($today),
-            ]);
-        }
-
-        $day = $this->parseDay($key);
         $season = MembershipSeasons::of($day);
         $pointed = $this->attendances->indexedByApplication($day);
 
@@ -95,7 +83,7 @@ final class AttendanceLogController extends AbstractController
             'today' => $today,
             'isToday' => $day == $today,
             'season' => $season,
-            'event' => $sessions[$key],
+            'event' => $sessions[$key] ?? null,
             'sessions' => $sessions,
             'consumers' => $this->applications->findConsumers($season),
             'pointed' => $pointed,
@@ -143,11 +131,8 @@ final class AttendanceLogController extends AbstractController
             throw $this->createNotFoundException('Date de pointage invalide.');
         }
 
-        // On ne pointe que pour un evenement du calendrier.
+        // L'evenement du calendrier de ce jour, quand il y en a un ; sinon date libre.
         $event = $this->events->findOnDate($day);
-        if (null === $event) {
-            throw $this->createNotFoundException('Aucun événement ce jour-là.');
-        }
 
         if (!$this->isCsrfTokenValid('pointage'.$date.'-'.$application->getId(), (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Action expirée, recommencez.');

@@ -15,20 +15,14 @@
         <a href="{{ path('app_accounting', {saison: season}) }}" class="btn btn-secondary">{{ ui.icon('download') }} Voir la comptabilité</a>
     </div>
 
-    {% if day is null %}
-        <section class="card mt-8" aria-labelledby="titre-pointage">
-            <h2 id="titre-pointage" class="px-5 pt-4 text-lg font-bold text-ink">Aucune séance à pointer</h2>
-            <p class="px-5 py-4 text-slate-600">
-                Le pointage se rattache à un événement du calendrier, aujourd'hui ou déjà passé. Aucun
-                n'est disponible : ajoutez l'événement au calendrier, puis revenez ici.
-            </p>
-        </section>
-    {% else %}
     {# La seance pointee : un evenement du calendrier, celui du jour par defaut. #}
     <form method="get" action="{{ path('app_attendance_log') }}" class="mt-8 flex flex-wrap items-end gap-3" aria-label="Séance pointée">
         <div>
             <label for="p-date" class="mb-1.5 block text-sm font-semibold text-slate-800">Événement</label>
             <select name="date" id="p-date" class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
+                {% if event is null %}
+                    <option value="{{ day|date('Y-m-d') }}" selected>Date libre · {{ day|date('d/m/Y') }}</option>
+                {% endif %}
                 {% for key, session in sessions %}
                     <option value="{{ key }}"{{ key == day|date('Y-m-d') ? ' selected' }}>{{ session.title }} · {{ key|date('d/m/Y') }}</option>
                 {% endfor %}
@@ -37,10 +31,18 @@
         <button type="submit" class="btn btn-secondary">{{ ui.icon('eye') }} Afficher</button>
     </form>
 
+    <form method="get" action="{{ path('app_attendance_log') }}" class="mt-4 flex flex-wrap items-end gap-3" aria-label="Date libre">
+        <div>
+            <label for="p-date-libre" class="mb-1.5 block text-sm font-semibold text-slate-800">Ou une autre date, sans événement</label>
+            <input type="date" name="date" id="p-date-libre" max="{{ today|date('Y-m-d') }}" value="{{ event is null ? day|date('Y-m-d') }}" required class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
+        </div>
+        <button type="submit" class="btn btn-secondary">{{ ui.icon('eye') }} Afficher</button>
+    </form>
+
     <section class="card mt-8" aria-labelledby="titre-pointage">
         <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <h2 id="titre-pointage" class="text-lg font-bold text-ink">
-                {{ event.title }} <span class="font-medium text-slate-600">· {{ isToday ? 'aujourd\'hui' : 'séance passée' }}, {{ day|format_date(pattern: 'EEEE d MMMM y') }}</span>
+                {{ event ? event.title : 'Séance' }} <span class="font-medium text-slate-600">· {{ isToday ? 'aujourd\'hui' : 'séance passée' }}, {{ day|format_date(pattern: 'EEEE d MMMM y') }}</span>
             </h2>
             <p class="text-sm text-slate-600">
                 <strong>{{ present }}</strong> présent{{ present > 1 ? 's' }},
@@ -109,5 +111,4 @@
             </ul>
         {% endif %}
     </section>
-    {% endif %}
 {% endblock %}

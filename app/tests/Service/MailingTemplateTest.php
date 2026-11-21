@@ -126,4 +126,12 @@ final class MailingTemplateTest extends TestCase
 
         self::assertSame("Salut toi,\n\nVoir le site (https://enviedejouer89.fr/).\n\n- un\n- deux", $text);
     }
+
+    public function testAVariableSplitByFormattingIsStillReplaced(): void
+    {
+        $html = '<p>Bonjour {{<strong>prenom</strong>}}</p>';
+
+        self::assertSame([], MailingTemplate::unknownVariables($html));
+        self::assertStringContainsString('Bonjour Camille', MailingTemplate::renderHtml($html, MailingTemplate::sampleValues(2027)));
+    }
 }

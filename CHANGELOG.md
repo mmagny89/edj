@@ -10,6 +10,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute
 
+- **Pointage sur date libre** : l'admin peut pointer les consommateurs un jour sans evenement au calendrier
+  (date choisie au plus tard aujourd'hui, libelle « Seance »), en plus des evenements.
+
 - **Ajout a l'agenda** : chaque evenement du calendrier et sa fiche proposent « Ajouter a mon agenda »
   (fichier `.ics`, lu par Apple, Outlook et Google) ; la fiche offre aussi un lien Google Agenda. L'heure est lue
   dans l'horaire (« 18h30 - 00h ») ; sans heure reconnue, ou sur plusieurs jours, l'evenement est ajoute toute la
