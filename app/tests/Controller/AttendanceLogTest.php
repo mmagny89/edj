@@ -69,7 +69,7 @@ final class AttendanceLogTest extends WebTestCase
      * Sans evenement au calendrier, il n'y a rien a pointer : pas de liste de
      * consommateurs, pas de bouton.
      */
-    public function testWithoutAnyEventThereIsNothingToPoint(): void
+    public function testWithoutAnyEventTodayIsPointedAsAFreeSession(): void
     {
         $this->consumer('Alix', 'Consommatrice', 'now');
         $this->logIn();
@@ -77,16 +77,15 @@ final class AttendanceLogTest extends WebTestCase
         $this->client->request('GET', '/admin/pointage');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('#titre-pointage', 'Aucune séance à pointer');
-        self::assertSelectorNotExists('form[action*="/admin/pointage/"]');
-        self::assertSelectorTextNotContains('body', 'Alix Consommatrice');
+        self::assertSelectorTextContains('#titre-pointage', 'Séance');
+        self::assertSelectorTextContains('body', 'Alix Consommatrice');
+        self::assertSelectorExists('form[action*="/admin/pointage/"]');
     }
 
     /**
-     * Un jour sans evenement ne se pointe pas, meme si l'on saisit sa date : la page
-     * le dit et revient a la seance la plus recente.
+     * Un jour sans evenement se pointe sur sa date libre, sous le libelle « Séance ».
      */
-    public function testADayWithoutEventIsRefused(): void
+    public function testADayWithoutEventIsOpenedAsAFreeDate(): void
     {
         $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->event(self::PAST);
@@ -94,8 +93,9 @@ final class AttendanceLogTest extends WebTestCase
 
         $this->client->request('GET', '/admin/pointage?date=2020-12-06');
 
-        self::assertSelectorTextContains('body', 'Aucun événement ce jour-là');
-        self::assertSelectorTextContains('#titre-pointage', 'Soirée de test');
+        self::assertSelectorTextContains('#titre-pointage', 'Séance');
+        self::assertSelectorTextContains('#titre-pointage', '6 décembre 2020');
+        self::assertSelectorTextContains('body', 'Alix Consommatrice');
     }
 
     public function testTheEventsAreOfferedInASelector(): void
@@ -107,7 +107,7 @@ final class AttendanceLogTest extends WebTestCase
         $this->client->request('GET', '/admin/pointage');
 
         self::assertSelectorExists('select[name="date"]');
-        self::assertSelectorNotExists('input[type="date"][name="date"]');
+        self::assertSelectorExists('input[type="date"][name="date"][max]');
         self::assertSelectorTextContains('select[name="date"]', 'Soirée passée');
         self::assertSelectorTextContains('select[name="date"]', 'Mardi du jeu');
     }
@@ -172,15 +172,18 @@ final class AttendanceLogTest extends WebTestCase
         self::assertSame('Soirée de test', $attendance->getLabel());
     }
 
-    public function testADayWithoutEventCannotBePointed(): void
+    public function testADayWithoutEventIsPointedWithTheDefaultLabel(): void
     {
         $consumer = $this->consumer('Alix', 'Consommatrice', self::PAST);
         $this->logIn();
 
-        $this->client->request('POST', sprintf('/admin/pointage/%s/%d', self::PAST, $consumer->getId()), ['action' => 'paye']);
+        $this->press(self::PAST, $consumer, 'paye');
 
-        self::assertResponseStatusCodeSame(404);
-        self::assertNull($this->attendance(self::PAST, $consumer));
+        $attendance = $this->attendance(self::PAST, $consumer);
+        self::assertNotNull($attendance);
+        self::assertNull($attendance->getEvent());
+        self::assertSame('Séance', $attendance->getLabel());
+        self::assertTrue($attendance->isPaid());
     }
 
     public function testAPresenceWithoutPaymentCollectsNothing(): void

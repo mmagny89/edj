@@ -54,7 +54,7 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   saison : `member_edit` (modification de la fiche, passage consommateur -> annuel par `recordFormulaChange`,
   `clearGuardianUnlessMinor()`) ; sinon renouvellement. L'enregistrement **redirige** vers une page de
   confirmation (Turbo n'affiche pas un 200 a un POST), et les boutons d'envoi portent `data-turbo-submits-with`.
-- Pointage : rattache a un evenement du calendrier (`EventAttendance::$event`), jamais a une date libre.
+- Pointage : rattache a l'evenement du calendrier du jour (`EventAttendance::$event`) quand il y en a un ; sinon date libre (event nul, libelle « Seance »). Jamais dans l'avenir.
 - Courriels aux adherents : le corps est du HTML nettoye par `MailingTemplate::normalize`
   (symfony/html-sanitizer) avant tout affichage, stockage ou envoi ; un texte sans balise reste accepte.
   Gabarit `emails/mailing.html.twig` (logo joint en `cid:logo`) : le style est en ligne et en tableaux.
