@@ -29,7 +29,12 @@ final class MailingTemplate
         'formule' => "Formule d'adhésion",
     ];
 
-    private const PATTERN = '/\{\{\s*([^{}]{0,40}?)\s*\}\}/u';
+    /**
+     * Les balises sont tolerees dans les accolades : l'editeur coupe « {{prenom}} »
+     * d'une balise des qu'une partie du mot est en gras ou en italique, et la
+     * variable cessait d'etre reconnue sans qu'aucune erreur ne le signale.
+     */
+    private const PATTERN = '/\{\{\s*((?:[^{}<]|<[^>]*>){0,120}?)\s*\}\}/u';
 
     /**
      * Les variables du texte que l'on ne sait pas remplacer, dans l'ordre ou elles
@@ -43,12 +48,17 @@ final class MailingTemplate
 
         $unknown = [];
         foreach ($found[1] as $name) {
-            if (!isset(self::VARIABLES[MemberDirectory::normalize($name)])) {
-                $unknown[trim($name)] = true;
+            if (!isset(self::VARIABLES[self::variableName($name)])) {
+                $unknown[trim(strip_tags($name))] = true;
             }
         }
 
         return array_keys($unknown);
+    }
+
+    private static function variableName(string $raw): string
+    {
+        return MemberDirectory::normalize(html_entity_decode(strip_tags($raw), \ENT_QUOTES, 'UTF-8'));
     }
 
     /**
@@ -58,7 +68,7 @@ final class MailingTemplate
     {
         return (string) preg_replace_callback(
             self::PATTERN,
-            static fn (array $match): string => $values[MemberDirectory::normalize($match[1])] ?? $match[0],
+            static fn (array $match): string => $values[self::variableName($match[1])] ?? $match[0],
             $text,
         );
     }
