@@ -35,6 +35,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- **Heure de Paris** : les dates et heures, enregistrees en UTC, s'affichent a l'heure de Paris ; « aujourd'hui »,
+  les saisons et les exports CSV suivent aussi le jour de Paris.
 - **Venue gratuite** : « Present, sans payer » devient « Venu gratuitement » ; un tel passage vaut 0 € et n'est
   plus a relancer, y compris pour les pointages deja saisis.
 - **Administration** : « Voir le site public » s'ouvre dans le meme onglet.

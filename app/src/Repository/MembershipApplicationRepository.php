@@ -7,6 +7,7 @@ use App\Entity\MembershipApplication;
 use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
+use App\Service\Day;
 use App\Service\MemberDirectory;
 use App\Service\MembershipSeasons;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -107,7 +108,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             // Une saison court du 1er octobre au 30 septembre et porte le
             // millesime de l'annee qu'elle couvre (voir MembershipSeasons) :
             // la saison 2027 va du 1er octobre 2026 au 30 septembre 2027.
-            [$from, $to] = self::seasonBounds($season);
+            [$from, $to] = self::seasonInstantBounds($season);
             $query
                 ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
                 ->setParameter('from', $from)
@@ -188,7 +189,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findInSeason(Member $member, int $season): ?MembershipApplication
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         return $this->createQueryBuilder('a')
             ->where('a.member = :member')
@@ -391,7 +392,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findPhilibertRows(?\DateTimeImmutable $now = null): array
     {
-        [$from, $to] = self::seasonBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
+        [$from, $to] = self::seasonInstantBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
 
         $rows = $this->createQueryBuilder('a')
             ->select('a.email AS email, a.submittedAt AS joinedAt')
@@ -436,7 +437,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findForAttendance(int $season, bool $withMinors, bool $withConsumers): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         $qb = $this->createQueryBuilder('a')
             ->where('a.status = :validated')
@@ -479,7 +480,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findConsumers(int $season): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         /** @var list<MembershipApplication> $rows */
         $rows = $this->createQueryBuilder('a')
@@ -508,7 +509,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findValidatedInSeason(int $season): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         /** @var list<MembershipApplication> $rows */
         $rows = $this->createQueryBuilder('a')
@@ -542,5 +543,22 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season - 1)),
             new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season)),
         ];
+    }
+
+    /**
+     * Les memes bornes pour un instant, comme la date de depot : minuit a Paris,
+     * exprime en UTC comme il est enregistre.
+     *
+     * @return array{\DateTimeImmutable, \DateTimeImmutable}
+     */
+    public static function seasonInstantBounds(int $season): array
+    {
+        $paris = new \DateTimeZone(Day::TIMEZONE);
+        $utc = new \DateTimeZone('UTC');
+
+        return array_map(
+            static fn (\DateTimeImmutable $bound) => (new \DateTimeImmutable($bound->format('Y-m-d'), $paris))->setTimezone($utc),
+            self::seasonBounds($season),
+        );
     }
 }

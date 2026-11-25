@@ -10,6 +10,7 @@ use App\Enum\PaymentMethod;
 use App\Form\EditMembershipType;
 use App\Form\PaperMembershipType;
 use App\Form\UpgradeMembershipType;
+use App\Service\Day;
 use App\Service\MemberDirectory;
 use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
@@ -129,10 +130,10 @@ final class MembershipApplicationController extends AbstractController
                 fputcsv($out, array_map($this->neutralize(...), [
                     (string) $a->getMemberNumber(),
                     (string) MembershipSeasons::of($a->getSubmittedAt()),
-                    $a->getSubmittedAt()->format('Y-m-d'),
+                    Day::local($a->getSubmittedAt())->format('Y-m-d'),
                     $a->getSource()->label(),
                     $a->getStatus()->label(),
-                    $a->getStatusChangedAt()?->format('Y-m-d') ?? '',
+                    null !== $a->getStatusChangedAt() ? Day::local($a->getStatusChangedAt())->format('Y-m-d') : '',
                     $a->getPaymentMethod()?->label() ?? '',
                     (string) $a->getMembershipType()?->label(),
                     (string) ($a->amountDue() ?? ''),
@@ -161,7 +162,7 @@ final class MembershipApplicationController extends AbstractController
         $response->headers->set('Content-Disposition', sprintf(
             'attachment; filename="adhesions-%s-%s.csv"',
             null !== $filters['season'] ? 'saison-'.$filters['season'] : 'toutes-saisons',
-            (new \DateTimeImmutable())->format('Y-m-d'),
+            Day::today()->format('Y-m-d'),
         ));
         // Donnees personnelles : ni le navigateur ni un intermediaire ne les gardent.
         $response->headers->set('Cache-Control', 'no-store, private');
@@ -189,7 +190,7 @@ final class MembershipApplicationController extends AbstractController
     {
         $application = (new MembershipApplication())
             ->enterFromPaper($this->getUser() instanceof User ? $this->getUser()->getId() : null)
-            ->setSubmittedAt(new \DateTimeImmutable('today'))
+            ->setSubmittedAt(Day::today())
             ->setStatutesAccepted(true)
             ->setRulesAccepted(true)
             ->setSignaturePlace('Fiche papier')
@@ -261,7 +262,7 @@ final class MembershipApplicationController extends AbstractController
 
         $draft = MembershipApplication::renewalOf($previous)
             ->enterFromPaper($this->adminId())
-            ->setSubmittedAt(new \DateTimeImmutable('today'))
+            ->setSubmittedAt(Day::today())
             ->setStatutesAccepted(true)
             ->setRulesAccepted(true)
             ->setSignaturePlace('Fiche papier')
@@ -376,7 +377,7 @@ final class MembershipApplicationController extends AbstractController
             foreach ($rows as $row) {
                 // Date au format ISO : sans ambiguite jour / mois, quel que soit
                 // le logiciel qui la lira.
-                fputcsv($out, [$this->neutralize($row['email']), $row['joinedAt']->format('Y-m-d')], ';', '"', '');
+                fputcsv($out, [$this->neutralize($row['email']), Day::local($row['joinedAt'])->format('Y-m-d')], ';', '"', '');
             }
             fclose($out);
         });
@@ -385,7 +386,7 @@ final class MembershipApplicationController extends AbstractController
         $response->headers->set('Content-Disposition', sprintf(
             'attachment; filename="philibert-saison-%d-%s.csv"',
             MembershipSeasons::of(new \DateTimeImmutable()),
-            (new \DateTimeImmutable())->format('Y-m-d'),
+            Day::today()->format('Y-m-d'),
         ));
 
         return $response;

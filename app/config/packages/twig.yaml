@@ -1,5 +1,8 @@
 twig:
     cache: false # Désactive le cache des templates
+    # Les instants sont enregistres en UTC et se lisent a l'heure de Paris.
+    date:
+        timezone: Europe/Paris
     debug: true
     auto_reload: true # Recharge automatiquement les templates
     globals:

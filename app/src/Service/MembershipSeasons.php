@@ -77,6 +77,7 @@ final class MembershipSeasons
      */
     public static function of(\DateTimeImmutable $date): int
     {
+        $date = Day::local($date);
         $year = (int) $date->format('Y');
 
         return (int) $date->format('n') >= self::FIRST_MONTH ? $year + 1 : $year;

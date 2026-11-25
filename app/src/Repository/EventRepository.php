@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Event;
+use App\Service\Day;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -29,7 +30,7 @@ class EventRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('e')
             ->andWhere('COALESCE(e.endsAt, e.startsAt) >= :from')
-            ->setParameter('from', $from ?? new \DateTimeImmutable('today'))
+            ->setParameter('from', $from ?? Day::today())
             ->orderBy('e.startsAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();

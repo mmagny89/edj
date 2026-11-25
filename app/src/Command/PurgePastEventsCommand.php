@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Repository\EventRepository;
+use App\Service\Day;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -55,7 +56,7 @@ final class PurgePastEventsCommand extends Command
 
         // Un evenement du jour n'est jamais supprime : la borne est le debut
         // de la journee, retranche du delai de retention.
-        $before = new \DateTimeImmutable('today');
+        $before = Day::today();
         if ($days > 0) {
             $before = $before->modify(sprintf('-%d days', $days));
         }

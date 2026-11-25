@@ -55,7 +55,7 @@ final class AttendanceLogController extends AbstractController
     #[Route('', name: 'app_attendance_log', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $today = new \DateTimeImmutable('today');
+        $today = Day::today();
         $anyDate = $this->isGranted('ROLE_SUPER_ADMIN');
         $sessions = $this->sessions($today);
         $requested = (string) $request->query->get('date', '');
@@ -249,7 +249,7 @@ final class AttendanceLogController extends AbstractController
     private function pointableDay(string $date): \DateTimeImmutable
     {
         $day = Day::parse($date);
-        if (null === $day || ($day > new \DateTimeImmutable('today') && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
+        if (null === $day || ($day > Day::today() && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
             throw $this->createNotFoundException('Date de pointage invalide.');
         }
 

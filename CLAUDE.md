@@ -93,6 +93,10 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
 
 ## Pieges connus
 
+- Fuseaux : PHP et la base restent en UTC ; Twig affiche a Paris. Cote PHP, « aujourd'hui » est `Day::today()`,
+  jamais `new \DateTimeImmutable('today')`, un instant formate passe par `Day::local()`, et une requete sur une date
+  de depot utilise `seasonInstantBounds` (`seasonBounds` pour les colonnes `date`).
+
 - Une variable injectee par `compose.yml` (`DATABASE_URL`, `APP_ENV`,
   `MAILER_DSN`, `SYMFONY_TRUSTED_PROXIES`) ne doit jamais etre redefinie dans
   `app/.env` : la valeur concurrente est masquee en conteneur et reprend la

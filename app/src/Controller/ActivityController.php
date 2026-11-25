@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Event;
 use App\Entity\EventContribution;
 use App\Form\EventContributionType;
+use App\Service\Day;
 use App\Service\EventCalendarExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -83,7 +84,7 @@ final class ActivityController extends AbstractController
     ): Response {
         $this->assertHasOwnPage($event);
 
-        $over = $event->lastDay() < new \DateTimeImmutable('today');
+        $over = $event->lastDay() < Day::today();
         $contribution = new EventContribution($event);
         $form = $this->createForm(EventContributionType::class, $contribution);
 

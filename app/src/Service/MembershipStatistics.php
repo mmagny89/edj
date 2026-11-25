@@ -220,7 +220,7 @@ final class MembershipStatistics implements ResetInterface
      */
     public static function monthIndex(\DateTimeImmutable $date): int
     {
-        return ((int) $date->format('n') + 2) % 12;
+        return ((int) Day::local($date)->format('n') + 2) % 12;
     }
 
     /**

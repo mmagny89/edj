@@ -92,7 +92,7 @@ final class AccountingController extends AbstractController
 
         $value = trim((string) $request->request->get('date'));
         $on = Day::parse($value);
-        if ('' !== $value && (null === $on || $on > new \DateTimeImmutable('today'))) {
+        if ('' !== $value && (null === $on || $on > Day::today())) {
             $this->addFlash('error', 'La date de dépôt ou de paiement n\'est pas valide, ou se situe dans l\'avenir.');
 
             return $back;
@@ -148,7 +148,7 @@ final class AccountingController extends AbstractController
 
             foreach ($entries as $entry) {
                 fputcsv($out, [
-                    $entry['date']->format('d/m/Y'),
+                    Day::local($entry['date'])->format('d/m/Y'),
                     'passage' === $entry['kind'] ? 'Passage' : 'Cotisation',
                     $entry['label'],
                     $entry['person'],

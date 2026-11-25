@@ -100,8 +100,8 @@
             <p class="px-5 py-8 text-slate-600">Aucune recette sur cette saison.</p>
         {% else %}
             {# Tableau sur grand ecran, cartes sur telephone : six colonnes ne
-               tiennent pas a 390 px. Un seul des deux est affiche. #}
-            <div class="relative hidden overflow-x-auto md:block">
+               tiennent qu'a partir de 1280 px. Un seul des deux est affiche. #}
+            <div class="relative hidden overflow-x-auto xl:block">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
                         <tr>
@@ -135,7 +135,7 @@
                 </table>
             </div>
 
-            <ul class="divide-y divide-slate-100 md:hidden">
+            <ul class="divide-y divide-slate-100 xl:hidden">
                 {% for line in entries %}
                     <li class="px-5 py-3">
                         <p class="font-semibold text-ink">{{ line.person }}</p>

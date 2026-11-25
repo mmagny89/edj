@@ -8,6 +8,7 @@ use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\Day;
 use App\Service\MemberDirectory;
 use App\Service\MembershipSeasons;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -313,7 +314,7 @@ class MembershipApplication
         foreach ($this->history as $event) {
             if (MembershipEventType::Upgraded === $event->getType()
                 && str_starts_with((string) $event->getDetail(), MembershipType::Consumer->value.' ')) {
-                $day = $event->getOccurredAt()->setTime(0, 0);
+                $day = Day::of($event->getOccurredAt());
             }
         }
 
