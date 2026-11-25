@@ -13,6 +13,7 @@ use App\Service\MembershipNotifier;
 use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
@@ -42,7 +43,9 @@ final class MembershipChangeController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MemberAccessLink $links,
         private readonly MembershipNotifier $notifier,
+        #[Target('member_access_request.limiter')]
         private readonly RateLimiterFactoryInterface $memberAccessRequestLimiter,
+        #[Target('membership_application.limiter')]
         private readonly RateLimiterFactoryInterface $membershipApplicationLimiter,
     ) {
     }

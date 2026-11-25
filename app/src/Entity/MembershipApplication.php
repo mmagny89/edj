@@ -237,7 +237,7 @@ class MembershipApplication
      * @var Collection<int, MembershipEvent>
      */
     #[ORM\OneToMany(targetEntity: MembershipEvent::class, mappedBy: 'application', cascade: ['persist'])]
-    #[ORM\OrderBy(['occurredAt' => 'ASC', 'id' => 'ASC'])]
+    #[ORM\OrderBy(['occurredAt' => \SortDirection::Ascending, 'id' => \SortDirection::Ascending])]
     private Collection $history;
 
     public function __construct()

@@ -94,7 +94,7 @@ class Event
      * @var Collection<int, EventContribution>
      */
     #[ORM\OneToMany(targetEntity: EventContribution::class, mappedBy: 'event', cascade: ['remove'])]
-    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
     private Collection $contributions;
 
     #[ORM\Column(type: 'datetime_immutable')]

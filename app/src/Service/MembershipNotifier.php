@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\MembershipApplication;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -24,7 +25,9 @@ final class MembershipNotifier
     public function __construct(
         private readonly MailerInterface $mailer,
         private readonly Environment $twig,
+        #[Target('membership_confirmation_email.limiter')]
         private readonly RateLimiterFactoryInterface $membershipConfirmationEmailLimiter,
+        #[Target('member_access_email.limiter')]
         private readonly RateLimiterFactoryInterface $memberAccessEmailLimiter,
         #[Autowire('%app.contact_email%')]
         private readonly string $contactEmail,

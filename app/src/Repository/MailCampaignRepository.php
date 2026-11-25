@@ -25,8 +25,8 @@ class MailCampaignRepository extends ServiceEntityRepository
     {
         /** @var list<MailCampaign> $rows */
         $rows = $this->createQueryBuilder('c')
-            ->orderBy('c.sentAt', 'DESC')
-            ->addOrderBy('c.id', 'DESC')
+            ->orderBy('c.sentAt', \SortDirection::Descending)
+            ->addOrderBy('c.id', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

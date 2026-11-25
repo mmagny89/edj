@@ -28,7 +28,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     public function findLatest(int $limit = 100): array
     {
         return $this->createQueryBuilder('a')
-            ->orderBy('a.submittedAt', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -57,8 +57,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
         $query = $this->createQueryBuilder('a')
             ->leftJoin('a.member', 'm')
             ->addSelect('m')
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->setMaxResults($limit);
 
         $term = trim((string) ($filters['q'] ?? ''));
@@ -156,8 +156,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->addSelect('m')
             ->where('a.status = :validated')
             ->setParameter('validated', MembershipStatus::Validated)
-            ->orderBy('a.submittedAt', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.submittedAt', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -175,8 +175,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('a')
             ->where('a.member = :member')
             ->setParameter('member', $member)
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -263,8 +263,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->where('a.member = :member')
             ->andWhere('a.anonymizedAt IS NULL')
             ->setParameter('member', $member)
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -283,8 +283,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->leftJoin('a.member', 'm')
             ->addSelect('m')
             ->andWhere('a.anonymizedAt IS NULL')
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
 
@@ -360,8 +360,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             // depot (la colonne n'a pas de fraction) : sans departage, c'est le
             // moteur qui choisit quelle graphie de l'adresse survit a la
             // deduplication, et l'export change d'une execution a l'autre.
-            ->orderBy('a.submittedAt', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.submittedAt', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -396,7 +396,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('validated', MembershipStatus::Validated)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.id', 'ASC');
+            ->orderBy('a.id', \SortDirection::Ascending);
 
         if (!$withConsumers) {
             $qb->andWhere('a.membershipType != :consumer')->setParameter('consumer', MembershipType::Consumer);
@@ -442,8 +442,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('consumer', MembershipType::Consumer)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.lastName', 'ASC')
-            ->addOrderBy('a.firstName', 'ASC')
+            ->orderBy('a.lastName', \SortDirection::Ascending)
+            ->addOrderBy('a.firstName', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 
@@ -471,9 +471,9 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('validated', MembershipStatus::Validated)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.lastName', 'ASC')
-            ->addOrderBy('a.firstName', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.lastName', \SortDirection::Ascending)
+            ->addOrderBy('a.firstName', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 

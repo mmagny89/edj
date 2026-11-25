@@ -30,7 +30,7 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             ->andWhere('COALESCE(e.endsAt, e.startsAt) >= :from')
             ->setParameter('from', $from ?? new \DateTimeImmutable('today'))
-            ->orderBy('e.startsAt', 'ASC')
+            ->orderBy('e.startsAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -49,8 +49,8 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             ->andWhere('e.startsAt <= :day AND COALESCE(e.endsAt, e.startsAt) >= :day')
             ->setParameter('day', $day)
-            ->orderBy('e.startsAt', 'ASC')
-            ->addOrderBy('e.id', 'ASC')
+            ->orderBy('e.startsAt', \SortDirection::Ascending)
+            ->addOrderBy('e.id', \SortDirection::Ascending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -68,8 +68,8 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             ->andWhere('e.startsAt <= :end')
             ->setParameter('end', $today->setTime(23, 59, 59))
-            ->orderBy('e.startsAt', 'ASC')
-            ->addOrderBy('e.id', 'ASC')
+            ->orderBy('e.startsAt', \SortDirection::Ascending)
+            ->addOrderBy('e.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -85,7 +85,7 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             // Du plus proche au plus lointain : la liste s'ouvre sur ce qui arrive,
             // et les evenements passes, purges chaque nuit, restent en tete.
-            ->orderBy('e.startsAt', 'ASC')
+            ->orderBy('e.startsAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -106,7 +106,7 @@ class EventRepository extends ServiceEntityRepository
             ->andWhere('e.startsAt >= :from AND e.startsAt < :to')
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('e.startsAt', 'DESC')
+            ->orderBy('e.startsAt', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
 
@@ -152,7 +152,7 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             ->andWhere('COALESCE(e.endsAt, e.startsAt) < :before')
             ->setParameter('before', $before)
-            ->orderBy('e.startsAt', 'ASC')
+            ->orderBy('e.startsAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

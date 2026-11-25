@@ -15,6 +15,7 @@ use App\Service\MemberAccessLink;
 use App\Service\MembershipCardRenderer;
 use App\Service\MembershipNotifier;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
@@ -38,6 +39,7 @@ final class MemberSpaceController extends AbstractController
         private readonly MembershipApplicationRepository $applications,
         private readonly MemberAccessLink $links,
         private readonly MembershipNotifier $notifier,
+        #[Target('member_access_request.limiter')]
         private readonly RateLimiterFactoryInterface $memberAccessRequestLimiter,
         private readonly EntityManagerInterface $entityManager,
     ) {

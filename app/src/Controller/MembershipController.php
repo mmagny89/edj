@@ -8,6 +8,7 @@ use App\Service\MemberDirectory;
 use App\Service\MembershipNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
@@ -19,6 +20,7 @@ final class MembershipController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MembershipNotifier $notifier,
         private readonly MemberDirectory $members,
+        #[Target('membership_application.limiter')]
         private readonly RateLimiterFactoryInterface $membershipApplicationLimiter,
     ) {
     }
