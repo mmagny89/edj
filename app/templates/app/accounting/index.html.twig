@@ -120,7 +120,10 @@
                                 <td class="px-3 py-3">{{ line.kind == 'passage' ? 'Passage' : 'Cotisation' }} — {{ line.label }}</td>
                                 <td class="px-3 py-3">{{ line.person }}{% if line.number %} <span class="text-slate-500">({{ line.number }})</span>{% endif %}</td>
                                 <td class="px-3 py-3">{{ line.method ? line.method.label : (line.cents > 0 ? 'Non encaissé' : 'Gratuit') }}</td>
-                                <td class="whitespace-nowrap px-3 py-3 text-right font-semibold">{{ money.euros(line.cents) }}</td>
+                                <td class="whitespace-nowrap px-3 py-3 text-right font-semibold">
+                                    {{ money.euros(line.cents) }}
+                                    {% if line.creditCents %}<span class="block text-xs font-normal text-slate-600">{{ money.euros(line.creditCents) }} déduits (séances)</span>{% endif %}
+                                </td>
                                 <td class="px-5 py-2">
                                     {% if line.paid %}
                                         {{ include('app/_cashing_form.html.twig', {kind: line.kind, id: line.id, cashedOn: line.cashedOn, person: line.person, uid: 't'}) }}
@@ -145,6 +148,10 @@
                             <dd>{{ line.kind == 'passage' ? 'Passage' : 'Cotisation' }}</dd>
                             <dt class="sr-only">Règlement</dt>
                             <dd class="text-right">{{ line.method ? line.method.label : (line.cents > 0 ? 'Non encaissé' : 'Gratuit') }}</dd>
+                            {% if line.creditCents %}
+                                <dt class="sr-only">Déduction</dt>
+                                <dd class="col-span-2">{{ money.euros(line.creditCents) }} déduits (séances payées en consommateur)</dd>
+                            {% endif %}
                         </dl>
                         {% if line.paid %}
                             <div class="mt-2">

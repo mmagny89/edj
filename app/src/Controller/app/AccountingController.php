@@ -144,7 +144,7 @@ final class AccountingController extends AbstractController
         $response = new StreamedResponse(static function () use ($entries): void {
             $out = fopen('php://output', 'wb');
             fwrite($out, "\u{FEFF}");
-            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Encaissé', 'Dépôt / paiement'], ';', '"', '');
+            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Déduit (€)', 'Encaissé', 'Dépôt / paiement'], ';', '"', '');
 
             foreach ($entries as $entry) {
                 fputcsv($out, [
@@ -155,6 +155,7 @@ final class AccountingController extends AbstractController
                     $entry['number'] ?? '',
                     $entry['method']?->label() ?? '',
                     number_format($entry['cents'] / 100, 2, ',', ''),
+                    number_format($entry['creditCents'] / 100, 2, ',', ''),
                     $entry['paid'] ? 'oui' : 'non',
                     $entry['cashedOn']?->format('d/m/Y') ?? '',
                 ], ';', '"', '');

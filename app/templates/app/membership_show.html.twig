@@ -84,7 +84,7 @@
         <h2 id="t-etat" class="text-lg font-bold text-ink">État de l'adhésion</h2>
         <p class="mt-2 text-sm text-slate-600">
             {% if application.validated %}
-                Validée le {{ application.statusChangedAt|date('d/m/Y') }}{% if application.paymentMethod %}, réglée par {{ application.paymentMethod.label|lower }}{% else %} (formule gratuite à l'année){% endif %}.
+                Validée le {{ application.statusChangedAt|date('d/m/Y') }}{% if application.paymentMethod %}, réglée par {{ application.paymentMethod.label|lower }}{% else %}{% if application.consumerCredit %} (rien à encaisser, les séances déjà payées couvrent la cotisation){% else %} (formule gratuite à l'année){% endif %}{% endif %}.
             {% elseif application.cancelled %}
                 Annulée le {{ application.statusChangedAt|date('d/m/Y') }}. Le bulletin reste consultable.
             {% else %}
@@ -175,6 +175,18 @@
             <dl class="mt-2 divide-y divide-slate-100">
                 {{ f.row('Formule', application.membershipType.label) }}
                 {{ f.row('Montant dû', application.amountDueLabel) }}
+                {% if application.consumerCredit %}
+                    <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-semibold text-slate-600">Séances déduites</dt>
+                        <dd class="text-slate-900 sm:col-span-2">
+                            <ul>
+                                {% for passage in application.deductiblePassages %}
+                                    <li>{{ passage.occurredOn|date('d/m/Y') }} · {{ passage.label }} · {{ (passage.amountCents / 100)|number_format(2, ',', ' ') }} €</li>
+                                {% endfor %}
+                            </ul>
+                        </dd>
+                    </div>
+                {% endif %}
                 {% if not application.anonymized and application.principalMemberName %}
                     <div class="grid gap-1 py-3 sm:grid-cols-3 sm:gap-4">
                         <dt class="text-sm font-semibold text-slate-600">Adhérent principal</dt>
@@ -244,6 +256,23 @@
             {% endif %}
         </section>
     </div>
+
+    {% if attached is not empty %}
+        <section class="card mt-6 p-6" aria-labelledby="t-rattaches">
+            <h2 id="t-rattaches" class="text-lg font-bold text-ink">Membres rattachés <span class="font-medium text-slate-500">{{ attached|length }}</span></h2>
+            <ul class="mt-3 divide-y divide-slate-100">
+                {% for other in attached %}
+                    <li class="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+                        <a href="{{ path('app_membership_show', {id: other.id}) }}" class="inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-2 hover:text-brand-dark">
+                            {{ other.firstName }} {{ other.lastName }}
+                        </a>
+                        <span class="badge border {{ other.status.badgeClass }}">{{ other.status.label }}</span>
+                        <span class="text-sm text-slate-700">{{ other.amountDueLabel }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
 
     {# Parcours de la personne : tous ses bulletins, saison apres saison. Il
        repond a « est-ce un renouvellement, et depuis quand adhere-t-elle ? »

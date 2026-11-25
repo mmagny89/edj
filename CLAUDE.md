@@ -57,6 +57,9 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
 - Pointage : rattache a l'evenement du calendrier du jour (`EventAttendance::$event`) quand il y en a un ; sinon date
   libre (event nul, libelle « Seance »). Contributeur : consommateurs seuls, jamais dans l'avenir ; super-administrateur :
   tout adherent, toute date, gratuit ou paye quelle que soit la formule. Un passage non paye est gratuit, jamais a relancer.
+- `amountDue()` est net des seances payees jusqu'au passage consommateur -> annuel (`baseAmountDue` moins
+  `consumerCredit`), lu dans l'historique : ecrire `recordFormulaChange` avant de lire le montant. Calcul a la
+  volee, y compris apres validation.
 - `cashedOn` (bulletin et pointage) est la date de depot ou de paiement, saisie par `app_accounting_cashing`.
 - Courriels aux adherents : le corps est du HTML nettoye par `MailingTemplate::normalize`
   (symfony/html-sanitizer) avant tout affichage, stockage ou envoi ; un texte sans balise reste accepte.

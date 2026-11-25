@@ -10,6 +10,10 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute
 
+- **Deduction des seances payees** : au passage de consommateur a une adhesion annuelle, les euros payes jusqu'a ce
+  jour sont deduits de la cotisation (sans remboursement). Visible sur la fiche, au passage a l'annuel et en
+  comptabilite ; la fiche d'une adhesion individuelle liste les membres du foyer rattaches et leur montant du.
+
 - **Date de depot / de paiement** : pour chaque recette reglee (cotisation ou euro de seance), la date se pointe
   dans le journal de la comptabilite, et pour une cotisation aussi sur la fiche de l'adherent. Elle figure dans
   l'export CSV.

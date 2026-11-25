@@ -2,6 +2,7 @@
 
 namespace App\Tests\Entity;
 
+use App\Entity\EventAttendance;
 use App\Entity\MembershipApplication;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
@@ -78,6 +79,67 @@ final class AmountDueTest extends TestCase
         $this->expectException(\LogicException::class);
 
         $this->application(MembershipType::Family, 9)->validate(null, 7);
+    }
+
+    /**
+     * Venu deux fois en consommateur, une fois gratuitement et une fois pour
+     * 1 €, puis passe a l'annuel : l'euro paye se deduit.
+     */
+    public function testThePaidConsumerSessionsAreDeductedFromTheAnnualFee(): void
+    {
+        $application = $this->upgraded(MembershipType::Individual, ['2026-10-20' => false, '2026-10-27' => true]);
+
+        self::assertSame(1, $application->consumerCredit());
+        self::assertSame(9, $application->amountDue());
+        self::assertSame('9 € (10 € − 1 € déjà payés en consommateur)', $application->amountDueLabel());
+    }
+
+    public function testASessionPaidAfterTheUpgradeOrInAnotherSeasonIsNotDeducted(): void
+    {
+        $application = $this->upgraded(MembershipType::Family, ['2026-09-29' => true, '2026-11-03' => true, '2026-11-10' => true]);
+
+        // Seul le passage du jour du changement (3 novembre) compte.
+        self::assertSame(4, $application->amountDue());
+    }
+
+    public function testTheDeductionNeverExceedsTheFee(): void
+    {
+        $days = [];
+        for ($day = 16; $day <= 22; ++$day) {
+            $days['2026-10-'.$day] = true;
+        }
+        $application = $this->upgraded(MembershipType::Family, $days);
+
+        self::assertSame(0, $application->amountDue());
+        self::assertTrue($application->validate(null, 7)->isValidated());
+    }
+
+    public function testSomeoneWhoWasNeverAConsumerHasNothingDeducted(): void
+    {
+        $application = $this->application(MembershipType::Individual, 40);
+        (new EventAttendance(new \DateTimeImmutable('2026-10-20'), $application))->markPaid();
+
+        self::assertSame(10, $application->amountDue());
+    }
+
+    /**
+     * Un consommateur pointe aux jours donnes (vrai : paye), devenu annuel le
+     * 3 novembre 2026.
+     *
+     * @param array<string, bool> $days
+     */
+    private function upgraded(MembershipType $to, array $days): MembershipApplication
+    {
+        $application = $this->application(MembershipType::Consumer, 40);
+        foreach ($days as $day => $paid) {
+            $attendance = new EventAttendance(new \DateTimeImmutable($day), $application);
+            if ($paid) {
+                $attendance->markPaid();
+            }
+        }
+
+        return $application->setMembershipType($to)
+            ->recordFormulaChange(MembershipType::Consumer, 7, new \DateTimeImmutable('2026-11-03 19:00'));
     }
 
     public function testAPayingMemberIsValidatedWithOne(): void

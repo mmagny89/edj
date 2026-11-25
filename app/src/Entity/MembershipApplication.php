@@ -240,10 +240,84 @@ class MembershipApplication
     #[ORM\OrderBy(['occurredAt' => \SortDirection::Ascending, 'id' => \SortDirection::Ascending])]
     private Collection $history;
 
+    /**
+     * Les passages en seance pointes sur ce bulletin : les euros payes en
+     * consommateur se deduisent de la cotisation annuelle.
+     *
+     * @var Collection<int, EventAttendance>
+     */
+    #[ORM\OneToMany(targetEntity: EventAttendance::class, mappedBy: 'application')]
+    #[ORM\OrderBy(['occurredOn' => \SortDirection::Ascending])]
+    private Collection $attendances;
+
     public function __construct()
     {
         $this->submittedAt = new \DateTimeImmutable();
         $this->history = new ArrayCollection();
+        $this->attendances = new ArrayCollection();
+    }
+
+    /**
+     * Tient la collection a jour pour un pointage cree dans la meme requete.
+     * Appele par le constructeur d'EventAttendance.
+     */
+    public function addAttendance(EventAttendance $attendance): static
+    {
+        if (!$this->attendances->contains($attendance)) {
+            $this->attendances->add($attendance);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Les passages payes pendant la saison du bulletin, quelle que soit la
+     * formule actuelle.
+     *
+     * @return list<EventAttendance>
+     */
+    public function paidSeasonPassages(): array
+    {
+        $season = MembershipSeasons::of($this->submittedAt);
+
+        return array_values($this->attendances->filter(
+            static fn (EventAttendance $a) => $a->isPaid() && MembershipSeasons::of($a->getOccurredOn()) === $season,
+        )->toArray());
+    }
+
+    /**
+     * Les passages a deduire de la cotisation annuelle : ceux payes jusqu'au jour
+     * du passage de consommateur a annuel, compris. Un passage saisi apres coup
+     * compte s'il date d'avant ; un euro paye ensuite ne se deduit pas, et un
+     * adherent qui n'a jamais ete consommateur n'a rien a deduire.
+     *
+     * @return list<EventAttendance>
+     */
+    public function deductiblePassages(): array
+    {
+        if (null === $this->membershipType || MembershipType::Consumer === $this->membershipType) {
+            return [];
+        }
+
+        $passages = $this->paidSeasonPassages();
+        if ([] === $passages || null === $until = $this->leftConsumerOn()) {
+            return [];
+        }
+
+        return array_values(array_filter($passages, static fn (EventAttendance $a) => $a->getOccurredOn() <= $until));
+    }
+
+    private function leftConsumerOn(): ?\DateTimeImmutable
+    {
+        $day = null;
+        foreach ($this->history as $event) {
+            if (MembershipEventType::Upgraded === $event->getType()
+                && str_starts_with((string) $event->getDetail(), MembershipType::Consumer->value.' ')) {
+                $day = $event->getOccurredAt()->setTime(0, 0);
+            }
+        }
+
+        return $day;
     }
 
     /**
@@ -477,14 +551,14 @@ class MembershipApplication
     }
 
     /**
-     * Ce que doit la personne, en euros. Nul quand il n'y a rien a encaisser.
+     * Le tarif qui s'applique a la personne, en euros, avant toute deduction.
      *
      * Deux regles se superposent : le tarif de la formule, et la gratuite des
      * moins de huit ans. C'est ici et non sur la formule que le montant se
      * calcule, parce qu'il depend de l'adherent autant que de ce qu'il a
      * choisi.
      */
-    public function amountDue(): ?int
+    public function baseAmountDue(): ?int
     {
         if (null === $this->membershipType) {
             return null;
@@ -495,17 +569,49 @@ class MembershipApplication
         return null !== $age && $age < self::FREE_UNDER_AGE ? 0 : $this->membershipType->amountDue();
     }
 
+    /**
+     * Ce qui est deduit de la cotisation, en euros : les passages deja payes en
+     * consommateur, sans depasser le tarif — rien n'est rembourse.
+     */
+    public function consumerCredit(): int
+    {
+        $cents = array_sum(array_map(static fn (EventAttendance $a) => $a->getAmountCents(), $this->deductiblePassages()));
+
+        return min((int) $this->baseAmountDue(), intdiv($cents, 100));
+    }
+
+    /**
+     * Ce que doit la personne, en euros, deduction faite. Nul quand la formule
+     * manque.
+     */
+    public function amountDue(): ?int
+    {
+        $base = $this->baseAmountDue();
+
+        return null === $base ? null : $base - $this->consumerCredit();
+    }
+
     public function amountDueLabel(): string
     {
-        $amount = $this->amountDue();
+        $base = $this->baseAmountDue();
 
-        if (0 === $amount) {
+        if (null === $this->membershipType || MembershipType::Consumer === $this->membershipType) {
+            $age = $this->ageAtSubmission();
+
+            return null !== $age && $age < self::FREE_UNDER_AGE && 0 === $base
+                ? sprintf('0 € (moins de %d ans)', self::FREE_UNDER_AGE)
+                : (string) $this->membershipType?->amountDueLabel();
+        }
+
+        if (0 === $base) {
             return sprintf('0 € (moins de %d ans)', self::FREE_UNDER_AGE);
         }
 
-        return null !== $amount && $amount > 0
-            ? $amount.' €'
-            : (string) $this->membershipType?->amountDueLabel();
+        $credit = $this->consumerCredit();
+
+        return 0 === $credit
+            ? $base.' €'
+            : sprintf('%d € (%d € − %d € déjà payés en consommateur)', $base - $credit, $base, $credit);
     }
 
     public function isMinor(?\DateTimeImmutable $reference = null): bool

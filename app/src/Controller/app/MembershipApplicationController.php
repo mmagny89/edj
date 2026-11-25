@@ -335,9 +335,9 @@ final class MembershipApplicationController extends AbstractController
             }
 
             $method = $form->get('paymentMethod')->getData();
-            $owed = ($application->amountDue() ?? 0) > 0;
-
+            // La trace d'abord : c'est elle qui ouvre la deduction des euros de seance.
             $application->recordFormulaChange($from, $this->adminId());
+            $owed = ($application->amountDue() ?? 0) > 0;
             if ($owed && $method instanceof PaymentMethod) {
                 $application->validate($method, $this->adminId());
             } elseif ($owed && $application->isValidated()) {
@@ -349,7 +349,7 @@ final class MembershipApplicationController extends AbstractController
             $this->addFlash('success', match (true) {
                 $owed && $method instanceof PaymentMethod => sprintf('Adhésion annuelle enregistrée et validée, cotisation réglée par %s.', mb_lcfirst($method->label())),
                 $owed => sprintf('Adhésion annuelle enregistrée. Elle est en attente : %s restent à encaisser.', $application->amountDueLabel()),
-                default => 'Adhésion annuelle enregistrée : rien à encaisser pour cet adhérent.',
+                default => sprintf('Adhésion annuelle enregistrée : rien à encaisser, %s.', $application->amountDueLabel()),
             });
 
             return $this->redirectToRoute('app_membership_show', ['id' => $application->getId()]);
@@ -455,6 +455,8 @@ final class MembershipApplicationController extends AbstractController
     {
         return $this->render('app/membership_show.html.twig', [
             'application' => $application,
+            // Les membres du foyer rattaches a cette adhesion individuelle.
+            'attached' => $this->applications->findAttachedTo($application),
             // Le bulletin public laisse saisir l'adherent principal en texte
             // libre : la fiche dit si ce nom correspond a une adhesion
             // individuelle connue, plutot que de le presenter comme acquis.

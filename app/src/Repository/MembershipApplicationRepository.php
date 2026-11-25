@@ -236,20 +236,69 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findIndividualByName(string $name): ?MembershipApplication
     {
-        $normalized = MemberDirectory::normalize($name);
-
         foreach ($this->findBy(['membershipType' => MembershipType::Individual, 'anonymizedAt' => null]) as $candidate) {
-            $parts = [
-                MemberDirectory::normalize((string) $candidate->getFirstName()),
-                MemberDirectory::normalize((string) $candidate->getLastName()),
-            ];
-
-            if (\in_array($normalized, [implode(' ', $parts), implode(' ', array_reverse($parts))], true)) {
+            if ($this->isNamed($candidate, $name)) {
                 return $candidate;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Les bulletins famille de la meme saison qui designent cette adhesion
+     * individuelle comme adherent principal, annulations exclues.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findAttachedTo(MembershipApplication $principal): array
+    {
+        if (MembershipType::Individual !== $principal->getMembershipType() || $principal->isAnonymized()) {
+            return [];
+        }
+
+        $candidates = $this->findFiltered([
+            'type' => MembershipType::Family,
+            'season' => MembershipSeasons::of($principal->getSubmittedAt()),
+        ], limit: 10000);
+
+        return array_values(array_filter(
+            $candidates,
+            fn (MembershipApplication $a) => !$a->isCancelled() && !$a->isAnonymized()
+                && $this->isNamed($principal, (string) $a->getPrincipalMemberName()),
+        ));
+    }
+
+    /** Le nom saisi designe-t-il ce bulletin, prenom d'abord ou nom d'abord ? */
+    private function isNamed(MembershipApplication $application, string $name): bool
+    {
+        $parts = [
+            MemberDirectory::normalize((string) $application->getFirstName()),
+            MemberDirectory::normalize((string) $application->getLastName()),
+        ];
+
+        return \in_array(MemberDirectory::normalize($name), [implode(' ', $parts), implode(' ', array_reverse($parts))], true);
+    }
+
+    /**
+     * Charge en une requete les passages de ces bulletins : la cotisation due en
+     * depend, et la comptabilite la calcule pour toute la saison.
+     *
+     * @param list<MembershipApplication> $applications
+     */
+    public function preloadAttendances(array $applications): void
+    {
+        if ([] === $applications) {
+            return;
+        }
+
+        $this->createQueryBuilder('a')
+            ->leftJoin('a.attendances', 'p')
+            ->addSelect('p')
+            ->where('a IN (:applications)')
+            ->setParameter('applications', $applications)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
