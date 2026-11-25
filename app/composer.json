@@ -54,9 +54,9 @@
         "symfony/webpack-encore-bundle": "^2.4.3",
         "symfony/yaml": "8.1.*",
         "symfonycasts/reset-password-bundle": "^1.26.1",
-        "twig/extra-bundle": "^3.29",
-        "twig/intl-extra": "^3.26",
-        "twig/twig": "^3.30"
+        "twig/extra-bundle": "^3.31",
+        "twig/intl-extra": "^3.31",
+        "twig/twig": "^3.31.1"
     },
     "config": {
         "allow-plugins": {
