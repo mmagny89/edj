@@ -15,8 +15,12 @@
             <tr>
                 <td style="padding:14px 16px;font-size:15px;">
                     <strong>{{ application.membershipType.label }}</strong><br>
+                    {% if application.amountDue %}
                     Cotisation à encaisser : <strong>{{ application.amountDueLabel }}</strong>.<br>
                     <span style="font-size:13px;color:#475569;">L'adhésion est repassée « en attente » tant qu'elle n'est pas encaissée.</span>
+                    {% else %}
+                    Rien à encaisser : <strong>{{ application.amountDueLabel }}</strong>.
+                    {% endif %}
                 </td>
             </tr>
         </table>

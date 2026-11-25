@@ -5,6 +5,7 @@ namespace App\Controller\app;
 use App\Form\AttendanceSheetType;
 use App\Repository\MembershipApplicationRepository;
 use App\Service\AttendanceSheetRenderer;
+use App\Service\Day;
 use App\Service\MembershipStatistics;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,7 +38,7 @@ final class AttendanceSheetController extends AbstractController
     {
         $form = $this->createForm(AttendanceSheetType::class, [
             'kind' => AttendanceSheetType::KINDS['Assemblée générale ordinaire'],
-            'date' => new \DateTimeImmutable('today'),
+            'date' => Day::today(),
             'season' => $this->statistics->currentSeason(),
             'withMinors' => false,
             'withConsumers' => false,

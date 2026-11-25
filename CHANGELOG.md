@@ -10,11 +10,16 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute
 
+- **Deduction des seances payees** : au passage de consommateur a une adhesion annuelle, les euros payes jusqu'a ce
+  jour sont deduits de la cotisation (sans remboursement). Visible sur la fiche, au passage a l'annuel et en
+  comptabilite ; la fiche d'une adhesion individuelle liste les membres du foyer rattaches et leur montant du.
+
 - **Date de depot / de paiement** : pour chaque recette reglee (cotisation ou euro de seance), la date se pointe
   dans le journal de la comptabilite, et pour une cotisation aussi sur la fiche de l'adherent. Elle figure dans
   l'export CSV.
 - **Pointage par un super-administrateur** : n'importe quel adherent, a n'importe quelle date, y compris a venir ;
-  hors formule consommateur, la presence est gratuite et n'apparait pas dans la comptabilite.
+  quelle que soit la formule, la venue est gratuite ou payee 1 € ; une venue gratuite hors formule consommateur
+  n'apparait pas dans la comptabilite.
 
 - **Pointage sur date libre** : l'admin peut pointer les consommateurs un jour sans evenement au calendrier
   (date choisie au plus tard aujourd'hui, libelle « Seance »), en plus des evenements.
@@ -30,6 +35,8 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- **Heure de Paris** : les dates et heures, enregistrees en UTC, s'affichent a l'heure de Paris ; « aujourd'hui »,
+  les saisons et les exports CSV suivent aussi le jour de Paris.
 - **Venue gratuite** : « Present, sans payer » devient « Venu gratuitement » ; un tel passage vaut 0 € et n'est
   plus a relancer, y compris pour les pointages deja saisis.
 - **Administration** : « Voir le site public » s'ouvre dans le meme onglet.

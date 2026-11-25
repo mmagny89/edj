@@ -63,7 +63,7 @@ class EventAttendance
      * Le bulletin, et non la personne : c'est lui qui porte la formule et la
      * saison, et c'est sur lui que se lit le droit au tarif consommateur.
      */
-    #[ORM\ManyToOne(targetEntity: MembershipApplication::class)]
+    #[ORM\ManyToOne(targetEntity: MembershipApplication::class, inversedBy: 'attendances')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private MembershipApplication $application;
 
@@ -106,6 +106,7 @@ class EventAttendance
         $this->occurredOn = $occurredOn->setTime(0, 0);
         $this->label = (string) ($event?->getTitle() ?? self::DEFAULT_LABEL);
         $this->application = $application;
+        $application->addAttendance($this);
         $this->recordedById = $recordedById;
         $this->recordedAt = $recordedAt ?? new \DateTimeImmutable();
     }

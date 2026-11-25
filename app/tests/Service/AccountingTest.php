@@ -93,6 +93,28 @@ final class AccountingTest extends KernelTestCase
     }
 
     /**
+     * L'euro paye en consommateur est compte une seule fois : sur sa ligne de
+     * passage, et retire de la cotisation.
+     */
+    public function testAnUpgradedMemberIsCountedOnlyOnce(): void
+    {
+        $application = $this->application('Alix', 'Consommatrice', MembershipType::Consumer);
+        $this->attendance($application, paid: true);
+        $application->setMembershipType(MembershipType::Individual)
+            ->recordFormulaChange(MembershipType::Consumer, null)
+            ->validate(PaymentMethod::Cheque, null);
+        $this->em->flush();
+        $this->em->clear();
+
+        $lines = $this->mine($this->accounting->entries($this->season));
+        $summary = $this->accounting->summary($this->season, $lines);
+
+        self::assertSame(900, $summary['cotisationsCents']);
+        self::assertSame(100, $summary['passagesCents']);
+        self::assertSame([100], array_values(array_filter(array_column($lines, 'creditCents'))));
+    }
+
+    /**
      * Une adhesion consommateur ne doit rien a l'annee : elle ne doit pas
      * apparaitre comme un impaye de 0 €, qui ferait chercher un reglement.
      */

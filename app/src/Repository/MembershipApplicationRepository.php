@@ -7,6 +7,7 @@ use App\Entity\MembershipApplication;
 use App\Enum\MembershipStatus;
 use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
+use App\Service\Day;
 use App\Service\MemberDirectory;
 use App\Service\MembershipSeasons;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -28,7 +29,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     public function findLatest(int $limit = 100): array
     {
         return $this->createQueryBuilder('a')
-            ->orderBy('a.submittedAt', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -57,8 +58,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
         $query = $this->createQueryBuilder('a')
             ->leftJoin('a.member', 'm')
             ->addSelect('m')
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->setMaxResults($limit);
 
         $term = trim((string) ($filters['q'] ?? ''));
@@ -107,7 +108,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             // Une saison court du 1er octobre au 30 septembre et porte le
             // millesime de l'annee qu'elle couvre (voir MembershipSeasons) :
             // la saison 2027 va du 1er octobre 2026 au 30 septembre 2027.
-            [$from, $to] = self::seasonBounds($season);
+            [$from, $to] = self::seasonInstantBounds($season);
             $query
                 ->andWhere('a.submittedAt >= :from AND a.submittedAt < :to')
                 ->setParameter('from', $from)
@@ -156,8 +157,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->addSelect('m')
             ->where('a.status = :validated')
             ->setParameter('validated', MembershipStatus::Validated)
-            ->orderBy('a.submittedAt', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.submittedAt', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -175,8 +176,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('a')
             ->where('a.member = :member')
             ->setParameter('member', $member)
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -188,7 +189,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findInSeason(Member $member, int $season): ?MembershipApplication
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         return $this->createQueryBuilder('a')
             ->where('a.member = :member')
@@ -236,20 +237,69 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findIndividualByName(string $name): ?MembershipApplication
     {
-        $normalized = MemberDirectory::normalize($name);
-
         foreach ($this->findBy(['membershipType' => MembershipType::Individual, 'anonymizedAt' => null]) as $candidate) {
-            $parts = [
-                MemberDirectory::normalize((string) $candidate->getFirstName()),
-                MemberDirectory::normalize((string) $candidate->getLastName()),
-            ];
-
-            if (\in_array($normalized, [implode(' ', $parts), implode(' ', array_reverse($parts))], true)) {
+            if ($this->isNamed($candidate, $name)) {
                 return $candidate;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Les bulletins famille de la meme saison qui designent cette adhesion
+     * individuelle comme adherent principal, annulations exclues.
+     *
+     * @return list<MembershipApplication>
+     */
+    public function findAttachedTo(MembershipApplication $principal): array
+    {
+        if (MembershipType::Individual !== $principal->getMembershipType() || $principal->isAnonymized()) {
+            return [];
+        }
+
+        $candidates = $this->findFiltered([
+            'type' => MembershipType::Family,
+            'season' => MembershipSeasons::of($principal->getSubmittedAt()),
+        ], limit: 10000);
+
+        return array_values(array_filter(
+            $candidates,
+            fn (MembershipApplication $a) => !$a->isCancelled() && !$a->isAnonymized()
+                && $this->isNamed($principal, (string) $a->getPrincipalMemberName()),
+        ));
+    }
+
+    /** Le nom saisi designe-t-il ce bulletin, prenom d'abord ou nom d'abord ? */
+    private function isNamed(MembershipApplication $application, string $name): bool
+    {
+        $parts = [
+            MemberDirectory::normalize((string) $application->getFirstName()),
+            MemberDirectory::normalize((string) $application->getLastName()),
+        ];
+
+        return \in_array(MemberDirectory::normalize($name), [implode(' ', $parts), implode(' ', array_reverse($parts))], true);
+    }
+
+    /**
+     * Charge en une requete les passages de ces bulletins : la cotisation due en
+     * depend, et la comptabilite la calcule pour toute la saison.
+     *
+     * @param list<MembershipApplication> $applications
+     */
+    public function preloadAttendances(array $applications): void
+    {
+        if ([] === $applications) {
+            return;
+        }
+
+        $this->createQueryBuilder('a')
+            ->leftJoin('a.attendances', 'p')
+            ->addSelect('p')
+            ->where('a IN (:applications)')
+            ->setParameter('applications', $applications)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
@@ -263,8 +313,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->where('a.member = :member')
             ->andWhere('a.anonymizedAt IS NULL')
             ->setParameter('member', $member)
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -283,8 +333,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->leftJoin('a.member', 'm')
             ->addSelect('m')
             ->andWhere('a.anonymizedAt IS NULL')
-            ->orderBy('a.submittedAt', 'DESC')
-            ->addOrderBy('a.id', 'DESC')
+            ->orderBy('a.submittedAt', \SortDirection::Descending)
+            ->addOrderBy('a.id', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
 
@@ -342,7 +392,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findPhilibertRows(?\DateTimeImmutable $now = null): array
     {
-        [$from, $to] = self::seasonBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
+        [$from, $to] = self::seasonInstantBounds(MembershipSeasons::of($now ?? new \DateTimeImmutable()));
 
         $rows = $this->createQueryBuilder('a')
             ->select('a.email AS email, a.submittedAt AS joinedAt')
@@ -360,8 +410,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             // depot (la colonne n'a pas de fraction) : sans departage, c'est le
             // moteur qui choisit quelle graphie de l'adresse survit a la
             // deduplication, et l'export change d'une execution a l'autre.
-            ->orderBy('a.submittedAt', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.submittedAt', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -387,7 +437,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findForAttendance(int $season, bool $withMinors, bool $withConsumers): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         $qb = $this->createQueryBuilder('a')
             ->where('a.status = :validated')
@@ -396,7 +446,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('validated', MembershipStatus::Validated)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.id', 'ASC');
+            ->orderBy('a.id', \SortDirection::Ascending);
 
         if (!$withConsumers) {
             $qb->andWhere('a.membershipType != :consumer')->setParameter('consumer', MembershipType::Consumer);
@@ -430,7 +480,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findConsumers(int $season): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         /** @var list<MembershipApplication> $rows */
         $rows = $this->createQueryBuilder('a')
@@ -442,8 +492,8 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('consumer', MembershipType::Consumer)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.lastName', 'ASC')
-            ->addOrderBy('a.firstName', 'ASC')
+            ->orderBy('a.lastName', \SortDirection::Ascending)
+            ->addOrderBy('a.firstName', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 
@@ -459,7 +509,7 @@ class MembershipApplicationRepository extends ServiceEntityRepository
      */
     public function findValidatedInSeason(int $season): array
     {
-        [$from, $to] = self::seasonBounds($season);
+        [$from, $to] = self::seasonInstantBounds($season);
 
         /** @var list<MembershipApplication> $rows */
         $rows = $this->createQueryBuilder('a')
@@ -471,9 +521,9 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             ->setParameter('validated', MembershipStatus::Validated)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('a.lastName', 'ASC')
-            ->addOrderBy('a.firstName', 'ASC')
-            ->addOrderBy('a.id', 'ASC')
+            ->orderBy('a.lastName', \SortDirection::Ascending)
+            ->addOrderBy('a.firstName', \SortDirection::Ascending)
+            ->addOrderBy('a.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 
@@ -493,5 +543,22 @@ class MembershipApplicationRepository extends ServiceEntityRepository
             new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season - 1)),
             new \DateTimeImmutable(sprintf('%d-10-01 00:00:00', $season)),
         ];
+    }
+
+    /**
+     * Les memes bornes pour un instant, comme la date de depot : minuit a Paris,
+     * exprime en UTC comme il est enregistre.
+     *
+     * @return array{\DateTimeImmutable, \DateTimeImmutable}
+     */
+    public static function seasonInstantBounds(int $season): array
+    {
+        $paris = new \DateTimeZone(Day::TIMEZONE);
+        $utc = new \DateTimeZone('UTC');
+
+        return array_map(
+            static fn (\DateTimeImmutable $bound) => (new \DateTimeImmutable($bound->format('Y-m-d'), $paris))->setTimezone($utc),
+            self::seasonBounds($season),
+        );
     }
 }

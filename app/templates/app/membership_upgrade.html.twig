@@ -19,6 +19,14 @@
         ce n'est pas un renouvellement. L'historique garde la trace du changement.
     </p>
 
+    {% set passages = application.paidSeasonPassages %}
+    {% if passages is not empty %}
+        <p class="mt-4 max-w-3xl rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="note">
+            {{ passages|length }} séance{{ passages|length > 1 ? 's' }} déjà payée{{ passages|length > 1 ? 's' }} en consommateur :
+            <strong>{{ passages|length }} €</strong> seront déduits de la cotisation annuelle.
+        </p>
+    {% endif %}
+
     <div class="card mt-8 max-w-3xl p-6">
         {{ form_start(form, {attr: {class: 'space-y-8', novalidate: 'novalidate'}}) }}
             {{ form_errors(form) }}

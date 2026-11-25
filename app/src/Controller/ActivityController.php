@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\Event;
 use App\Entity\EventContribution;
 use App\Form\EventContributionType;
+use App\Service\Day;
 use App\Service\EventCalendarExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -77,11 +79,12 @@ final class ActivityController extends AbstractController
         Request $request,
         Event $event,
         EntityManagerInterface $entityManager,
+        #[Target('event_contribution.limiter')]
         RateLimiterFactoryInterface $eventContributionLimiter,
     ): Response {
         $this->assertHasOwnPage($event);
 
-        $over = $event->lastDay() < new \DateTimeImmutable('today');
+        $over = $event->lastDay() < Day::today();
         $contribution = new EventContribution($event);
         $form = $this->createForm(EventContributionType::class, $contribution);
 

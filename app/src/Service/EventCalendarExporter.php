@@ -78,7 +78,7 @@ final class EventCalendarExporter
      */
     private function window(Event $event): array
     {
-        $first = $event->getStartsAt() ?? new \DateTimeImmutable('today');
+        $first = $event->getStartsAt() ?? Day::today();
         $last = $event->lastDay() ?? $first;
         $zone = new \DateTimeZone(self::TIMEZONE);
 

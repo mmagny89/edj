@@ -92,7 +92,7 @@ final class AccountingController extends AbstractController
 
         $value = trim((string) $request->request->get('date'));
         $on = Day::parse($value);
-        if ('' !== $value && (null === $on || $on > new \DateTimeImmutable('today'))) {
+        if ('' !== $value && (null === $on || $on > Day::today())) {
             $this->addFlash('error', 'La date de dépôt ou de paiement n\'est pas valide, ou se situe dans l\'avenir.');
 
             return $back;
@@ -144,17 +144,18 @@ final class AccountingController extends AbstractController
         $response = new StreamedResponse(static function () use ($entries): void {
             $out = fopen('php://output', 'wb');
             fwrite($out, "\u{FEFF}");
-            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Encaissé', 'Dépôt / paiement'], ';', '"', '');
+            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Déduit (€)', 'Encaissé', 'Dépôt / paiement'], ';', '"', '');
 
             foreach ($entries as $entry) {
                 fputcsv($out, [
-                    $entry['date']->format('d/m/Y'),
+                    Day::local($entry['date'])->format('d/m/Y'),
                     'passage' === $entry['kind'] ? 'Passage' : 'Cotisation',
                     $entry['label'],
                     $entry['person'],
                     $entry['number'] ?? '',
                     $entry['method']?->label() ?? '',
                     number_format($entry['cents'] / 100, 2, ',', ''),
+                    number_format($entry['creditCents'] / 100, 2, ',', ''),
                     $entry['paid'] ? 'oui' : 'non',
                     $entry['cashedOn']?->format('d/m/Y') ?? '',
                 ], ';', '"', '');

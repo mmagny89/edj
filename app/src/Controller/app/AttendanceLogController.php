@@ -6,7 +6,6 @@ use App\Entity\Event;
 use App\Entity\EventAttendance;
 use App\Entity\MembershipApplication;
 use App\Entity\User;
-use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\EventAttendanceRepository;
 use App\Repository\EventRepository;
@@ -31,8 +30,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * de la date.
  *
  * Un contributeur ne pointe que les consommateurs, jamais dans l'avenir. Un
- * super-administrateur pointe n'importe quel adherent a n'importe quelle date ;
- * hors formule consommateur, la presence est gratuite.
+ * super-administrateur pointe n'importe quel adherent a n'importe quelle date, et
+ * choisit, quelle que soit la formule, entre venue gratuite et euro paye.
  *
  * Pense pour etre tenu a l'entree, souvent sur un telephone, pendant que les
  * gens arrivent : un bouton par personne. Chaque geste est un POST qui revient
@@ -56,7 +55,7 @@ final class AttendanceLogController extends AbstractController
     #[Route('', name: 'app_attendance_log', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $today = new \DateTimeImmutable('today');
+        $today = Day::today();
         $anyDate = $this->isGranted('ROLE_SUPER_ADMIN');
         $sessions = $this->sessions($today);
         $requested = (string) $request->query->get('date', '');
@@ -168,10 +167,9 @@ final class AttendanceLogController extends AbstractController
         $attendance = $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])
             ?? new EventAttendance($day, $application, $event, $this->currentUserId());
 
-        // Seule la formule consommateur paie a la seance.
-        match (true) {
-            'retirer' === $action => $this->entityManager->remove($attendance),
-            'present' === $action, MembershipType::Consumer !== $application->getMembershipType() => $attendance->markFree(),
+        match ($action) {
+            'retirer' => $this->entityManager->remove($attendance),
+            'present' => $attendance->markFree(),
             default => $attendance->markPaid(PaymentMethod::Cash),
         };
 
@@ -214,7 +212,11 @@ final class AttendanceLogController extends AbstractController
         }
 
         if (null === $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])) {
-            $this->entityManager->persist(new EventAttendance($day, $application, $this->events->findOnDate($day), $this->currentUserId()));
+            $attendance = new EventAttendance($day, $application, $this->events->findOnDate($day), $this->currentUserId());
+            if ('paye' === $request->request->get('action')) {
+                $attendance->markPaid(PaymentMethod::Cash);
+            }
+            $this->entityManager->persist($attendance);
             $this->entityManager->flush();
 
             $this->securityLogger->info('Pointage adherent', [
@@ -222,6 +224,7 @@ final class AttendanceLogController extends AbstractController
                 'user' => $this->getUser()?->getUserIdentifier(),
                 'date' => $date,
                 'action' => 'ajouter',
+                'paid' => $attendance->isPaid(),
             ]);
         }
 
@@ -246,7 +249,7 @@ final class AttendanceLogController extends AbstractController
     private function pointableDay(string $date): \DateTimeImmutable
     {
         $day = Day::parse($date);
-        if (null === $day || ($day > new \DateTimeImmutable('today') && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
+        if (null === $day || ($day > Day::today() && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
             throw $this->createNotFoundException('Date de pointage invalide.');
         }
 

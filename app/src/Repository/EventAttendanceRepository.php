@@ -55,8 +55,8 @@ class EventAttendanceRepository extends ServiceEntityRepository
             ->andWhere('p.occurredOn >= :from AND p.occurredOn < :to')
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('p.occurredOn', 'DESC')
-            ->addOrderBy('a.lastName', 'ASC')
+            ->orderBy('p.occurredOn', \SortDirection::Descending)
+            ->addOrderBy('a.lastName', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

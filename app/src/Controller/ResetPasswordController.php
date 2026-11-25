@@ -12,6 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,6 +46,7 @@ final class ResetPasswordController extends AbstractController
         private readonly UserRepository $users,
         private readonly AdminPasswordResetNotifier $notifier,
         private readonly EntityManagerInterface $entityManager,
+        #[Target('admin_password_reset_request.limiter')]
         private readonly RateLimiterFactoryInterface $adminPasswordResetRequestLimiter,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,

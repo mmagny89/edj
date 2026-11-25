@@ -8,6 +8,7 @@ use App\Entity\EventContribution;
 use App\Form\EventFormType;
 use App\Form\SeasonGenerationType;
 use App\Repository\EventRepository;
+use App\Service\Day;
 use App\Service\SeasonGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -39,7 +40,7 @@ final class EventController extends AbstractController
     {
         return $this->render('app/events/index.html.twig', [
             'events' => $this->events->findAllOrdered(),
-            'today' => new \DateTimeImmutable('today'),
+            'today' => Day::today(),
         ]);
     }
 
@@ -51,7 +52,7 @@ final class EventController extends AbstractController
     public function generate(Request $request, SeasonGenerator $generator): Response
     {
         $generation = new SeasonGenerationRequest();
-        $generation->from = new \DateTimeImmutable('today');
+        $generation->from = Day::today();
         $generation->to = $this->suggestedEnd($generation->from);
 
         $form = $this->createForm(SeasonGenerationType::class, $generation);

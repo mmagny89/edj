@@ -56,7 +56,10 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   confirmation (Turbo n'affiche pas un 200 a un POST), et les boutons d'envoi portent `data-turbo-submits-with`.
 - Pointage : rattache a l'evenement du calendrier du jour (`EventAttendance::$event`) quand il y en a un ; sinon date
   libre (event nul, libelle « Seance »). Contributeur : consommateurs seuls, jamais dans l'avenir ; super-administrateur :
-  tout adherent, toute date. Un passage non paye est gratuit, jamais a relancer.
+  tout adherent, toute date, gratuit ou paye quelle que soit la formule. Un passage non paye est gratuit, jamais a relancer.
+- `amountDue()` est net des seances payees jusqu'au passage consommateur -> annuel (`baseAmountDue` moins
+  `consumerCredit`), lu dans l'historique : ecrire `recordFormulaChange` avant de lire le montant. Calcul a la
+  volee, y compris apres validation.
 - `cashedOn` (bulletin et pointage) est la date de depot ou de paiement, saisie par `app_accounting_cashing`.
 - Courriels aux adherents : le corps est du HTML nettoye par `MailingTemplate::normalize`
   (symfony/html-sanitizer) avant tout affichage, stockage ou envoi ; un texte sans balise reste accepte.
@@ -89,6 +92,10 @@ En developpement, `npm run build` (mode production) casse l'affichage tant que
   « Non publie » fait partie d'un changement visible de l'utilisateur.
 
 ## Pieges connus
+
+- Fuseaux : PHP et la base restent en UTC ; Twig affiche a Paris. Cote PHP, « aujourd'hui » est `Day::today()`,
+  jamais `new \DateTimeImmutable('today')`, un instant formate passe par `Day::local()`, et une requete sur une date
+  de depot utilise `seasonInstantBounds` (`seasonBounds` pour les colonnes `date`).
 
 - Une variable injectee par `compose.yml` (`DATABASE_URL`, `APP_ENV`,
   `MAILER_DSN`, `SYMFONY_TRUSTED_PROXIES`) ne doit jamais etre redefinie dans

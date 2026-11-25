@@ -22,7 +22,7 @@ class SeasonStampRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('s')
-            ->orderBy('s.year', 'DESC')
+            ->orderBy('s.year', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }

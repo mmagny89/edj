@@ -38,7 +38,7 @@ final readonly class Accounting
      *
      * @return list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
-     *     cents: int, paid: bool}>
+     *     cents: int, creditCents: int, paid: bool}>
      */
     public function entries(int $season): array
     {
@@ -54,7 +54,9 @@ final readonly class Accounting
                 'person' => $this->nameOf($application),
                 'number' => $application->getMember()?->getNumber(),
                 'method' => $application->getPaymentMethod(),
+                // Net des euros de seance, deja comptes sur leurs propres lignes.
                 'cents' => 100 * (int) $application->amountDue(),
+                'creditCents' => 100 * $application->consumerCredit(),
                 'paid' => null !== $application->getPaymentMethod(),
             ];
         }
@@ -76,6 +78,7 @@ final readonly class Accounting
                 'method' => $attendance->getPaymentMethod(),
                 // Zero pour une venue gratuite : ce n'est pas une creance.
                 'cents' => $attendance->collectedCents(),
+                'creditCents' => 0,
                 'paid' => $attendance->isPaid(),
             ];
         }
@@ -94,7 +97,7 @@ final readonly class Accounting
      *
      * @param list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
-     *     cents: int, paid: bool}>|null $entries
+     *     cents: int, creditCents: int, paid: bool}>|null $entries
      *
      * @return array{cotisationsCents: int, passagesCents: int, totalCents: int,
      *     passages: int, byMethod: array<string, int>, unpaidCents: int, unpaidCount: int}
@@ -148,11 +151,11 @@ final readonly class Accounting
      *
      * @param list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
-     *     cents: int, paid: bool}>|null $entries
+     *     cents: int, creditCents: int, paid: bool}>|null $entries
      *
      * @return list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
-     *     cents: int, paid: bool}>
+     *     cents: int, creditCents: int, paid: bool}>
      */
     public function unpaid(int $season, ?array $entries = null): array
     {
@@ -177,7 +180,10 @@ final readonly class Accounting
             static fn (MembershipApplication $a) => $a->isValidated() && MembershipType::Consumer !== $a->getMembershipType(),
         );
 
-        return array_values($rows);
+        $rows = array_values($rows);
+        $this->applications->preloadAttendances($rows);
+
+        return $rows;
     }
 
     private function nameOf(MembershipApplication $application): string
