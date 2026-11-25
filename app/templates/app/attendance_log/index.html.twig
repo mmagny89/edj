@@ -70,7 +70,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">{{ ui.icon('plus') }} Pointer</button>
+                <button type="submit" name="action" value="paye" class="btn btn-primary">{{ ui.icon('check') }} Présent · 1 € payé</button>
+                <button type="submit" name="action" value="present" class="btn btn-secondary">Venu gratuitement</button>
             </form>
         {% endif %}
 
@@ -84,7 +85,6 @@
                 {% for consumer in people %}
                     {% set mark = pointed[consumer.id] ?? null %}
                     {% set token = 'pointage' ~ day|date('Y-m-d') ~ '-' ~ consumer.id %}
-                    {% set pays = consumer.membershipType.value == 'consommateur' %}
                     {% set editable = anyDate or consumer.id in consumerIds %}
                     <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
                         <div class="min-w-0">
@@ -93,7 +93,7 @@
                                 {% if mark and mark.paid %}
                                     <span class="badge bg-emerald-100 text-emerald-800">{{ ui.icon('check', 'size-4') }} 1 € réglé</span>
                                 {% elseif mark %}
-                                    <span class="badge bg-slate-100 text-slate-700">{{ pays ? 'Venu gratuitement' : 'Présent' }}</span>
+                                    <span class="badge bg-slate-100 text-slate-700">Venu gratuitement</span>
                                 {% endif %}
                             </p>
                             <p class="text-sm text-slate-500">{{ consumer.member ? consumer.member.number : 'Sans numéro' }}</p>
@@ -102,7 +102,7 @@
                         {# Trois boutons, trois POST : le geste courant d'abord, et le retrait
                            en dernier pour qu'un pouce ne l'atteigne pas par accident. #}
                         <div class="flex flex-wrap gap-2">
-                            {% if editable and pays and not (mark and mark.paid) %}
+                            {% if editable and not (mark and mark.paid) %}
                                 <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
                                     <input type="hidden" name="action" value="paye">
@@ -113,7 +113,7 @@
                                 <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
                                     <input type="hidden" name="action" value="present">
-                                    <button type="submit" class="btn btn-secondary">{{ pays ? 'Venu gratuitement' : 'Présent' }}</button>
+                                    <button type="submit" class="btn btn-secondary">Venu gratuitement</button>
                                 </form>
                             {% endif %}
                             {% if editable and mark %}

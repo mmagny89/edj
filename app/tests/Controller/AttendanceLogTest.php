@@ -284,7 +284,8 @@ final class AttendanceLogTest extends WebTestCase
         $this->logIn('admin@example.test');
 
         $crawler = $this->client->request('GET', '/admin/pointage?date='.$date);
-        $form = $crawler->filter('#p-adherent')->closest('form')?->form(['application' => (string) $annual->getId()]);
+        // Le second bouton du formulaire : venue gratuite.
+        $form = $crawler->filter('#p-adherent')->closest('form')?->selectButton('Venu gratuitement')->form(['application' => (string) $annual->getId()]);
         self::assertNotNull($form);
         $this->client->submit($form);
         $this->em->clear();
@@ -293,9 +294,23 @@ final class AttendanceLogTest extends WebTestCase
         self::assertNotNull($attendance);
         self::assertFalse($attendance->isPaid());
 
-        $this->client->request('GET', '/admin/pointage?date='.$date);
-        self::assertSelectorTextContains('body', 'Camille Annuelle');
-        self::assertSelectorNotExists('input[name="action"][value="paye"]');
+        // Et l'on peut encore la passer en payante.
+        $this->press($date, $annual, 'paye');
+        self::assertTrue($this->attendance($date, $annual)?->isPaid());
+    }
+
+    public function testASuperAdminAddsAPayingAttendanceForAnAnnualMember(): void
+    {
+        $annual = $this->consumer('Camille', 'Annuelle', self::PAST, MembershipType::Individual);
+        $this->logIn('admin@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/pointage?date='.self::PAST);
+        $form = $crawler->filter('#p-adherent')->closest('form')?->selectButton('Présent · 1 € payé')->form(['application' => (string) $annual->getId()]);
+        self::assertNotNull($form);
+        $this->client->submit($form);
+        $this->em->clear();
+
+        self::assertTrue($this->attendance(self::PAST, $annual)?->isPaid());
     }
 
     /**

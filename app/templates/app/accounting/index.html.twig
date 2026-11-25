@@ -19,7 +19,7 @@
             <h1 class="text-3xl font-bold text-ink">Comptabilité</h1>
             <p class="mt-1 text-slate-600">
                 Les recettes de la saison : cotisations encaissées à la validation d'un bulletin,
-                et l'euro que paie un consommateur à chaque séance.
+                et l'euro payé à une séance.
             </p>
         </div>
         <a href="{{ path('app_accounting_export', {saison: season}) }}" class="btn btn-primary">{{ ui.icon('download') }} Exporter en CSV</a>
@@ -48,7 +48,7 @@
             <p class="mt-1 text-3xl font-bold text-ink">{{ money.euros(summary.cotisationsCents) }}</p>
         </div>
         <div class="card p-5">
-            <p class="text-sm font-semibold text-slate-600">Passages consommateurs</p>
+            <p class="text-sm font-semibold text-slate-600">Passages en séance</p>
             <p class="mt-1 text-3xl font-bold text-ink">{{ money.euros(summary.passagesCents) }}</p>
             <p class="mt-1 text-sm text-slate-600">{{ summary.passages }} passage{{ summary.passages > 1 ? 's' }} pointé{{ summary.passages > 1 ? 's' }}</p>
         </div>

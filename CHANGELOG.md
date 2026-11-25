@@ -14,7 +14,8 @@ GitHub, par `.github/workflows/release.yml`.
   dans le journal de la comptabilite, et pour une cotisation aussi sur la fiche de l'adherent. Elle figure dans
   l'export CSV.
 - **Pointage par un super-administrateur** : n'importe quel adherent, a n'importe quelle date, y compris a venir ;
-  hors formule consommateur, la presence est gratuite et n'apparait pas dans la comptabilite.
+  quelle que soit la formule, la venue est gratuite ou payee 1 € ; une venue gratuite hors formule consommateur
+  n'apparait pas dans la comptabilite.
 
 - **Pointage sur date libre** : l'admin peut pointer les consommateurs un jour sans evenement au calendrier
   (date choisie au plus tard aujourd'hui, libelle « Seance »), en plus des evenements.
