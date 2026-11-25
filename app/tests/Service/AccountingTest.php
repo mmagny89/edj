@@ -67,7 +67,7 @@ final class AccountingTest extends KernelTestCase
         self::assertSame(100, $summary['byMethod']['especes']);
     }
 
-    public function testAnUnpaidPassageIsACreance(): void
+    public function testAFreePassageIsNotACreance(): void
     {
         $consumer = $this->application('Alix', 'Consommatrice', MembershipType::Consumer);
         $this->attendance($consumer, paid: false);
@@ -76,8 +76,20 @@ final class AccountingTest extends KernelTestCase
         $summary = $this->summary();
 
         self::assertSame(0, $summary['passagesCents']);
-        self::assertSame(100, $summary['unpaidCents']);
-        self::assertCount(1, $this->mine($this->accounting->unpaid($this->season)));
+        self::assertSame(0, $summary['unpaidCents']);
+        self::assertSame(1, $summary['passages']);
+        self::assertSame([], $this->mine($this->accounting->unpaid($this->season)));
+    }
+
+    public function testTheFreePresenceOfAnAnnualMemberStaysOutOfTheJournal(): void
+    {
+        $annual = $this->application('Camille', 'Annuelle', MembershipType::Individual, PaymentMethod::Cash);
+        $this->attendance($annual, paid: false);
+        $this->em->flush();
+
+        $lines = $this->mine($this->accounting->entries($this->season));
+
+        self::assertSame(['cotisation'], array_column($lines, 'kind'));
     }
 
     /**

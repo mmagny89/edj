@@ -271,6 +271,44 @@ class MembershipApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Un bulletin par personne, pour pointer n'importe quel adherent : celui de
+     * la saison s'il existe (annulation exclue), sinon le plus recent.
+     *
+     * @return list<MembershipApplication> par nom puis prenom
+     */
+    public function findOnePerMember(int $season): array
+    {
+        /** @var list<MembershipApplication> $rows */
+        $rows = $this->createQueryBuilder('a')
+            ->leftJoin('a.member', 'm')
+            ->addSelect('m')
+            ->andWhere('a.anonymizedAt IS NULL')
+            ->orderBy('a.submittedAt', 'DESC')
+            ->addOrderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $kept = [];
+        $inSeason = [];
+        foreach ($rows as $row) {
+            $key = null !== $row->getMember() ? 'm'.$row->getMember()->getId() : 'a'.$row->getId();
+            $matches = !$row->isCancelled() && MembershipSeasons::of($row->getSubmittedAt()) === $season;
+            if (!isset($kept[$key]) || ($matches && !isset($inSeason[$key]))) {
+                $kept[$key] = $row;
+                if ($matches) {
+                    $inSeason[$key] = true;
+                }
+            }
+        }
+
+        $kept = array_values($kept);
+        usort($kept, static fn (MembershipApplication $x, MembershipApplication $y) => [mb_strtolower((string) $x->getLastName()), mb_strtolower((string) $x->getFirstName())]
+            <=> [mb_strtolower((string) $y->getLastName()), mb_strtolower((string) $y->getFirstName())]);
+
+        return $kept;
+    }
+
+    /**
      * Supprime les bulletins dont l'adresse se termine par le suffixe donne.
      * Reserve aux bulletins fictifs : le suffixe est un domaine inexistant.
      */

@@ -15,6 +15,7 @@ enum MembershipEventType: string
     case Anonymized = 'anonymisee';
     case Upgraded = 'formule';
     case Edited = 'modifiee';
+    case Cashed = 'encaissement';
 
     public function label(): string
     {
@@ -25,6 +26,7 @@ enum MembershipEventType: string
             self::Anonymized => 'Bulletin anonymisé',
             self::Upgraded => 'Formule modifiée',
             self::Edited => 'Fiche corrigée',
+            self::Cashed => 'Encaissement pointé',
         };
     }
 }

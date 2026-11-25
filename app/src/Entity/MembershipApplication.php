@@ -212,6 +212,14 @@ class MembershipApplication
     private ?PaymentMethod $paymentMethod = null;
 
     /**
+     * Le jour ou la cotisation est arrivee sur le compte : depot du cheque ou
+     * des especes, reception du virement. Distinct de la validation, et nul
+     * tant que la tresorerie ne l'a pas pointe.
+     */
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
+    private ?\DateTimeImmutable $cashedOn = null;
+
+    /**
      * Date du dernier changement d'etat, et identifiant de l'administrateur qui
      * l'a decide. L'association doit pouvoir dire qui a valide un encaissement
      * ou annule une adhesion.
@@ -338,6 +346,26 @@ class MembershipApplication
         return $this->paymentMethod;
     }
 
+    public function getCashedOn(): ?\DateTimeImmutable
+    {
+        return $this->cashedOn;
+    }
+
+    /**
+     * Pointe, corrige ou efface (null) la date de depot ou de paiement.
+     */
+    public function recordCashing(?\DateTimeImmutable $on, ?int $adminId, ?\DateTimeImmutable $now = null): static
+    {
+        if (null === $this->paymentMethod) {
+            throw new \LogicException('Sans moyen de reglement, il n\'y a pas d\'encaissement a pointer.');
+        }
+
+        $this->cashedOn = $on?->setTime(0, 0);
+        $this->record(MembershipEventType::Cashed, $adminId, $now, $this->cashedOn?->format('d/m/Y') ?? 'date effacée');
+
+        return $this;
+    }
+
     public function getStatusChangedAt(): ?\DateTimeImmutable
     {
         return $this->statusChangedAt;
@@ -377,6 +405,7 @@ class MembershipApplication
     {
         $this->status = MembershipStatus::Cancelled;
         $this->paymentMethod = null;
+        $this->cashedOn = null;
         $this->record(MembershipEventType::Cancelled, $adminId, $now);
 
         return $this->recordStatusChange($adminId, $now);
@@ -390,6 +419,7 @@ class MembershipApplication
     {
         $this->status = MembershipStatus::Pending;
         $this->paymentMethod = null;
+        $this->cashedOn = null;
         $this->record(MembershipEventType::Reopened, $adminId, $now);
 
         return $this->recordStatusChange($adminId, $now);

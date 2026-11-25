@@ -20,8 +20,8 @@
         <div>
             <label for="p-date" class="mb-1.5 block text-sm font-semibold text-slate-800">Événement</label>
             <select name="date" id="p-date" class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
-                {% if event is null %}
-                    <option value="{{ day|date('Y-m-d') }}" selected>Date libre · {{ day|date('d/m/Y') }}</option>
+                {% if sessions[day|date('Y-m-d')] is not defined %}
+                    <option value="{{ day|date('Y-m-d') }}" selected>{{ event ? event.title : 'Date libre' }} · {{ day|date('d/m/Y') }}</option>
                 {% endif %}
                 {% for key, session in sessions %}
                     <option value="{{ key }}"{{ key == day|date('Y-m-d') ? ' selected' }}>{{ session.title }} · {{ key|date('d/m/Y') }}</option>
@@ -34,7 +34,7 @@
     <form method="get" action="{{ path('app_attendance_log') }}" class="mt-4 flex flex-wrap items-end gap-3" aria-label="Date libre">
         <div>
             <label for="p-date-libre" class="mb-1.5 block text-sm font-semibold text-slate-800">Ou une autre date, sans événement</label>
-            <input type="date" name="date" id="p-date-libre" max="{{ today|date('Y-m-d') }}" value="{{ event is null ? day|date('Y-m-d') }}" required class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
+            <input type="date" name="date" id="p-date-libre" {% if not anyDate %}max="{{ today|date('Y-m-d') }}"{% endif %} value="{{ event is null ? day|date('Y-m-d') }}" required class="block min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
         </div>
         <button type="submit" class="btn btn-secondary">{{ ui.icon('eye') }} Afficher</button>
     </form>
@@ -42,7 +42,7 @@
     <section class="card mt-8" aria-labelledby="titre-pointage">
         <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <h2 id="titre-pointage" class="text-lg font-bold text-ink">
-                {{ event ? event.title : 'Séance' }} <span class="font-medium text-slate-600">· {{ isToday ? 'aujourd\'hui' : 'séance passée' }}, {{ day|format_date(pattern: 'EEEE d MMMM y') }}</span>
+                {{ event ? event.title : 'Séance' }} <span class="font-medium text-slate-600">· {{ isToday ? 'aujourd\'hui' : (day > today ? 'séance à venir' : 'séance passée') }}, {{ day|format_date(pattern: 'EEEE d MMMM y') }}</span>
             </h2>
             <p class="text-sm text-slate-600">
                 <strong>{{ present }}</strong> présent{{ present > 1 ? 's' }},
@@ -53,21 +53,39 @@
 
         {% if not isToday %}
             <p class="border-b border-slate-100 bg-amber-50 px-5 py-3 text-sm text-amber-900" role="note">
-                Séance passée : les pointages s'enregistrent à la date du {{ day|date('d/m/Y') }}
+                {{ day > today ? 'Séance à venir' : 'Séance passée' }} : les pointages s'enregistrent à la date du {{ day|date('d/m/Y') }}
                 et apparaissent à cette date dans la comptabilité.
             </p>
         {% endif %}
 
-        {% if consumers is empty %}
+        {% if anyDate and others is not empty %}
+            <form method="post" action="{{ path('app_attendance_log_add', {date: day|date('Y-m-d')}) }}" class="flex flex-wrap items-end gap-3 border-b border-slate-100 px-5 py-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('pointage-ajout-' ~ day|date('Y-m-d')) }}">
+                <div class="min-w-0 max-w-full">
+                    <label for="p-adherent" class="mb-1.5 block text-sm font-semibold text-slate-800">Pointer un autre adhérent</label>
+                    <select name="application" id="p-adherent" required class="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-brand">
+                        <option value="">Choisir un adhérent</option>
+                        {% for other in others %}
+                            <option value="{{ other.id }}">{{ other.lastName }} {{ other.firstName }}{{ other.member ? ' · ' ~ other.member.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ ui.icon('plus') }} Pointer</button>
+            </form>
+        {% endif %}
+
+        {% if people is empty %}
             <p class="px-5 py-8 text-slate-600">
                 Aucun consommateur validé sur la saison {{ season - 1 }}-{{ season }}. La formule se choisit sur le
                 bulletin d'adhésion : gratuite à l'année, 1 € par séance.
             </p>
         {% else %}
             <ul class="divide-y divide-slate-100">
-                {% for consumer in consumers %}
+                {% for consumer in people %}
                     {% set mark = pointed[consumer.id] ?? null %}
                     {% set token = 'pointage' ~ day|date('Y-m-d') ~ '-' ~ consumer.id %}
+                    {% set pays = consumer.membershipType.value == 'consommateur' %}
+                    {% set editable = anyDate or consumer.id in consumerIds %}
                     <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
                         <div class="min-w-0">
                             <p class="font-semibold text-ink">
@@ -75,7 +93,7 @@
                                 {% if mark and mark.paid %}
                                     <span class="badge bg-emerald-100 text-emerald-800">{{ ui.icon('check', 'size-4') }} 1 € réglé</span>
                                 {% elseif mark %}
-                                    <span class="badge bg-amber-100 text-amber-900">Présent, à régler</span>
+                                    <span class="badge bg-slate-100 text-slate-700">{{ pays ? 'Venu gratuitement' : 'Présent' }}</span>
                                 {% endif %}
                             </p>
                             <p class="text-sm text-slate-500">{{ consumer.member ? consumer.member.number : 'Sans numéro' }}</p>
@@ -84,21 +102,21 @@
                         {# Trois boutons, trois POST : le geste courant d'abord, et le retrait
                            en dernier pour qu'un pouce ne l'atteigne pas par accident. #}
                         <div class="flex flex-wrap gap-2">
-                            {% if not (mark and mark.paid) %}
+                            {% if editable and pays and not (mark and mark.paid) %}
                                 <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
                                     <input type="hidden" name="action" value="paye">
                                     <button type="submit" class="btn btn-primary">{{ ui.icon('check') }} Présent · 1 € payé</button>
                                 </form>
                             {% endif %}
-                            {% if mark is null %}
+                            {% if editable and mark is null %}
                                 <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
                                     <input type="hidden" name="action" value="present">
-                                    <button type="submit" class="btn btn-secondary">Présent, sans payer</button>
+                                    <button type="submit" class="btn btn-secondary">{{ pays ? 'Venu gratuitement' : 'Présent' }}</button>
                                 </form>
                             {% endif %}
-                            {% if mark %}
+                            {% if editable and mark %}
                                 <form method="post" action="{{ path('app_attendance_log_toggle', {date: day|date('Y-m-d'), application: consumer.id}) }}">
                                     <input type="hidden" name="_token" value="{{ csrf_token(token) }}">
                                     <input type="hidden" name="action" value="retirer">

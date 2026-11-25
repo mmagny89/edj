@@ -10,6 +10,12 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Ajoute
 
+- **Date de depot / de paiement** : pour chaque recette reglee (cotisation ou euro de seance), la date se pointe
+  dans le journal de la comptabilite, et pour une cotisation aussi sur la fiche de l'adherent. Elle figure dans
+  l'export CSV.
+- **Pointage par un super-administrateur** : n'importe quel adherent, a n'importe quelle date, y compris a venir ;
+  hors formule consommateur, la presence est gratuite et n'apparait pas dans la comptabilite.
+
 - **Pointage sur date libre** : l'admin peut pointer les consommateurs un jour sans evenement au calendrier
   (date choisie au plus tard aujourd'hui, libelle « Seance »), en plus des evenements.
 
@@ -24,6 +30,9 @@ GitHub, par `.github/workflows/release.yml`.
 
 ### Modifie
 
+- **Venue gratuite** : « Present, sans payer » devient « Venu gratuitement » ; un tel passage vaut 0 € et n'est
+  plus a relancer, y compris pour les pointages deja saisis.
+- **Administration** : « Voir le site public » s'ouvre dans le meme onglet.
 - **Administration** : la creation d'un compte et la reinitialisation de son mot de passe envoient un courriel avec
   un lien (48 h, usage unique) pour choisir son mot de passe : plus aucun mot de passe n'est affiche ni transmis.
   Un contributeur peut etre supprime (jamais un super-administrateur).

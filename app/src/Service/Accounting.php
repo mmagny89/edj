@@ -36,7 +36,7 @@ final readonly class Accounting
      * validation du bulletin pour une cotisation, la seance pour un passage.
      * La date de saisie, elle, n'interesse pas la caisse.
      *
-     * @return list<array{date: \DateTimeImmutable, kind: string, label: string,
+     * @return list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
      *     cents: int, paid: bool}>
      */
@@ -46,6 +46,8 @@ final readonly class Accounting
 
         foreach ($this->cotisations($season) as $application) {
             $rows[] = [
+                'id' => (int) $application->getId(),
+                'cashedOn' => $application->getCashedOn(),
                 'date' => $application->getStatusChangedAt() ?? $application->getSubmittedAt(),
                 'kind' => 'cotisation',
                 'label' => $application->getMembershipType()?->label() ?? 'Adhésion',
@@ -58,14 +60,22 @@ final readonly class Accounting
         }
 
         foreach ($this->attendances->findForSeason($season) as $attendance) {
+            // La presence gratuite d'un adherent annuel ne concerne pas la caisse.
+            if (!$attendance->isPaid() && MembershipType::Consumer !== $attendance->getApplication()->getMembershipType()) {
+                continue;
+            }
+
             $rows[] = [
+                'id' => (int) $attendance->getId(),
+                'cashedOn' => $attendance->getCashedOn(),
                 'date' => $attendance->getOccurredOn(),
                 'kind' => 'passage',
                 'label' => $attendance->getLabel(),
                 'person' => $this->nameOf($attendance->getApplication()),
                 'number' => $attendance->getApplication()->getMember()?->getNumber(),
                 'method' => $attendance->getPaymentMethod(),
-                'cents' => $attendance->getAmountCents(),
+                // Zero pour une venue gratuite : ce n'est pas une creance.
+                'cents' => $attendance->collectedCents(),
                 'paid' => $attendance->isPaid(),
             ];
         }
@@ -79,10 +89,10 @@ final readonly class Accounting
      * Ce qu'il y a dans la caisse a la fin de la saison, et d'ou ca vient.
      *
      * Seules les lignes reglees sont comptees : une cotisation validee sans
-     * moyen de reglement et un passage non paye sont des creances, pas des
-     * recettes. Ils se retrouvent dans unpaid().
+     * moyen de reglement est une creance, pas une recette, et se retrouve dans
+     * unpaid(). Un passage gratuit vaut zero.
      *
-     * @param list<array{date: \DateTimeImmutable, kind: string, label: string,
+     * @param list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
      *     cents: int, paid: bool}>|null $entries
      *
@@ -134,13 +144,13 @@ final readonly class Accounting
 
     /**
      * Ce qui reste a encaisser : un bulletin valide dont le reglement n'a
-     * jamais ete saisi, un passage pointe sans son euro.
+     * jamais ete saisi.
      *
-     * @param list<array{date: \DateTimeImmutable, kind: string, label: string,
+     * @param list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
      *     cents: int, paid: bool}>|null $entries
      *
-     * @return list<array{date: \DateTimeImmutable, kind: string, label: string,
+     * @return list<array{id: int, cashedOn: \DateTimeImmutable|null, date: \DateTimeImmutable, kind: string, label: string,
      *     person: string, number: string|null, method: PaymentMethod|null,
      *     cents: int, paid: bool}>
      */
