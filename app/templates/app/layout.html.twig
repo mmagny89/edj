@@ -30,11 +30,12 @@
             </div>
 
             <div id="menu-principal" data-nav-target="panel" class="px-3 pb-4 lg:flex lg:flex-1 lg:flex-col lg:px-4 lg:pb-6">
-                <a href="{{ path('site_index') }}" target="_blank" rel="noopener"
+                {# Chargement complet : Turbo melangerait les feuilles de style de
+                   l'administration et du site. #}
+                <a href="{{ path('site_index') }}" data-turbo="false"
                    class="btn btn-accent w-full">
                     {{ ui.icon('globe') }}
                     Voir le site public
-                    <span class="sr-only">(nouvel onglet)</span>{{ ui.icon('external', 'size-4') }}
                 </a>
 
                 {# Quatre blocs, dans l'ordre ou on s'en sert : le tableau de bord seul, puis

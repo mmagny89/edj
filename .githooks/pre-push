@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# pre-push — les portes de la CI doivent passer en local avant qu'un push parte.
+# pre-push — rejoue les portes de la CI en local, SUR DEMANDE : RUN_CHECKS=1 git push
 #
-# Rejoue .github/workflows/qualite.yml dans le conteneur php, en environnement vierge
-# (outils/ci-local.sh). Contournement exceptionnel, à justifier : SKIP_CHECKS=1 git push
+# Par défaut le hook ne bloque pas : les contrôles se lancent une fois avant de committer
+# (`make check`) et la CI GitHub les rejoue sur la PR (rules/tests.md, niveaux de contrôle).
+# Avec RUN_CHECKS=1, il rejoue .github/workflows/qualite.yml dans le conteneur php, en
+# environnement vierge (outils/ci-local.sh). SKIP_CHECKS=1 l'emporte, à justifier.
 #
 # Activation, une fois par clone : `git config core.hooksPath .githooks` (ou `make hooks`).
-if [ "${SKIP_CHECKS:-}" = "1" ]; then
-	echo "pre-push : contrôles ignorés (SKIP_CHECKS=1)."
+if [ "${RUN_CHECKS:-}" != "1" ] || [ "${SKIP_CHECKS:-}" = "1" ]; then
+	echo "pre-push : contrôles non lancés (RUN_CHECKS=1 pour les rejouer)."
 	exit 0
 fi
 cd "$(git rev-parse --show-toplevel)" || exit 1

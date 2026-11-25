@@ -12,10 +12,10 @@
         "ext-iconv": "*",
         "ext-simplexml": "*",
         "chillerlan/php-qrcode": "^6.0",
-        "doctrine/dbal": "^4.5.1",
+        "doctrine/dbal": "^4.6.0",
         "doctrine/doctrine-bundle": "^3.4.2",
         "doctrine/doctrine-migrations-bundle": "^4.0.1",
-        "doctrine/orm": "^3.7.6",
+        "doctrine/orm": "^3.8.0",
         "dompdf/dompdf": "^3.1",
         "dragonmantank/cron-expression": "^3.6.1",
         "guzzlehttp/guzzle": "^8.5.2",
@@ -54,9 +54,9 @@
         "symfony/webpack-encore-bundle": "^2.4.3",
         "symfony/yaml": "8.1.*",
         "symfonycasts/reset-password-bundle": "^1.26.1",
-        "twig/extra-bundle": "^3.29",
-        "twig/intl-extra": "^3.26",
-        "twig/twig": "^3.30"
+        "twig/extra-bundle": "^3.31",
+        "twig/intl-extra": "^3.31",
+        "twig/twig": "^3.31.1"
     },
     "config": {
         "allow-plugins": {

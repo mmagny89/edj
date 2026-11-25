@@ -6,10 +6,12 @@ use App\Entity\Event;
 use App\Entity\EventAttendance;
 use App\Entity\MembershipApplication;
 use App\Entity\User;
+use App\Enum\MembershipType;
 use App\Enum\PaymentMethod;
 use App\Repository\EventAttendanceRepository;
 use App\Repository\EventRepository;
 use App\Repository\MembershipApplicationRepository;
+use App\Service\Day;
 use App\Service\MembershipSeasons;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -26,7 +28,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * On pointe un evenement du calendrier ou une date libre, aujourd'hui ou deja
  * passee : la page propose les seances recentes et s'ouvre sur le jour meme. Un
  * jour sans evenement se pointe sous le libelle « Séance ». La saison se deduit
- * de la date, et on ne pointe pas dans l'avenir.
+ * de la date.
+ *
+ * Un contributeur ne pointe que les consommateurs, jamais dans l'avenir. Un
+ * super-administrateur pointe n'importe quel adherent a n'importe quelle date ;
+ * hors formule consommateur, la presence est gratuite.
  *
  * Pense pour etre tenu a l'entree, souvent sur un telephone, pendant que les
  * gens arrivent : un bouton par personne. Chaque geste est un POST qui revient
@@ -37,8 +43,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_CONTRIBUTOR')]
 final class AttendanceLogController extends AbstractController
 {
-    private const DATE_FORMAT = '!Y-m-d';
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EventRepository $events,
@@ -53,39 +57,55 @@ final class AttendanceLogController extends AbstractController
     public function index(Request $request): Response
     {
         $today = new \DateTimeImmutable('today');
+        $anyDate = $this->isGranted('ROLE_SUPER_ADMIN');
         $sessions = $this->sessions($today);
         $requested = (string) $request->query->get('date', '');
-        $day = $this->parseDay($requested);
+        $day = Day::parse($requested);
 
         if ('' !== $requested) {
             if (null === $day) {
                 $this->addFlash('error', 'Cette date n\'est pas valide.');
-            } elseif ($day > $today) {
+            } elseif ($day > $today && !$anyDate) {
                 $this->addFlash('error', 'On ne pointe pas dans l\'avenir.');
             }
         }
 
-        // Date demandee si elle est valide (evenement ou date libre), sinon le
-        // jour meme.
-        $day = null !== $day && $day <= $today ? $day : $today;
+        // Date demandee si elle est permise, sinon le jour meme.
+        $day = null !== $day && ($anyDate || $day <= $today) ? $day : $today;
         $key = $day->format('Y-m-d');
 
         $season = MembershipSeasons::of($day);
         $pointed = $this->attendances->indexedByApplication($day);
 
         $paid = 0;
-        foreach ($pointed as $attendance) {
-            $paid += $attendance->isPaid() ? 1 : 0;
+        $people = [];
+        $consumerIds = [];
+        foreach ($this->applications->findConsumers($season) as $consumer) {
+            $people[(int) $consumer->getId()] = $consumer;
+            $consumerIds[] = (int) $consumer->getId();
         }
+        foreach ($pointed as $id => $attendance) {
+            $paid += $attendance->isPaid() ? 1 : 0;
+            // Les autres personnes deja pointees ce jour-la.
+            $people[$id] ??= $attendance->getApplication();
+        }
+
+        $others = $anyDate ? array_filter(
+            $this->applications->findOnePerMember($season),
+            static fn (MembershipApplication $a) => !isset($people[(int) $a->getId()]),
+        ) : [];
 
         return $this->render('app/attendance_log/index.html.twig', [
             'day' => $day,
             'today' => $today,
             'isToday' => $day == $today,
+            'anyDate' => $anyDate,
             'season' => $season,
-            'event' => $sessions[$key] ?? null,
+            'event' => $sessions[$key] ?? $this->events->findOnDate($day),
             'sessions' => $sessions,
-            'consumers' => $this->applications->findConsumers($season),
+            'people' => array_values($people),
+            'consumerIds' => $consumerIds,
+            'others' => $others,
             'pointed' => $pointed,
             'present' => \count($pointed),
             'paid' => $paid,
@@ -117,7 +137,7 @@ final class AttendanceLogController extends AbstractController
 
     /**
      * Les trois gestes du pointage, sur une seule route : present et paye,
-     * present sans avoir paye, et le retrait d'un pointage saisi par erreur.
+     * venu gratuitement, et le retrait d'un pointage saisi par erreur.
      *
      * Un seul point d'entree parce que c'est un seul et meme geste vu de la
      * personne qui pointe — elle corrige en appuyant ailleurs, pas en
@@ -126,9 +146,12 @@ final class AttendanceLogController extends AbstractController
     #[Route('/{date}/{application}', name: 'app_attendance_log_toggle', methods: ['POST'], requirements: ['date' => '\d{4}-\d{2}-\d{2}', 'application' => '\d+'])]
     public function toggle(Request $request, string $date, MembershipApplication $application): Response
     {
-        $day = $this->parseDay($date);
-        if (null === $day || $day > new \DateTimeImmutable('today')) {
-            throw $this->createNotFoundException('Date de pointage invalide.');
+        $day = $this->pointableDay($date);
+
+        // Hors super-administrateur, seuls les consommateurs de la saison.
+        if (!$this->isGranted('ROLE_SUPER_ADMIN')
+            && !\in_array($application, $this->applications->findConsumers(MembershipSeasons::of($day)), true)) {
+            throw $this->createAccessDeniedException('Ce bulletin ne se pointe pas avec ce compte.');
         }
 
         // L'evenement du calendrier de ce jour, quand il y en a un ; sinon date libre.
@@ -145,9 +168,10 @@ final class AttendanceLogController extends AbstractController
         $attendance = $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])
             ?? new EventAttendance($day, $application, $event, $this->currentUserId());
 
-        match ($action) {
-            'retirer' => $this->entityManager->remove($attendance),
-            'present' => $attendance->markUnpaid(),
+        // Seule la formule consommateur paie a la seance.
+        match (true) {
+            'retirer' === $action => $this->entityManager->remove($attendance),
+            'present' === $action, MembershipType::Consumer !== $application->getMembershipType() => $attendance->markFree(),
             default => $attendance->markPaid(PaymentMethod::Cash),
         };
 
@@ -168,6 +192,45 @@ final class AttendanceLogController extends AbstractController
     }
 
     /**
+     * Ajoute au pointage du jour un adherent qui n'est pas dans la liste.
+     */
+    #[Route('/{date}/ajouter', name: 'app_attendance_log_add', methods: ['POST'], requirements: ['date' => '\d{4}-\d{2}-\d{2}'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function add(Request $request, string $date): Response
+    {
+        $day = $this->pointableDay($date);
+
+        if (!$this->isCsrfTokenValid('pointage-ajout-'.$date, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Action expirée, recommencez.');
+
+            return $this->back($day);
+        }
+
+        $application = $this->applications->find($request->request->getInt('application'));
+        if (null === $application || $application->isAnonymized()) {
+            $this->addFlash('error', 'Choisissez un adhérent.');
+
+            return $this->back($day);
+        }
+
+        if (null === $this->attendances->findOneBy(['occurredOn' => $day, 'application' => $application])) {
+            $this->entityManager->persist(new EventAttendance($day, $application, $this->events->findOnDate($day), $this->currentUserId()));
+            $this->entityManager->flush();
+
+            $this->securityLogger->info('Pointage adherent', [
+                'event' => 'attendance_log',
+                'user' => $this->getUser()?->getUserIdentifier(),
+                'date' => $date,
+                'action' => 'ajouter',
+            ]);
+        }
+
+        $this->addFlash('success', sprintf('%s %s est pointé(e).', $application->getFirstName(), $application->getLastName()));
+
+        return $this->back($day);
+    }
+
+    /**
      * Retour sur le jour que l'on vient de pointer, et non sur aujourd'hui :
      * sans le parametre, chaque clic sur une date passee ramenerait au jour meme.
      */
@@ -177,16 +240,14 @@ final class AttendanceLogController extends AbstractController
     }
 
     /**
-     * La date « AAAA-MM-JJ », ou null si elle n'en est pas une : « 2026-02-30 »
-     * est refusee, pas reportee au 2 mars.
+     * Le jour d'un geste de pointage : une date reelle, et pas dans l'avenir
+     * sauf pour un super-administrateur.
      */
-    private function parseDay(string $value): ?\DateTimeImmutable
+    private function pointableDay(string $date): \DateTimeImmutable
     {
-        $day = \DateTimeImmutable::createFromFormat(self::DATE_FORMAT, $value);
-        $errors = \DateTimeImmutable::getLastErrors();
-
-        if (false === $day || (false !== $errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
-            return null;
+        $day = Day::parse($date);
+        if (null === $day || ($day > new \DateTimeImmutable('today') && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
+            throw $this->createNotFoundException('Date de pointage invalide.');
         }
 
         return $day;

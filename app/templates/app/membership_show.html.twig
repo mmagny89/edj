@@ -97,6 +97,16 @@
             {% endif %}
         </p>
 
+        {% if application.validated and application.paymentMethod %}
+            <div class="mt-4">
+                <p class="mb-1.5 text-sm font-semibold text-slate-800">
+                    Date de dépôt / de paiement :
+                    {{ application.cashedOn ? application.cashedOn|date('d/m/Y') : 'non pointée' }}
+                </p>
+                {{ include('app/_cashing_form.html.twig', {kind: 'cotisation', id: application.id, cashedOn: application.cashedOn, person: application.firstName ~ ' ' ~ application.lastName, uid: 'f', back: 'fiche'}) }}
+            </div>
+        {% endif %}
+
         <div class="mt-5 flex flex-wrap items-end gap-3">
             {% if not application.validated %}
                 <form method="post" action="{{ path('app_membership_validate', {id: application.id}) }}" class="flex flex-wrap items-end gap-3">

@@ -2,8 +2,13 @@
 
 namespace App\Controller\app;
 
+use App\Entity\EventAttendance;
+use App\Entity\MembershipApplication;
+use App\Entity\User;
 use App\Service\Accounting;
+use App\Service\Day;
 use App\Service\MembershipStatistics;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -30,6 +35,7 @@ final class AccountingController extends AbstractController
     public function __construct(
         private readonly Accounting $accounting,
         private readonly MembershipStatistics $statistics,
+        private readonly EntityManagerInterface $entityManager,
         #[Autowire(service: 'monolog.logger.security')]
         private readonly LoggerInterface $securityLogger,
     ) {
@@ -58,6 +64,70 @@ final class AccountingController extends AbstractController
      * accents. Montants en euros avec une virgule decimale, pour la meme
      * raison.
      */
+    /**
+     * Pointe la date de depot (cheque, especes) ou de paiement (virement) d'une
+     * recette, depuis le journal ou depuis la fiche. Un champ vide l'efface.
+     */
+    #[Route('/encaissement/{kind}/{id}', name: 'app_accounting_cashing', methods: ['POST'], requirements: ['kind' => 'cotisation|passage', 'id' => '\d+'])]
+    public function cashing(Request $request, string $kind, int $id): Response
+    {
+        $line = 'passage' === $kind
+            ? $this->entityManager->find(EventAttendance::class, $id)
+            : $this->entityManager->find(MembershipApplication::class, $id);
+        if (null === $line) {
+            throw $this->createNotFoundException('Recette introuvable.');
+        }
+
+        // Vide quand le journal est affiche sans parametre : getInt() le refuserait.
+        $season = (int) $request->request->get('saison');
+        $back = 'fiche' === $request->request->get('retour') && $line instanceof MembershipApplication
+            ? $this->redirectToRoute('app_membership_show', ['id' => $id], Response::HTTP_SEE_OTHER)
+            : $this->redirectToRoute('app_accounting', $season > 0 ? ['saison' => $season] : [], Response::HTTP_SEE_OTHER);
+
+        if (!$this->isCsrfTokenValid('cashing-'.$kind.'-'.$id, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Action expirée, recommencez.');
+
+            return $back;
+        }
+
+        $value = trim((string) $request->request->get('date'));
+        $on = Day::parse($value);
+        if ('' !== $value && (null === $on || $on > new \DateTimeImmutable('today'))) {
+            $this->addFlash('error', 'La date de dépôt ou de paiement n\'est pas valide, ou se situe dans l\'avenir.');
+
+            return $back;
+        }
+
+        $cashable = $line instanceof EventAttendance ? $line->isPaid() : null !== $line->getPaymentMethod();
+        if (!$cashable) {
+            $this->addFlash('error', 'Aucun règlement n\'est enregistré sur cette ligne.');
+
+            return $back;
+        }
+
+        if ($line instanceof EventAttendance) {
+            $line->recordCashing($on);
+        } else {
+            $user = $this->getUser();
+            $line->recordCashing($on, $user instanceof User ? $user->getId() : null);
+        }
+        $this->entityManager->flush();
+
+        $this->securityLogger->info('Encaissement pointe', [
+            'event' => 'accounting_cashing',
+            'user' => $this->getUser()?->getUserIdentifier(),
+            'kind' => $kind,
+            'id' => $id,
+            'date' => $on?->format('Y-m-d'),
+        ]);
+
+        $this->addFlash('success', null === $on
+            ? 'Date de dépôt / de paiement effacée.'
+            : sprintf('Date de dépôt / de paiement enregistrée : %s.', $on->format('d/m/Y')));
+
+        return $back;
+    }
+
     #[Route('/export.csv', name: 'app_accounting_export', methods: ['GET'])]
     public function export(Request $request): StreamedResponse
     {
@@ -74,7 +144,7 @@ final class AccountingController extends AbstractController
         $response = new StreamedResponse(static function () use ($entries): void {
             $out = fopen('php://output', 'wb');
             fwrite($out, "\u{FEFF}");
-            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Encaissé'], ';', '"', '');
+            fputcsv($out, ['Date', 'Nature', 'Libellé', 'Personne', 'Numéro', 'Règlement', 'Montant (€)', 'Encaissé', 'Dépôt / paiement'], ';', '"', '');
 
             foreach ($entries as $entry) {
                 fputcsv($out, [
@@ -86,6 +156,7 @@ final class AccountingController extends AbstractController
                     $entry['method']?->label() ?? '',
                     number_format($entry['cents'] / 100, 2, ',', ''),
                     $entry['paid'] ? 'oui' : 'non',
+                    $entry['cashedOn']?->format('d/m/Y') ?? '',
                 ], ';', '"', '');
             }
 

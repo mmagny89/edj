@@ -265,6 +265,39 @@ final class AttendanceLogTest extends WebTestCase
         self::assertSame([], $this->repository()->findBy(['application' => $consumer]), 'Rien ne doit etre enregistre.');
     }
 
+    public function testAContributorCannotPointAnyoneElse(): void
+    {
+        $this->consumer('Alix', 'Consommatrice', self::PAST);
+        $this->logIn();
+
+        $this->client->request('GET', '/admin/pointage?date='.self::PAST);
+        self::assertSelectorNotExists('#p-adherent');
+
+        $this->client->request('POST', sprintf('/admin/pointage/%s/ajouter', self::PAST));
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testASuperAdminPointsAnyMemberOnAFutureDate(): void
+    {
+        $date = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
+        $annual = $this->consumer('Camille', 'Annuelle', 'now', MembershipType::Individual);
+        $this->logIn('admin@example.test');
+
+        $crawler = $this->client->request('GET', '/admin/pointage?date='.$date);
+        $form = $crawler->filter('#p-adherent')->closest('form')?->form(['application' => (string) $annual->getId()]);
+        self::assertNotNull($form);
+        $this->client->submit($form);
+        $this->em->clear();
+
+        $attendance = $this->attendance($date, $annual);
+        self::assertNotNull($attendance);
+        self::assertFalse($attendance->isPaid());
+
+        $this->client->request('GET', '/admin/pointage?date='.$date);
+        self::assertSelectorTextContains('body', 'Camille Annuelle');
+        self::assertSelectorNotExists('input[name="action"][value="paye"]');
+    }
+
     /**
      * Le geste tel qu'il se fait : on ouvre la page du jour, on appuie sur le bouton.
      * Le jeton se lit sur le formulaire plutot que de se fabriquer a cote — hors
@@ -310,13 +343,13 @@ final class AttendanceLogTest extends WebTestCase
         return $event;
     }
 
-    private function logIn(): void
+    private function logIn(string $user = 'contributeur@example.test'): void
     {
         $provider = static::getContainer()->get('security.user.provider.concrete.test_memory_provider');
-        $this->client->loginUser($provider->loadUserByIdentifier('contributeur@example.test'));
+        $this->client->loginUser($provider->loadUserByIdentifier($user));
     }
 
-    private function consumer(string $firstName, string $lastName, string $submittedAt): MembershipApplication
+    private function consumer(string $firstName, string $lastName, string $submittedAt, MembershipType $type = MembershipType::Consumer): MembershipApplication
     {
         $member = new Member('EDJ-'.random_int(1000, 9999));
         $this->em->persist($member);
@@ -328,14 +361,14 @@ final class AttendanceLogTest extends WebTestCase
             ->setPostalCode('89300')
             ->setCity('Joigny')
             ->setEmail(mb_strtolower($lastName).self::MAIL_SUFFIX)
-            ->setMembershipType(MembershipType::Consumer)
+            ->setMembershipType($type)
             ->setStatutesAccepted(true)
             ->setRulesAccepted(true)
             ->setSignaturePlace('Joigny')
             ->setSignatureName($firstName.' '.$lastName)
             ->setSubmittedAt(new \DateTimeImmutable($submittedAt))
             ->setMember($member);
-        $application->validate(null, null, new \DateTimeImmutable($submittedAt));
+        $application->validate(MembershipType::Consumer === $type ? null : PaymentMethod::Cash, null, new \DateTimeImmutable($submittedAt));
         $this->em->persist($application);
         $this->em->flush();
 

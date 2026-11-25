@@ -53,9 +53,9 @@ periode d'inactivite)
 | Evenements | Calendrier de l'accueil ; generation d'une saison entiere (jours feries ecartes) ; pour une Nuit du jeu : LudiPassion, tombola, liste de ce que chacun apporte |
 | Adhesions | Validation et encaissement, fiche papier, correction, renouvellement, passage a l'annuel, anonymisation, export CSV |
 | Courriels | Message aux adherents d'une saison, redige dans un editeur simple (gras, italique, souligne, lien, centrage, liste), avec variables, apercu, essai, lien de desinscription et historique ; habille aux couleurs et au logo de l'association |
-| Pointage | Presence et euro de chaque consommateur, pour un evenement du calendrier (aujourd'hui ou passe) |
+| Pointage | Presence et euro de chaque consommateur, aujourd'hui ou a une date passee ; un super-administrateur pointe tout adherent a toute date |
 | QR code du site | QR code (SVG et PNG) de l'adresse du site, avec ou sans `www` |
-| Comptabilite | Journal de caisse d'une saison, reste a encaisser, export CSV |
+| Comptabilite | Journal de caisse d'une saison, date de depot ou de paiement, reste a encaisser, export CSV |
 | Emargement | Feuille d'emargement PDF pour une assemblee generale |
 | Saisons, Import, Administrateurs | Reserves aux super-administrateurs : tampons des cartes, import d'un fichier Excel d'adherents, comptes (roles, blocage, mot de passe provisoire) |
 

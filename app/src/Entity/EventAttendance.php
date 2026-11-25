@@ -18,9 +18,9 @@ use Doctrine\ORM\Mapping as ORM;
  * dont dispose la tresorerie pour ces encaissements.
  *
  * Presence et reglement sont deux faits distincts. Une personne peut etre
- * venue sans avoir paye — elle apparait alors dans les impayes de la section
- * comptable — d'ou un paidAt nul plutot qu'un montant a zero : zero euro paye
- * et euro non encore paye ne se lisent pas pareil dans un journal de caisse.
+ * venue gratuitement : paidAt reste nul, rien n'est encaisse et rien n'est a
+ * relancer. C'est aussi le cas d'un adherent annuel pointe par un
+ * administrateur.
  */
 #[ORM\Entity(repositoryClass: EventAttendanceRepository::class)]
 #[ORM\Table(name: 'event_attendance')]
@@ -76,6 +76,10 @@ class EventAttendance
 
     #[ORM\Column(length: 20, enumType: PaymentMethod::class, nullable: true)]
     private ?PaymentMethod $paymentMethod = null;
+
+    /** Le jour ou cet euro a ete depose ou recu sur le compte. */
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
+    private ?\DateTimeImmutable $cashedOn = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $recordedAt;
@@ -151,6 +155,22 @@ class EventAttendance
         return $this->paymentMethod;
     }
 
+    public function getCashedOn(): ?\DateTimeImmutable
+    {
+        return $this->cashedOn;
+    }
+
+    public function recordCashing(?\DateTimeImmutable $on): static
+    {
+        if (!$this->isPaid()) {
+            throw new \LogicException('Une venue gratuite ne s\'encaisse pas.');
+        }
+
+        $this->cashedOn = $on?->setTime(0, 0);
+
+        return $this;
+    }
+
     public function getRecordedAt(): \DateTimeImmutable
     {
         return $this->recordedAt;
@@ -178,10 +198,11 @@ class EventAttendance
         return $this;
     }
 
-    public function markUnpaid(): static
+    public function markFree(): static
     {
         $this->paidAt = null;
         $this->paymentMethod = null;
+        $this->cashedOn = null;
 
         return $this;
     }

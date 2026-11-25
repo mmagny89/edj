@@ -1,0 +1,12 @@
+{# Date de depot ou de paiement d'une recette. Attend : kind, id, cashedOn,
+   person, uid (prefixe unique dans la page), back (« fiche » ou vide), today. #}
+{% import 'app/_icons.html.twig' as ui %}
+<form method="post" action="{{ path('app_accounting_cashing', {kind: kind, id: id}) }}" class="flex items-center gap-2">
+    <input type="hidden" name="_token" value="{{ csrf_token('cashing-' ~ kind ~ '-' ~ id) }}">
+    <input type="hidden" name="saison" value="{{ app.request.query.get('saison') }}">
+    <input type="hidden" name="retour" value="{{ back|default('') }}">
+    <label for="{{ uid }}-{{ kind }}-{{ id }}" class="sr-only">Date de dépôt ou de paiement — {{ person }}</label>
+    <input type="date" name="date" id="{{ uid }}-{{ kind }}-{{ id }}" value="{{ cashedOn ? cashedOn|date('Y-m-d') }}" max="{{ 'today'|date('Y-m-d') }}"
+           class="block min-h-11 min-w-0 rounded-lg border border-slate-300 bg-white px-2 py-2 text-base focus:border-brand">
+    <button type="submit" class="btn btn-secondary">{{ ui.icon('check', 'size-4') }}<span class="sr-only">Enregistrer la date — {{ person }}</span></button>
+</form>
